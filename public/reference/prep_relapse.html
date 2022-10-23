@@ -47,7 +47,7 @@
 
 
 <meta property="og:title" content="Prepare long-term relapse probabilities — prep_relapse" />
-<meta property="og:description" content="Combines published estimates of long-term relapse with the Health Survey for England data
+<meta property="og:description" content="Combines published estimates of long-term relapse with the population survey data
 to arrive at the expected values for relapse probabilities within defined subgroups." />
 <meta property="og:image" content="https://stapm.gitlab.io/r-packages/smktrans/logo.png" />
 
@@ -91,7 +91,7 @@ to arrive at the expected values for relapse probabilities within defined subgro
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -139,7 +139,7 @@ to arrive at the expected values for relapse probabilities within defined subgro
     </div>
 
     <div class="ref-description">
-    <p>Combines published estimates of long-term relapse with the Health Survey for England data
+    <p>Combines published estimates of long-term relapse with the population survey data
 to arrive at the expected values for relapse probabilities within defined subgroups.</p>
     </div>
 
@@ -156,7 +156,7 @@ to arrive at the expected values for relapse probabilities within defined subgro
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>Data table containing individual characteristics from the Health Survey for England.</p></td>
+      <td><p>Data table containing individual characteristics from the population survey data.</p></td>
     </tr>
     <tr>
       <th>hawkins_relapse</th>
@@ -168,7 +168,7 @@ long-term smoking relapse probability
     <tr>
       <th>lowest_year</th>
       <td><p>integer - lowest year of data available (for England this is 2003
-and for Scotland this is 2008). Default is set to 2003, for HSE.</p></td>
+and for Scotland this is 2008). Default is 2003.</p></td>
     </tr>
     <tr>
       <th>highest_year</th>
@@ -176,8 +176,8 @@ and for Scotland this is 2008). Default is set to 2003, for HSE.</p></td>
     </tr>
     <tr>
       <th>youngest_age</th>
-      <td><p>integer - youngest age in data (for England we use 11, but for
-Scotland this is 16).</p></td>
+      <td><p>integer - youngest age in data (for England 11, for
+Scotland 16).</p></td>
     </tr>
     </table>
 
@@ -193,14 +193,12 @@ age, IMD quintile and time since quit
     <p>This function takes the estimates of relapse to smoking from 
 Hawkins et al. (2010)
 
-and to process them into probabilities of relapse to smoking by the significant
+and processes them into probabilities of relapse to smoking by the significant
 variables from the above paper (age, time since quit, degree or not, mental health condition or not,
 married or not). Note that physical health / gp visits was also significant but not included here
-partly because the Health Survey for England doesn't have the right variables in all years
-and partly because it might not be right to include this when we are looking at
-health as an outcome in the model.
-Once we have mapped relapse prob onto the hse by the above variables,
- we can then calculate the variation in expected probability of relapse by imd quintile.</p>
+partly because the surveys do not have the right variables to do so.
+Once we have mapped relapse probabilities onto the survey data by the above variables,
+ we can then calculate the variation in expected probability of relapse by age, sex, time since quit and IMD quintile.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Hawkins J, Hollingworth W, Campbell R (2010).

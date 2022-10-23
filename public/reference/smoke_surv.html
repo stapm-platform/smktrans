@@ -94,7 +94,7 @@ of how risk declines by the time since some has quit." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -151,7 +151,7 @@ of how risk declines by the time since some has quit.</p>
 
     <pre class="usage"><span class='fu'>smoke_surv</span><span class='op'>(</span>
   <span class='va'>data</span>,
-  diseases <span class='op'>=</span> <span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'><a href='https://stapm.gitlab.io/r-packages/tobalcepi//reference/tob_disease_names.html'>tob_disease_names</a></span>,
+  diseases <span class='op'>=</span> <span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'>tob_disease_names</span>,
   <span class='va'>mx_data</span>,
   min_age <span class='op'>=</span> <span class='fl'>11</span>,
   max_age <span class='op'>=</span> <span class='fl'>89</span>,
@@ -208,7 +208,7 @@ other has been tidied into the form needed for quit probability estimation.</p>
 
 <span class='va'>test_data</span> <span class='op'>&lt;-</span> <span class='fu'>smoke_surv</span><span class='op'>(</span>
   data <span class='op'>=</span> <span class='va'>hse_data</span>,
-  diseases  <span class='op'>=</span> <span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'><a href='https://stapm.gitlab.io/r-packages/tobalcepi//reference/tob_disease_names.html'>tob_disease_names</a></span>,
+  diseases  <span class='op'>=</span> <span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'>tob_disease_names</span>,
   mx_data <span class='op'>=</span> <span class='va'>tob_mort_data_cause</span>
 <span class='op'>)</span>
 

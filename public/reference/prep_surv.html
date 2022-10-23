@@ -92,7 +92,7 @@ data from the period under investigation to produce an estimate of the socioecon
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -146,7 +146,7 @@ data from the period under investigation to produce an estimate of the socioecon
     </div>
 
     <pre class="usage"><span class='fu'>prep_surv</span><span class='op'>(</span>
-  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'><a href='hmd_data.html'>hmd_data</a></span>,
+  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'><a href='hmd_data_eng.html'>hmd_data_eng</a></span>,
   <span class='va'>mx_data_ons</span>,
   min_age <span class='op'>=</span> <span class='fl'>11</span>,
   max_age <span class='op'>=</span> <span class='fl'>89</span>,
@@ -166,7 +166,7 @@ from the Human Mortality Database.</p></td>
       <th>mx_data_ons</th>
       <td><p>Data table containing socioeconomically stratified
 mortality rates - that we process ourselves
-from mortality microdata supplied by the Office for National Statistics.</p></td>
+from mortality data.</p></td>
     </tr>
     <tr>
       <th>min_age</th>
@@ -190,12 +190,12 @@ from mortality microdata supplied by the Office for National Statistics.</p></td
 
     <p>Returns a data table containing the socioeconomically stratified cohort survivorship functions.
 Note that these data will only be stratified by IMD quintile for
-year ages and years covered by our ONS data.</p>
+year ages and years needed for the estimation of smoking state transition probabilities.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='va'>test_data</span> <span class='op'>&lt;-</span> <span class='fu'>prep_surv</span><span class='op'>(</span>
-  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'><a href='hmd_data.html'>hmd_data</a></span>,
+  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'><a href='hmd_data_eng.html'>hmd_data_eng</a></span>,
   mx_data_ons <span class='op'>=</span> <span class='va'>tob_mort_data</span>
 <span class='op'>)</span>
 <span class='op'>}</span>

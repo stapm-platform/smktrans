@@ -91,7 +91,7 @@ probabilities according to the formula given." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -257,14 +257,14 @@ The output of <code><a href='init_adj.html'>init_adj()</a></code>.</p></td>
 
 <span class='co'># Estimate cohort survivorship stratified by age, sex and IMD quintile</span>
 <span class='va'>survivorship_data</span> <span class='op'>&lt;-</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='fu'><a href='prep_surv.html'>prep_surv</a></span><span class='op'>(</span>
-  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'><a href='hmd_data.html'>hmd_data</a></span>,
+  mx_data_hmd <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'>hmd_data</span>,
   mx_data_ons <span class='op'>=</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='va'>tob_mort_data</span>
 <span class='op'>)</span>
 
 <span class='co'># Estimate age-specific probabilities of death by smoking status</span>
 <span class='va'>mortality_data</span> <span class='op'>&lt;-</span> <span class='fu'>smktrans</span><span class='fu'>::</span><span class='fu'><a href='smoke_surv.html'>smoke_surv</a></span><span class='op'>(</span>
   data <span class='op'>=</span> <span class='va'>hse_data</span>,
-  diseases  <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'><a href='https://stapm.gitlab.io/r-packages/tobalcepi//reference/tobacco_relative_risks.html'>tobacco_relative_risks</a></span><span class='op'>$</span><span class='va'>condition</span><span class='op'>)</span>,
+  diseases  <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'>tobalcepi</span><span class='fu'>::</span><span class='va'>tobacco_relative_risks</span><span class='op'>$</span><span class='va'>condition</span><span class='op'>)</span>,
   mx_data <span class='op'>=</span> <span class='fu'>stapmr</span><span class='fu'>::</span><span class='va'>tob_mort_data_cause</span>
 <span class='op'>)</span>
 

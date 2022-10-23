@@ -44,7 +44,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -213,7 +213,7 @@
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Estimate the shape of the cohort survivorship functions</span>
 <span class="va">survivorship_data</span> <span class="op">&lt;-</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="fu"><a href="../reference/prep_surv.html">prep_surv</a></span><span class="op">(</span>
-  mx_data_hmd <span class="op">=</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="va"><a href="../reference/hmd_data.html">hmd_data</a></span>,
+  mx_data_hmd <span class="op">=</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="va">hmd_data</span>,
   mx_data_ons <span class="op">=</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="va">tob_mort_data</span>
 <span class="op">)</span></code></pre></div>
 </div>
@@ -221,15 +221,15 @@
 <h3 class="hasAnchor">
 <a href="#survival-by-smoking-status" class="anchor"></a>Survival by smoking status</h3>
 <p>We estimated the age-specific probabilities of surviving from age <span class="math inline">\(a\)</span> to age <span class="math inline">\(a+1\)</span>, stratified by sex, IMD quintile and smoking status (current, former, never regular cigarette smoker). These estimates are used to adjust the probability of quitting smoking for the mortality differentials by smoking status. The estimation of survival by smoking status is done in the function <code><a href="../reference/smoke_surv.html">smktrans::smoke_surv()</a></code>.</p>
-<p>We do not use individually-linked data that has smoking status linked to time of death. Instead, we infer the mortality differentials by smoking status based on the relative differences in risks for smoking-related diseases among current, former and never smokers. To make these calculations, <code><a href="../reference/smoke_surv.html">smktrans::smoke_surv()</a></code> calls the functions <code><a href="https://stapm.gitlab.io/r-packages/tobalcepi//reference/RRFunc.html">tobalcepi::RRFunc()</a></code> and <code><a href="https://stapm.gitlab.io/r-packages/stapmr/reference/SurvFunc.html">stapmr::SurvFunc()</a></code>. Data on the relative risks of disease by smoking status and the rates of death for each smoking-related disease are also taken from the data stored in the other packages.</p>
-<p><code><a href="https://stapm.gitlab.io/r-packages/tobalcepi//reference/RRFunc.html">tobalcepi::RRFunc()</a></code> assigns the relative risk for each disease based on whether an individual is a current, former or never smoker. All current smokers have the same relative risk regardless of the amount they currently smoke or have smoked in the past. Former smokers are initially given the relative risk associated with current smokers, which we then scale according to a disease-specific function that describes how risk declines after quitting smoking.</p>
+<p>We do not use individually-linked data that has smoking status linked to time of death. Instead, we infer the mortality differentials by smoking status based on the relative differences in risks for smoking-related diseases among current, former and never smokers. To make these calculations, <code><a href="../reference/smoke_surv.html">smktrans::smoke_surv()</a></code> calls the functions <code>tobalcepi::RRFunc()</code> and <code><a href="https://stapm.gitlab.io/r-packages/stapmr/reference/SurvFunc.html">stapmr::SurvFunc()</a></code>. Data on the relative risks of disease by smoking status and the rates of death for each smoking-related disease are also taken from the data stored in the other packages.</p>
+<p><code>tobalcepi::RRFunc()</code> assigns the relative risk for each disease based on whether an individual is a current, former or never smoker. All current smokers have the same relative risk regardless of the amount they currently smoke or have smoked in the past. Former smokers are initially given the relative risk associated with current smokers, which we then scale according to a disease-specific function that describes how risk declines after quitting smoking.</p>
 <p><code><a href="https://stapm.gitlab.io/r-packages/stapmr/reference/SurvFunc.html">stapmr::SurvFunc()</a></code> computes the individual probability of death based on each individual’s relative risks of disease and the mortality rates for each disease for each sex and IMD quintile subgroup. The result is individual specific mortality rates that average to the subgroup rate. The mortality rates are then converted to the probability of death during the one-year age interval exponentially during the age-interval. Probabilities of death are summed across causes to give an overall probability of death.</p>
 <p><code><a href="../reference/smoke_surv.html">smktrans::smoke_surv()</a></code> takes these estimated probabilities of death and fits a smooth line through the age pattern for each year, sex, IMD quintile and smoking status. The values of this smoothed fit are converted to the probabilities of surviving from age <span class="math inline">\(a\)</span> to age <span class="math inline">\(a+1\)</span>, stratified by sex, IMD quintile and smoking status.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Estimate age-specific probabilities of death by smoking status</span>
 <span class="va">mortality_data</span> <span class="op">&lt;-</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="fu"><a href="../reference/smoke_surv.html">smoke_surv</a></span><span class="op">(</span>
   data <span class="op">=</span> <span class="va">hse_data</span>,
-  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://stapm.gitlab.io/r-packages/tobalcepi//reference/tobacco_relative_risks.html">tobacco_relative_risks</a></span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,
+  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va">tobacco_relative_risks</span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,
   mx_data <span class="op">=</span> <span class="fu">stapmr</span><span class="fu">::</span><span class="va">tob_mort_data_cause</span>
 <span class="op">)</span></code></pre></div>
 </div>

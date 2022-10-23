@@ -13,7 +13,10 @@
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hawkins_relapse.html</loc>
   </url>
   <url>
-    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data.html</loc>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data_eng.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data_scot.html</loc>
   </url>
   <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/init_adj.html</loc>

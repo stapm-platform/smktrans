@@ -92,7 +92,7 @@ age category 25-34 years." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.0</span>
       </span>
     </div>
 
@@ -149,9 +149,9 @@ age category 25-34 years.</p>
   <span class='va'>data</span>,
   time_horizon <span class='op'>=</span> <span class='fl'>2100</span>,
   num_bins <span class='op'>=</span> <span class='fl'>7</span>,
-  model <span class='op'>=</span> <span class='st'>"England"</span>,
+  model <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"model1"</span>, <span class='st'>"model2"</span>, <span class='st'>"model3"</span>, <span class='st'>"model4"</span>, <span class='st'>"model5"</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>]</span>,
   min_age <span class='op'>=</span> <span class='fl'>15</span>,
-  min_year <span class='op'>=</span> <span class='fl'>2003</span>
+  min_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2003</span>, <span class='fl'>2008</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>]</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -168,13 +168,16 @@ predictions for ever-smoking at the index age.</p></td>
     </tr>
     <tr>
       <th>num_bins</th>
-      <td><p>Integer - the number of bins to create</p></td>
+      <td><p>Integer - the number of bins to create from the continuous period (year) variable. 
+Wider bins = fewer data points from which to estimate the period trend, but less random uncertainty on each data point.</p></td>
     </tr>
     <tr>
       <th>model</th>
-      <td><p>Character - whether running the code using HSE or SHeS data.
-Fits a different model to trends depending
-on dataset using.</p></td>
+      <td><p>Character - c("model1", "model2", "model3", "model4"). 
+Model 1 - two-way interactions of the year trend with both sex and IMD quintile. 
+Model 2 - two-way interaction of the year trend with sex only.
+Model 3 - two-way interaction of the year trend with IMD quintile only.
+Model 4 - no two-way interactions of the year trend with either sex or IMD quintile.</p></td>
     </tr>
     <tr>
       <th>min_age</th>
@@ -183,9 +186,8 @@ progression of ever-smoking in a cohort should be generated. Defaults to 15 year
     </tr>
     <tr>
       <th>min_year</th>
-      <td><p>Integer - the first year of survey data. For England this will be 2003 
-(the year in which non-reponse weights were first introduced into the HSE), 
-and for Scotland this will be 2008.</p></td>
+      <td><p>Integer - the first year of survey data. For England 2003 
+and for Scotland 2008.</p></td>
     </tr>
     </table>
 
@@ -203,7 +205,7 @@ ever-smoking that accounts for survey sampling
 error and survey design.</p>
 <p>The linear model is fitted to a binary response variable, 1 = ever smoker,
 0 = never smoker and estimates
-ariation in the trend
+variation in the trend
 by sex and quintiles of the Index of Multiple Deprivation.
 The fitted model is then used to predict /
 extrapolate the trend up to the year specified by 'time horizon'.</p>
