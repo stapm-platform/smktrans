@@ -46,11 +46,10 @@ probabilities.
 
 ## Installation
 
-`smktrans` is currently available only to members of the project team
-(but please contact Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
-to discuss). To access you need to [sign-up for a GitLab
-account](https://gitlab.com/). You will then need to be added to the
-STAPM project team to gain access.
+`smktrans` is currently available only to members of the project team -
+we are developing plans to make the code open access. To access you need
+to [sign-up for a GitLab account](https://gitlab.com/). You will then
+need to be added to the STAPM Gitlab project to gain access.
 
 Once that is sorted, you can the latest or a specified version from
 GitLab with:
@@ -58,18 +57,26 @@ GitLab with:
 ``` r
 #install.packages("devtools")
 #install.packages("getPass")
+#install.packages("git2r")
 
 devtools::install_git(
   "https://gitlab.com/stapm/r-packages/smktrans.git", 
   credentials = git2r::cred_user_pass("uname", getPass::getPass()),
   ref = "x.x.x",
-  build_vignettes = TRUE
+  build_vignettes = FALSE # vignettes are better viewed on the website
 )
 
-# Where uname is your Gitlab user name.
-# ref is the version you want to install - remove for the latest version
-# this should make a box pop up where you enter your GitLab password
+# uname is your Gitlab user name
+
+# ref = "x.x.x" is the version you want to install - change to the version you want e.g. "1.2.3"
+# or leave blank for the latest version
+
+# running this code should make a box pop up where you enter your GitLab password
 ```
+
+Or clone the package repo locally and use the ‘install and restart’
+button in the Build tab of RStudio. This option is more convenient when
+testing development versions.
 
 Then load the package, and some other packages that are useful. Note
 that the code within `smktrans` uses the `data.table::data.table()`
