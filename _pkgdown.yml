@@ -58,7 +58,8 @@ reference:
   - quit_forecast
   - smoke_surv
   - prep_surv
-  - hmd_data
+  - hmd_data_eng
+  - hmd_data_scot
 
 - title: Relapse to smoking
   contents:

@@ -1,7 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/404.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/clean_hse_data.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smktrans.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smk_trans_prob_estimation.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smoke-trans.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smoketrans.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/authors.html</loc>
+  </url>
+  <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/index.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/LICENSE.html</loc>
   </url>
   <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/bin_var.html</loc>
@@ -13,10 +40,16 @@
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hawkins_relapse.html</loc>
   </url>
   <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data.html</loc>
+  </url>
+  <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data_eng.html</loc>
   </url>
   <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/hmd_data_scot.html</loc>
+  </url>
+  <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/index.html</loc>
   </url>
   <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/init_adj.html</loc>
@@ -52,12 +85,9 @@
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/smoke_surv.html</loc>
   </url>
   <url>
+    <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/tob_mort_data.html</loc>
+  </url>
+  <url>
     <loc>https://stapm.gitlab.io/r-packages/smktrans/reference/trend_fit.html</loc>
-  </url>
-  <url>
-    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smktrans.html</loc>
-  </url>
-  <url>
-    <loc>https://stapm.gitlab.io/r-packages/smktrans/articles/smk_trans_prob_estimation.html</loc>
   </url>
 </urlset>
