@@ -1,7 +1,7 @@
 Package: smktrans
 Type: Package
 Title: Smoking Initiation, Quit and Relapse Probabilities from Cross-sectional Survey Data
-Version: 1.5.1
+Version: 1.5.2
 Authors@R: 
     c(
     person(given = "Duncan",
