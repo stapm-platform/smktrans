@@ -26,7 +26,11 @@ navbar:
      href: reference/index.html
     articles:
      text: Technical documentation
-     href: articles/index.html
+     menu:
+      - text: Estimation workflow
+        href: articles/smk_trans_prob_estimation.pdf
+      - text: "Methods notes: Smoking state transition probability estimation"
+        href: articles/smoking_transition_probabilities_modelling_report.html
     gitlab:
       icon: fab fa-gitlab fa-lg
       href: https://gitlab.com/stapm/r-packages/smktrans
@@ -34,12 +38,6 @@ navbar:
       icon: fa-code
       href: https://stapm.gitlab.io/software.html
 
-
-articles:
-- title: Technical documentation
-  contents:
-  - smktrans
-  - smk_trans_prob_estimation
 
 reference:
 - title: Smoking trends

@@ -12,9 +12,11 @@ quit_forecast(
   oldest_year = 2003,
   youngest_age = 11,
   oldest_age = 88,
+  age_cont_limit = 88,
   first_year = 2010,
   jump_off_year = 2015,
   time_horizon = 2050,
+  smooth_rate_dim = c(3, 3),
   k_smooth_age = 3
 )
 }
@@ -27,7 +29,7 @@ quit_forecast(
 rates of proportional change ("continuing")
 or to keep the forecast variable constant at its last observed value ("stationary").}
 
-\item{cont_limit}{Integer - the year at which a continuing forecast becomes constant.}
+\item{cont_limit}{Integer - the year at which a continuing forecast becomes stationary.}
 
 \item{oldest_year}{Integer - the oldest year of data we have. Default is set to 2003 for England.}
 
@@ -37,13 +39,19 @@ Default is set to 11 for England.}
 \item{oldest_age}{Integer - the oldest age we have in the data - set to 88 for quitting and relapse 
 and 30 for initiation.}
 
-\item{first_year}{Integer - the first year of data.}
+\item{age_cont_limit}{Integer - the age after which the forecast transition probabilities 
+for a year, sex and IMD quintile are assumed not to change.}
+
+\item{first_year}{Integer - the earliest year of data on which the forecast is based.}
 
 \item{jump_off_year}{Integer - the last year of data.}
 
 \item{time_horizon}{Integer - the last year of the forecast period.}
 
-\item{k_smooth_age}{Integer - the degree of smoothing to apply to the age pattern of change. 
+\item{smooth_rate_dim}{Numeric vector length 2. The dimensions of the 2d window used to smooth trends 
+in the rates by age and year. (age, year), Defaults to c(3, 3). Must be odd numbers.}
+
+\item{k_smooth_age}{Integer - the degree of smoothing to apply to the age pattern of change (rotation). 
 If zero, then no smoothing is applied.}
 }
 \value{

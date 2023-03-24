@@ -46,7 +46,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2</span>
       </span>
     </div>
 
@@ -58,8 +58,20 @@
 <li>
   <a href="../reference/index.html">Functions</a>
 </li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Technical documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
 <li>
-  <a href="../articles/index.html">Technical documentation</a>
+      <a href="../articles/smk_trans_prob_estimation.pdf">Estimation workflow</a>
+    </li>
+    <li>
+      <a href="../articles/smoking_transition_probabilities_modelling_report.html">Methods notes: Smoking state transition probability estimation</a>
+    </li>
+  </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
@@ -121,7 +133,7 @@ corresponding to each age for each individual (1 = initiated smoking, NA
 = censored).</p>
 <p>We constructed the variable for the age that cigarettes were first
 smoked from the HSE using the <code>hseclean</code> R package (see
-<code><a href="https://stapm.gitlab.io/r-packages/hseclean/reference/smk_life_history.html" class="external-link">hseclean::smk_life_history()</a></code>).</p>
+<code><a href="https://stapm.github.io/hseclean/reference/smk_life_history.html" class="external-link">hseclean::smk_life_history()</a></code>).</p>
 <p>The <code><a href="../reference/init_est.html">smktrans::init_est()</a></code> function first calculates the
 cohort and strata specific mean of the 0s and 1s - which gives an
 estimate of the probability that someone from that cohort and strata
@@ -340,18 +352,18 @@ to time of death. Instead, we infer the mortality differentials by
 smoking status based on the relative differences in risks for
 smoking-related diseases among current, former and never smokers. To
 make these calculations, <code><a href="../reference/smoke_surv.html">smktrans::smoke_surv()</a></code> calls the
-functions <code>tobalcepi::RRFunc()</code> and
-<code>stapmr::SurvFunc()</code>. Data on the relative risks of disease
+functions <code><a href="https://rdrr.io/pkg/tobalcepi/man/RRFunc.html" class="external-link">tobalcepi::RRFunc()</a></code> and
+<code><a href="https://stapm.gitlab.io/r-packages/stapmr/reference/SurvFunc.html" class="external-link">stapmr::SurvFunc()</a></code>. Data on the relative risks of disease
 by smoking status and the rates of death for each smoking-related
 disease are also taken from the data stored in the other packages.</p>
-<p><code>tobalcepi::RRFunc()</code> assigns the relative risk for each
+<p><code><a href="https://rdrr.io/pkg/tobalcepi/man/RRFunc.html" class="external-link">tobalcepi::RRFunc()</a></code> assigns the relative risk for each
 disease based on whether an individual is a current, former or never
 smoker. All current smokers have the same relative risk regardless of
 the amount they currently smoke or have smoked in the past. Former
 smokers are initially given the relative risk associated with current
 smokers, which we then scale according to a disease-specific function
 that describes how risk declines after quitting smoking.</p>
-<p><code>stapmr::SurvFunc()</code> computes the individual probability
+<p><code><a href="https://stapm.gitlab.io/r-packages/stapmr/reference/SurvFunc.html" class="external-link">stapmr::SurvFunc()</a></code> computes the individual probability
 of death based on each individual’s relative risks of disease and the
 mortality rates for each disease for each sex and IMD quintile subgroup.
 The result is individual specific mortality rates that average to the
@@ -369,7 +381,7 @@ smoking status.</p>
 <code class="sourceCode R"><span><span class="co"># Estimate age-specific probabilities of death by smoking status</span></span>
 <span><span class="va">mortality_data</span> <span class="op">&lt;-</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="fu"><a href="../reference/smoke_surv.html">smoke_surv</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">hse_data</span>,</span>
-<span>  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va">tobacco_relative_risks</span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,</span>
+<span>  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/tobalcepi/man/tobacco_relative_risks.html" class="external-link">tobacco_relative_risks</a></span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,</span>
 <span>  mx_data <span class="op">=</span> <span class="fu">stapmr</span><span class="fu">::</span><span class="va">tob_mort_data_cause</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -442,14 +454,14 @@ outside of the function).</p>
 Hawkins, James, William Hollingworth, and Rona Campbell. 2010.
 <span>“Long-Term Smoking Relapse: A Study Using the British Household
 Panel Survey.”</span> <em>Nicotine &amp; Tobacco Research</em> 12 (12):
-1228–35.
+1228–35. <a href="https://doi.org/10.1093/ntr/ntq175" class="external-link">https://doi.org/10.1093/ntr/ntq175</a>.
 </div>
 <div id="ref-holford2014patterns" class="csl-entry">
 Holford, Theodore R, David T Levy, Lisa A McKay, Lauren Clarke, Ben
 Racine, Rafael Meza, Stephanie Land, Jihyoun Jeon, and Eric J Feuer.
 2014. <span>“Patterns of Birth Cohort–Specific Smoking Histories,
 1965–2009.”</span> <em>American Journal of Preventive Medicine</em> 46
-(2): e31–37.
+(2): e31–37. <a href="https://doi.org/10.1016/j.amepre.2013.10.022" class="external-link">https://doi.org/10.1016/j.amepre.2013.10.022</a>.
 </div>
 </div>
 </div>
@@ -472,7 +484,7 @@ Racine, Rafael Meza, Stephanie Land, Jihyoun Jeon, and Eric J Feuer.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

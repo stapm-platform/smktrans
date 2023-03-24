@@ -3,6 +3,7 @@
 ^\.Rproj\.user$
 ^_pkgdown\.yml$
 ^docs$
+^transition_probability_estimates$
 ^public$
 ^pkgdown$
 ^LICENSE\.md$
@@ -10,3 +11,4 @@
 ^\.gitlab-ci\.yml$
 ^examples$
 README.Rmd
+02_install_packages.R

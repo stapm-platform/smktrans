@@ -1,0 +1,55 @@
+---
+title: "Estimated smoking state transition probabilities"
+date: "`r format(Sys.Date(), format = '%d %B %Y')`"
+output: powerpoint_presentation
+params:
+  path:
+    value: x
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+suppressPackageStartupMessages(library(DiagrammeR))
+suppressPackageStartupMessages(library(knitr))
+
+path <- params$path
+
+```
+
+## Initiation
+
+```{r initiationprobforecast, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/initiation_probabilities_av.png")))
+```
+
+```{r initiationprobforecastage, echo = F, out.width = "130%"}
+include_graphics(here::here(paste0(path, "outputs/initiation_probabilities_age.png")))
+```
+
+## Relapse
+
+```{r relapseprobforecast, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/relapse_probabilities_av.png")))
+```
+
+```{r relapseprobforecast2, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/relapse_probabilities_age.png")))
+```
+
+```{r relapseprobforecast3, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/relapse_probabilities_timesincequit.png")))
+```
+
+## Quitting
+
+```{r quitprobforecast, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/quitting_probabilities_av.png")))
+```
+
+```{r quitprobforecast1, echo = F, out.width = "100%"}
+include_graphics(here::here(paste0(path, "outputs/quit_probabilities_age.png")))
+```
+
+
+

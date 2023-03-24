@@ -46,7 +46,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2</span>
       </span>
     </div>
 
@@ -58,8 +58,20 @@
 <li>
   <a href="reference/index.html">Functions</a>
 </li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Technical documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
 <li>
-  <a href="articles/index.html">Technical documentation</a>
+      <a href="articles/smk_trans_prob_estimation.pdf">Estimation workflow</a>
+    </li>
+    <li>
+      <a href="articles/smoking_transition_probabilities_modelling_report.html">Methods notes: Smoking state transition probability estimation</a>
+    </li>
+  </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
@@ -124,7 +136,7 @@
 <span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_git.html" class="external-link">install_git</a></span><span class="op">(</span></span>
 <span>  <span class="st">"https://gitlab.com/stapm/r-packages/smktrans.git"</span>, </span>
-<span>  credentials <span class="op">=</span> <span class="fu">git2r</span><span class="fu">::</span><span class="fu">cred_user_pass</span><span class="op">(</span><span class="st">"uname"</span>, <span class="fu">getPass</span><span class="fu">::</span><span class="fu">getPass</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  credentials <span class="op">=</span> <span class="fu">git2r</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/git2r/reference/cred_user_pass.html" class="external-link">cred_user_pass</a></span><span class="op">(</span><span class="st">"uname"</span>, <span class="fu">getPass</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/getPass/man/getPass.html" class="external-link">getPass</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  ref <span class="op">=</span> <span class="st">"x.x.x"</span>,</span>
 <span>  build_vignettes <span class="op">=</span> <span class="cn">FALSE</span> <span class="co"># vignettes are better viewed on the website</span></span>
 <span><span class="op">)</span></span>
@@ -191,7 +203,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

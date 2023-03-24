@@ -27,7 +27,7 @@ of how risk declines by the time since some has quit."><meta property="og:image"
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">smktrans</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.2</span>
       </span>
     </div>
 
@@ -38,9 +38,19 @@ of how risk declines by the time since some has quit."><meta property="og:image"
 <li>
   <a href="../reference/index.html">Functions</a>
 </li>
-<li>
-  <a href="../articles/index.html">Technical documentation</a>
-</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Technical documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu"><li>
+      <a href="../articles/smk_trans_prob_estimation.pdf">Estimation workflow</a>
+    </li>
+    <li>
+      <a href="../articles/smoking_transition_probabilities_modelling_report.html">Methods notes: Smoking state transition probability estimation</a>
+    </li>
+  </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://gitlab.com/stapm/r-packages/smktrans" class="external-link">
     <span class="fab fa-gitlab fa-lg"></span>
@@ -78,7 +88,7 @@ of how risk declines by the time since some has quit.</p>
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">smoke_surv</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  diseases <span class="op">=</span> <span class="fu">tobalcepi</span><span class="fu">::</span><span class="va">tob_disease_names</span>,</span>
+<span>  diseases <span class="op">=</span> <span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/tobalcepi/man/tob_disease_names.html" class="external-link">tob_disease_names</a></span>,</span>
 <span>  <span class="va">mx_data</span>,</span>
 <span>  min_age <span class="op">=</span> <span class="fl">11</span>,</span>
 <span>  max_age <span class="op">=</span> <span class="fl">89</span>,</span>
@@ -137,7 +147,7 @@ other has been tidied into the form needed for quit probability estimation.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">test_data</span> <span class="op">&lt;-</span> <span class="fu">smoke_surv</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">hse_data</span>,</span></span>
-<span class="r-in"><span>  diseases  <span class="op">=</span> <span class="fu">tobalcepi</span><span class="fu">::</span><span class="va">tob_disease_names</span>,</span></span>
+<span class="r-in"><span>  diseases  <span class="op">=</span> <span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/tobalcepi/man/tob_disease_names.html" class="external-link">tob_disease_names</a></span>,</span></span>
 <span class="r-in"><span>  mx_data <span class="op">=</span> <span class="va">tob_mort_data_cause</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -157,7 +167,7 @@ other has been tidied into the form needed for quit probability estimation.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
