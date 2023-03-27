@@ -1,8 +1,5 @@
 ---
-title: "Smoking state transition probability estimation"
-subtitle: "Vignette version number 1.1.0"
-date: "Last reviewed 20/10/21"
-author: "Duncan Gillespie, Laura Webster & Alan Brennan"
+title: "Workflow: Smoking state transition probability estimation"
 biblio-style: vancouver
 output: 
   rmarkdown::html_vignette:
@@ -13,7 +10,7 @@ bibliography: refs/smoking_transitions.bib
 always_allow_html: yes
 urlcolor: blue
 vignette: >
-  %\VignetteIndexEntry{Smoking state transition probability estimation}
+  %\VignetteIndexEntry{Workflow: Smoking state transition probability estimation}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

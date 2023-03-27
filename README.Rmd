@@ -33,12 +33,33 @@ The two objectives of the research programme are:
 The STAPM modelling is not linked to the tobacco or alcohol industry and is conducted without industry funding or influence.  
 
 ## Purpose of making the code open source
-The code has been made open source for the following two reasons:  
+The code has been made open source for the following three reasons:  
 
 - Transparency. Open science, allowing review and feedback to the project team on the code and methods used.
 - Methodology sharing. For people to understand the code and methods used so they might use aspects of it in their own work, e.g., because they are doing something partially related that isn't exactly the same job and might like to 'dip into' elements of this code for inspiration.
+- Sharing of the transition probability estimates. For people who would like to use the estimates but not run the code to produce them. There are spreadsheets containing the estimates for [England](https://osf.io/zy9q8) and [Scotland](https://osf.io/wtz7b). The workflow used to produce these estimates and slides with plots of the trends in the estimates for England and Scotland are available here https://github.com/STAPM/smktrans/tree/master/transition_probability_estimates.  
+
+## Documentation
+
+The starting point was to conduct a scoping review of individual based models of smoking state dynamics https://osf.io/egqvu.   
+
+The next step was to develop a workflow for estimating smoking state transition probabilities https://stapm.gitlab.io/r-packages/smktrans/articles/smoking_transition_probabilities_modelling_report.pdf  
+
+This was informed by previous work by Holford et al.  
+
+* Holford TR, Levy DT, McKay LA, Clarke L, Racine B, Meza R, Land S, Jeon J, Feuer EJ. Patterns of birth cohort–specific smoking histories, 1965–2009. American Journal of Preventive Medicine. 2014 Feb 1;46(2):e31-7. doi: https://doi.org/10.1016/j.amepre.2013.10.022.   
+
+This work fed into the development of the Sheffield Tobacco Policy Model (STPM) https://stapm.gitlab.io/projects/smoking-model-development/stpm_tech_report/stpm-technical-report.pdf   
+
+See the STPM webpage https://stapm.gitlab.io/STPM.html  
+
+The transition probability estimates have been used to inform forecasts of smoking prevalence in England:   
+
+* Gillespie D, Langley T, Agrawal S (2021) Section 2.6 - Model-based projections of alternative scenarios for the future trajectories of smoking prevalence in England and corresponding differences in quality-adjusted years of life. Tobacco Advisory Group of the Royal College of Physicians. ‘Smoking and health 2021: A coming of age for tobacco control?’ Royal College of Physicians. https://www.rcplondon.ac.uk/projects/outputs/smoking-and-health-2021-coming-age-tobacco-control   
+
 
 ## Stage of testing and development
+
 The code is actively being used in project work. It is being reviewed and developed all the time; more tests and checks are being added.  
 
 The repository is not intended to be maintained by an open source community wider than the development team.   

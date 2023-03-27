@@ -1,6 +1,6 @@
 Package: smktrans
 Type: Package
-Title: Smoking Initiation, Quit and Relapse Probabilities from Cross-sectional Survey Data
+Title: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data
 Version: 1.6.0
 Authors@R: 
     c(
@@ -11,19 +11,28 @@ Authors@R:
            comment = c(ORCID = "0000-0003-3450-5747")),
     person(given = "Laura",
            family = "Webster",
-           role = c("aut")),
+           role = c("aut"),
+           comment = c(ORCID = "0000-0002-4307-9631")),
+    person(given = "Grace",
+           family = "Leeming",
+           role = c("aut"),
+           email = "g.leeming@sheffield.ac.uk",
+           comment = c(ORCID = "0000-0003-4836-7840")),
     person(given = "Alan",
            family = "Brennan",
            role = c("aut"),
-           email = "a.brennan@sheffield.ac.uk")
+           email = "a.brennan@sheffield.ac.uk",
+           comment = c(ORCID = "0000-0002-1025-312X"))
     )
 Maintainer: Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
-Description: Estimates the probabilities that individuals will initiate or quit regular cigarette smoking from cross-sectional survey data.
-License: GPL-3
+Description: Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
+License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
 Imports: 
     nnet,
+    magrittr,
+    ggplot2,
     mgcv,
     testthat,
     MASS,
@@ -34,15 +43,36 @@ Imports:
     survey,
     Rdpack,
     lifecycle,
-    forecast
+    forecast,
+    readxl,
+    knitr,
+    stringr,
+    here,
+    RColorBrewer,
+    viridis,
+    rmarkdown,
+    TTR,
+    readr,
+    writexl,
+    Rfast,
+    dvmisc,
+    fastmatch,
+    dplyr,
+    plyr,
+    openxlsx,
+    demography,
+    Hmisc,
+    ggthemes
 RdMacros: Rdpack, lifecycle
 Suggests: 
-    hseclean (>= 1.8.5),
-    knitr,
-    rmarkdown
+    hseclean (>= 1.11.2),
+    mort.tools (>= 1.6.0),
+    tobalcepi (>= 1.6.2)
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
 RoxygenNote: 7.2.3
 Remotes: 
-    STAPM/hseclean
+    STAPM/hseclean,
+    STAPM/tobalcepi,
+    STAPM/mort.tools
