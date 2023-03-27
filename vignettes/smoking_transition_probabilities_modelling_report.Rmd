@@ -1,6 +1,6 @@
 ---
 title: "Estimating annual probabilities of smoking initiation, quitting and relapse from repeat cross-sectional survey data of smoking in England"
-author: Duncan Gillespie, Laura Webster, Magdalena Opazo-Breton, Alan Brennan
+author: Duncan Gillespie, Laura Webster, Grace Leeming, Magdalena Opazo-Breton, Alan Brennan
 biblio-style: apalike
 subtitle: Version 2.1.0
 date: "**`r format(Sys.Date(), format = '%B %Y')`**"

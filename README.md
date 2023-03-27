@@ -206,11 +206,11 @@ available.
 
 ## Citation
 
-Gillespie D, Webster L, Leeming G, Brennan A (\[YEAR\]). smktrans: An R
-Package for estimating smoking state transition probabilities from
-cross-sectional survey data. R package version \[x.x.x\]. University of
-Sheffield. <https://stapm.github.io/smktrans/>. doi:
-<https://doi.org/10.17605/OSF.IO/YGXQ9>
+Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A (\[YEAR\]).
+smktrans: An R Package for estimating smoking state transition
+probabilities from cross-sectional survey data. R package version
+\[x.x.x\]. University of Sheffield. <https://stapm.github.io/smktrans/>.
+doi: <https://doi.org/10.17605/OSF.IO/YGXQ9>
 
 ## Motivation for developing the R package
 
