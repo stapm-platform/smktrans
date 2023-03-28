@@ -49,6 +49,12 @@ probabilities according to the formula given."><meta property="og:image" content
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
+  <a href="https://github.com/STAPM/smktrans" class="external-link">
+    <span class="fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="https://gitlab.com/stapm/r-packages/smktrans" class="external-link">
     <span class="fab fa-gitlab fa-lg"></span>
      
@@ -203,7 +209,7 @@ The output of <code><a href="init_adj.html">init_adj()</a></code>.</p></dd>
 <span class="r-in"><span><span class="co"># Estimate age-specific probabilities of death by smoking status</span></span></span>
 <span class="r-in"><span><span class="va">mortality_data</span> <span class="op">&lt;-</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="fu"><a href="smoke_surv.html">smoke_surv</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">hse_data</span>,</span></span>
-<span class="r-in"><span>  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/tobalcepi/man/tobacco_relative_risks.html" class="external-link">tobacco_relative_risks</a></span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  diseases  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu">tobalcepi</span><span class="fu">::</span><span class="va"><a href="https://stapm.github.io/tobalcepi/reference/tobacco_relative_risks.html" class="external-link">tobacco_relative_risks</a></span><span class="op">$</span><span class="va">condition</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  mx_data <span class="op">=</span> <span class="fu">stapmr</span><span class="fu">::</span><span class="va">tob_mort_data_cause</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>

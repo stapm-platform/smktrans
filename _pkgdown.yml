@@ -15,7 +15,7 @@ authors:
 navbar:
   structure:
     left:  [home, intro, reference, articles]
-    right: [gitlab, software]
+    right: [github, gitlab, software]
   components:
     home: ~
     intro:
@@ -31,6 +31,9 @@ navbar:
         href: articles/smk_trans_prob_estimation.html
       - text: "Methods notes: Smoking state transition probability estimation"
         href: articles/smoking_transition_probabilities_modelling_report.pdf
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/STAPM/smktrans
     gitlab:
       icon: fab fa-gitlab fa-lg
       href: https://gitlab.com/stapm/r-packages/smktrans
@@ -56,19 +59,20 @@ reference:
   - quit_forecast
   - smoke_surv
   - prep_surv
-  - hmd_data_eng
-  - hmd_data_scot
 
 - title: Relapse to smoking
   contents:
   - prep_relapse
   - relapse_forecast
-  - hawkins_relapse
-  
+
 - title: Misc
   contents:
   - bin_var
   - p_dense
   - p_smooth
 
-
+- title: Data
+  contents:
+  - hmd_data_eng
+  - hmd_data_scot
+  - hawkins_relapse

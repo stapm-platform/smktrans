@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.3.7)  27 MAR 2023 07:58
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.3.6)  28 MAR 2023 07:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**C:/Users/cm1dog/Documents/smktrans/public/articles/smoking_transition_probabilities_modelling_report.tex
-(c:/Users/cm1dog/Documents/smktrans/public/articles/smoking_transition_probabilities_modelling_report.tex
+**X:/ScHARR/PR_STAPM/Code/R_packages/smktrans/public/articles/smoking_transition_probabilities_modelling_report.tex
+(x:/ScHARR/PR_STAPM/Code/R_packages/smktrans/public/articles/smoking_transition_probabilities_modelling_report.tex
 LaTeX2e <2022-11-01> patch level 1
 L3 programming layer <2023-02-22> (c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2022/07/02 v1.4n Standard LaTeX document class
@@ -840,13 +840,13 @@ Package rerunfilecheck Info: File `smoking_transition_probabilities_modelling_re
 (rerunfilecheck)             Checksum: 51308EB5B22022EA7677A55B6FE61BC4;2223.
  ) 
 Here is how much of TeX's memory you used:
- 23343 strings out of 477984
- 437733 string characters out of 5837250
+ 23341 strings out of 477984
+ 437630 string characters out of 5837660
  1872382 words of memory out of 5000000
  42986 multiletter control sequences out of 15000+600000
  575854 words of font info for 78 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 83i,11n,80p,1080b,611s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 83i,11n,80p,1089b,611s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}<c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr8.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri8.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb><c:/Users/cm1dog/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
 Output written on smoking_transition_probabilities_modelling_report.pdf (21 pages, 587411 bytes).
 PDF statistics:

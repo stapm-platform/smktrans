@@ -4,17 +4,19 @@
 \name{smktrans-package}
 \alias{smktrans}
 \alias{smktrans-package}
-\title{smktrans: Smoking Initiation, Quit and Relapse Probabilities from Cross-sectional Survey Data}
+\title{smktrans: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data}
 \description{
-Estimates the probabilities that individuals will initiate or quit regular cigarette smoking from cross-sectional survey data.
+Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
 }
 \author{
 \strong{Maintainer}: Duncan Gillespie \email{duncan.gillespie@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-3450-5747}{ORCID})
 
 Authors:
 \itemize{
-  \item Laura Webster
-  \item Alan Brennan \email{a.brennan@sheffield.ac.uk}
+  \item Laura Webster (\href{https://orcid.org/0000-0002-4307-9631}{ORCID})
+  \item Grace Leeming \email{g.leeming@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-4836-7840}{ORCID})
+  \item Magdalena Opazo-Breton
+  \item Alan Brennan \email{a.brennan@sheffield.ac.uk} (\href{https://orcid.org/0000-0002-1025-312X}{ORCID})
 }
 
 }
