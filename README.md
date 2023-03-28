@@ -206,11 +206,39 @@ available.
 
 ## Citation
 
-Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A (\[YEAR\]).
-smktrans: An R Package for estimating smoking state transition
-probabilities from cross-sectional survey data. R package version
-\[x.x.x\]. University of Sheffield. <https://stapm.github.io/smktrans/>.
-doi: <https://doi.org/10.17605/OSF.IO/YGXQ9>
+R package and workflow code:
+
+-   Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A
+    (\[YEAR\]). smktrans: An R Package for estimating smoking state
+    transition probabilities from cross-sectional survey data. R package
+    version \[x.x.x\]. University of Sheffield. Open access code:
+    <https://github.com/STAPM/smktrans>. url:
+    <https://stapm.gitlab.io/r-packages/smktrans/>. doi:
+    <https://doi.org/10.17605/OSF.IO/YGXQ9>
+
+Smoking state transition probabilities for England:
+
+-   Smoking state transition probabilities for England. Available from
+    <https://osf.io/zy9q8> (Accessed \[DATE\]). Produced by code in:
+    Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A
+    (\[YEAR\]). smktrans: An R Package for estimating smoking state
+    transition probabilities from cross-sectional survey data. R package
+    version \[x.x.x\]. University of Sheffield. Open access code:
+    <https://github.com/STAPM/smktrans>. url:
+    <https://stapm.gitlab.io/r-packages/smktrans/>. doi:
+    <https://doi.org/10.17605/OSF.IO/YGXQ9>
+
+Smoking state transition probabilities for Scotland:
+
+-   Smoking state transition probabilities for Scotland Available from
+    <https://osf.io/wtz7b> (Accessed \[DATE\]). Produced by code in:
+    Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A
+    (\[YEAR\]). smktrans: An R Package for estimating smoking state
+    transition probabilities from cross-sectional survey data. R package
+    version \[x.x.x\]. University of Sheffield. Open access code:
+    <https://github.com/STAPM/smktrans>. url:
+    <https://stapm.gitlab.io/r-packages/smktrans/>. doi:
+    <https://doi.org/10.17605/OSF.IO/YGXQ9>
 
 ## Motivation for developing the R package
 
