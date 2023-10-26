@@ -16,7 +16,7 @@
 init_data <- readRDS(paste0(path, "outputs/init_forecast_data_", country, ".rds"))
 
 init_data <- merge(init_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-init_data <- init_data[age >= min_age & age < 30 & year <= smokefree_target_year]
+init_data <- init_data[age >= min_age & age < 30 & year <= smokefree_target_year + 10]
 
 init_data_plot <- init_data[ , .(p_start = sum(p_start * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
 
@@ -41,7 +41,7 @@ dev.off()
 
 init_data <- readRDS(paste0(path, "outputs/init_forecast_data_", country, ".rds"))
 
-init_data <- init_data[age >= min_age & age < 30 & year <= smokefree_target_year]
+init_data <- init_data[age >= min_age & age < 30 & year <= smokefree_target_year + 10]
 
 pi1 <- ggplot() +
   geom_line(data = init_data, aes(x = age, y = p_start, colour = year, group = year), linewidth = .4, alpha = .7) +
@@ -63,7 +63,7 @@ dev.off()
 relapse_data <- readRDS(paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 
 relapse_data <- merge(relapse_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year]
+relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year + 10]
 
 relapse_data_plot <- relapse_data[ , .(p_relapse = sum(p_relapse * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
 
@@ -86,7 +86,7 @@ dev.off()
 
 relapse_data <- readRDS(paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 
-relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year]
+relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year + 10]
 
 relapse_data_plot <- relapse_data[ , .(p_relapse = mean(p_relapse)), by = c("year", "age", "sex", "imd_quintile")]
 
@@ -109,7 +109,7 @@ dev.off()
 
 relapse_data <- readRDS(paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 
-relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year]
+relapse_data <- relapse_data[age >= min_age & age <= max_age & year <= smokefree_target_year + 10]
 
 relapse_data_plot <- relapse_data[ , .(p_relapse = mean(p_relapse)), by = c("year", "time_since_quit", "sex", "imd_quintile")]
 
@@ -135,7 +135,7 @@ dev.off()
 quit_data <- readRDS(paste0(path, "outputs/quit_forecast_data_", country, ".rds"))
 
 quit_data <- merge(quit_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-quit_data <- quit_data[age >= min_age & age <= max_age & year <= smokefree_target_year]
+quit_data <- quit_data[age >= min_age & age <= max_age & year <= smokefree_target_year + 10]
 
 quit_data_plot <- quit_data[ , .(p_quit = sum(p_quit * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
 
@@ -159,7 +159,7 @@ dev.off()
 
 quit_data <- readRDS(paste0(path, "outputs/quit_forecast_data_", country, ".rds"))
 
-quit_data <- quit_data[age >= min_age & age <= max_age & year <= smokefree_target_year]
+quit_data <- quit_data[age >= min_age & age <= max_age & year <= smokefree_target_year + 10]
 
 quit_data_plot <- quit_data[ , .(p_quit = mean(p_quit)), by = c("year", "age", "sex", "imd_quintile")]
 

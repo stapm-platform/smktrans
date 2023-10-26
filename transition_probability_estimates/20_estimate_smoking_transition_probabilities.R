@@ -55,7 +55,7 @@ init_forecast_data <- smktrans::quit_forecast(
   data = copy(smk_init_data),
   forecast_var = "p_start",
   forecast_type = "continuing", # continuing or stationary
-  cont_limit = smokefree_target_year, # the year at which the forecast becomes stationary
+  cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
   first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
   jump_off_year = last_year_of_data - 1,
   time_horizon = max_year,
@@ -122,18 +122,24 @@ relapse_data <- smktrans::prep_relapse(
 
 saveRDS(relapse_data, paste0(path, "outputs/relapse_data_", country, ".rds"))
 
+# ggplot() +
+#   geom_line(data = relapse_data$relapse_by_age_imd, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
+#   facet_wrap(~ sex + imd_quintile, nrow = 2) +
+#   theme_minimal() +
+#   ylab("P(relapse)") +
+#   theme(axis.text.x = element_text(angle = 45)) +
+#   scale_colour_viridis(option = "plasma")
+
+
 # the probabilities that are used in the model are stratified by age, sex, IMDq and time since quitting
 # The approach will be to forecast the version of the probabilities stratified by age, sex and IMDq only
 # and then use the results to scale the higher dimensional version
-
-smooth_rate_dim_relapse <- c(5, 3)
-k_smooth_age_relapse <- 0
 
 relapse_forecast_data <- smktrans::quit_forecast(
   data = copy(relapse_data$relapse_by_age_imd),
   forecast_var = "p_relapse",
   forecast_type = "continuing", # continuing or stationary
-  cont_limit = current_year, # the year at which the forecast becomes stationary
+  cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
   first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
   jump_off_year = last_year_of_data - 1,
   time_horizon = max_year,
@@ -273,7 +279,7 @@ forecast_data <- quit_forecast(
   data = copy(quit_data),
   forecast_var = "p_quit",
   forecast_type = "continuing", # continuing or stationary
-  cont_limit = smokefree_target_year, # the year at which the forecast becomes stationary
+  cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
   first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
   jump_off_year = last_year_of_data - 1,
   time_horizon = max_year,

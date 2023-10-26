@@ -49,7 +49,10 @@ k_smooth_age_quit <- 6
 age_trend_limit_quit <- 75
 
 # Relapse forecast
-smooth_rate_dim_relapse <- c(5, 7)
+#smooth_rate_dim_relapse <- c(5, 3)
+#k_smooth_age_relapse <- 0
+
+smooth_rate_dim_relapse <- c(15, 7)
 k_smooth_age_relapse <- 6
 age_trend_limit_relapse <- 75
 
@@ -70,7 +73,7 @@ openxlsx::writeData(wb, sheet = "Cover sheet", min_age, startCol = 2, startRow =
 openxlsx::writeData(wb, sheet = "Cover sheet", ref_age, startCol = 2, startRow = 30)
 openxlsx::writeData(wb, sheet = "Cover sheet", max_age, startCol = 2, startRow = 31)
 openxlsx::writeData(wb, sheet = "Cover sheet", paste0(first_year_of_data_forecast, " to ", last_year_of_data, " (", last_year_of_data - first_year_of_data_forecast + 1, " years)"), startCol = 2, startRow = 32)
-openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year, startCol = 2, startRow = 33)
+openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year + 10, startCol = 2, startRow = 33)
 openxlsx::writeData(wb, sheet = "Cover sheet", max_year, startCol = 2, startRow = 34)
 
 # run once to build inputs
@@ -159,7 +162,7 @@ openxlsx::writeData(wb, sheet = "Cover sheet", min_age, startCol = 2, startRow =
 openxlsx::writeData(wb, sheet = "Cover sheet", ref_age, startCol = 2, startRow = 30)
 openxlsx::writeData(wb, sheet = "Cover sheet", max_age, startCol = 2, startRow = 31)
 openxlsx::writeData(wb, sheet = "Cover sheet", paste0(first_year_of_data_forecast, " to ", last_year_of_data, " (", last_year_of_data - first_year_of_data_forecast + 1, " years)"), startCol = 2, startRow = 32)
-openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year, startCol = 2, startRow = 33)
+openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year + 10, startCol = 2, startRow = 33)
 openxlsx::writeData(wb, sheet = "Cover sheet", max_year, startCol = 2, startRow = 34)
 
 # run once to build inputs
