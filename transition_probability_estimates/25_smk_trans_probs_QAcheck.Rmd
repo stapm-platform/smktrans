@@ -27,6 +27,16 @@ Gillespie D, Webster L, Leeming G, Opazo-Breton M, Brennan A (2023). smktrans: A
 
 Contact: `duncan.gillespie@sheffield.ac.uk`   
 
+## Key parameters
+Main dataset: ```r survey_data_name```  
+First year of survey data: ```r first_year_of_data```  
+Last year of survey data: ```r last_year_of_data```  
+Earliest year on which forecast trends are based: ```r first_year_of_data_forecast```  
+Last year of continuing trends in the forecast: ```r smokefree_target_year + 10```  
+Final year: ```r max_year```  
+Minimum age: ```r min_age```  
+Maximum age: ```r max_age```  
+
 ## Initiation
 
 ```{r initiationprobforecast, echo = F, out.width = "100%"}

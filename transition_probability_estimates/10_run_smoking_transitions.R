@@ -30,7 +30,7 @@ first_year_of_data_forecast <- 2013
 current_year <- 2023
 smokefree_target_year <- 2030
 max_year <- 2100
-min_age <- 16
+min_age <- 12
 max_age <- 89
 country <- "England"
 path <- "transition_probability_estimates/src_england/"
@@ -107,6 +107,8 @@ source("transition_probability_estimates/22_summarise_smoking_transitions.R")
 #######################################
 #######################################
 # Scotland
+
+survey_data_name <- "Scottish Health Survey"
 
 # Load the spreadsheet template
 wb <- openxlsx::loadWorkbook(paste0("transition_probability_estimates/", template, ".xlsx"))
