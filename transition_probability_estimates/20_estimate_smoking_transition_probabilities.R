@@ -104,9 +104,9 @@ init_forecast_data <- init_forecast_data[age >= min_age & age <= max_age]
 saveRDS(init_forecast_data, paste0(path, "outputs/init_forecast_data_", country, ".rds"))
 write.csv(init_forecast_data, paste0(path, "outputs/init_forecast_data_", country, ".csv"), row.names = FALSE)
 
-stapmr::WriteToExcel(wb, sheet = "Initiation",
-                     title = "Probabilities of smoking initiation (never to current smoker)",
-                     init_forecast_data, startCol = 1, startRow = 1)
+#stapmr::WriteToExcel(wb, sheet = "Initiation",
+#                     title = "Probabilities of smoking initiation (never to current smoker)",
+#                     init_forecast_data, startCol = 1, startRow = 1)
 
 
 ###############################
@@ -208,17 +208,12 @@ ggplot() +
   scale_colour_viridis(option = "plasma")
 
 
-
-
-
-
-
 saveRDS(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 write.csv(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".csv"), row.names = FALSE)
 
-stapmr::WriteToExcel(wb, sheet = "Relapse",
-                     title = "Probabilities of relapse to smoking (former to current smoker). Added stratification by years since quitting.",
-                     relapse_by_age_imd_timesincequit, startCol = 1, startRow = 1)
+#stapmr::WriteToExcel(wb, sheet = "Relapse",
+#                     title = "Probabilities of relapse to smoking (former to current smoker). Added stratification by years since quitting.",
+#                     relapse_by_age_imd_timesincequit, startCol = 1, startRow = 1)
 
 
 ###############################
@@ -296,9 +291,9 @@ forecast_data <- forecast_data[age >= min_age & age <= max_age]
 saveRDS(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".rds"))
 write.csv(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".csv"), row.names = FALSE)
 
-stapmr::WriteToExcel(wb, sheet = "Quit",
-                     title = "Probabilities of quitting smoking (current to former smoker).",
-                     forecast_data, startCol = 1, startRow = 1)
+#stapmr::WriteToExcel(wb, sheet = "Quit",
+#                     title = "Probabilities of quitting smoking (current to former smoker).",
+#                     forecast_data, startCol = 1, startRow = 1)
 
 
 

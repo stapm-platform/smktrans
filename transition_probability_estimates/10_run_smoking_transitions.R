@@ -56,6 +56,27 @@ smooth_rate_dim_relapse <- c(15, 7)
 k_smooth_age_relapse <- 6
 age_trend_limit_relapse <- 75
 
+#################################################
+#### Key assumptions for estimating uncertainty
+
+# Number of trials
+# this is an approximation of the sample size expected in each cell (smoking state, year, age, sex, IMD quintile)
+# vary it in orders of magnitude of 10 since this is a rough approximation
+kn <- 100
+
+# Correlation of uncertainly
+# e.g. the expected correlation of uncertainty between the initiation probability at age 20 and age 21
+# We might expect that if the estimate at age 20 is high, then the estimate at age 21 will also be high
+# so set the level of correlation high but not perfect
+kR <- 0.95
+
+# Number of uncertainty samples
+# ideally this would be set at 10,000 but that would take ages to run in the current setup
+# test robustness of estimates at 100 or 1000
+kn_samp <- 100
+
+#################################################
+
 # Spreadsheet cover sheet
 openxlsx::writeData(wb, sheet = "Cover sheet", country, startCol = 2, startRow = 2)
 openxlsx::writeData(wb, sheet = "Cover sheet", Sys.Date(), startCol = 2, startRow = 3)
@@ -97,6 +118,9 @@ hmd_data <- copy(smktrans::hmd_data_eng)
 
 # Functions to estimate the probabilities
 source("transition_probability_estimates/20_estimate_smoking_transition_probabilities.R")
+
+# Add uncertainty estimates
+source("transition_probability_estimates/23_uncertainty_in_smoking_transitions.R")
 
 saveWorkbook(wb, paste0("transition_probability_estimates/outputs/smoking_state_transition_probabilities_", country, ".xlsx"), overwrite = T)
 

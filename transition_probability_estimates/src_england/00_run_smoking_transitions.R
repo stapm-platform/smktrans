@@ -6,10 +6,10 @@
   # Access to the X drive folders PR_Consumption_TA and PR_STAPM
 
 # # Point to the location of the X drive
-#root_dir <- "X:/"
+root_dir <- "X:/"
 # #root_dir <- "/Volumes/Shared/"
 
-#path <- "transition_probability_estimates/src_england/"
+path <- "transition_probability_estimates/src_england/"
 
 source(paste0(path, "10_clean_hse.R"))
 source(paste0(path, "15_prep_mortality.R"))
