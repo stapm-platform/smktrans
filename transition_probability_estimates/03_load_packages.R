@@ -5,7 +5,9 @@
 #file.edit(file.path("~", ".Rprofile")) # edit .Rprofile in HOME
 #file.edit(".Rprofile") # edit project specific .Rprofile
 
-project_lib <- "X:/ScHARR/PR_STAPM/Data/smoking_transition_prob_estimation/R_packages"
+#project_lib <- "X:/ScHARR/PR_STAPM/Data/smoking_transition_prob_estimation/R_packages"
+project_lib <- "C:/Users/cm1dog/Documents/libloc"
+
 
 .libPaths(project_lib)
 
@@ -23,6 +25,8 @@ library(cowplot)
 library(RColorBrewer)
 library(ggplot2)
 library(viridis)
+library(survey)
+#library(svrep) # https://cran.r-project.org/web/packages/svrep/vignettes/bootstrap-replicates.html
 
 # STAPM packages
 library(stapmr)

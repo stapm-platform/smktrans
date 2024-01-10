@@ -6,8 +6,9 @@
 # CRAN packages
 
 # project_lib <- "X:/ScHARR/PR_STAPM/Data/smoking_transition_prob_estimation/R_packages"
+project_lib <- "C:/Users/cm1dog/Documents/libloc"
 
-# .libPaths(project_lib)
+.libPaths(project_lib)
 
 #update.packages(project_lib)
 
@@ -46,14 +47,16 @@ packages <- c("DiagrammeR",
               "mice",
               "Hmisc",
               "nnet",
-              "ggthemes")
+              "ggthemes",
+              "survey")
+              #"svrep")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   #install.packages(packages[!installed_packages], type = "source", INSTALL_opts = "--byte-compile")
-  #install.packages(packages[!installed_packages], lib = project_lib)
-  install.packages(packages[!installed_packages])
+  install.packages(packages[!installed_packages], lib = project_lib)
+  #install.packages(packages[!installed_packages])
 }
 
 #update.packages(lib.loc = project_lib, lib = project_lib)
@@ -79,10 +82,10 @@ devtools::install_git(
   "https://github.com/stapm/hseclean.git",
   build_vignettes = FALSE, quiet = TRUE)
 
-# devtools::install_git(
-#   url = "https://gitlab.com/stapm/r-packages/stapmr.git",
-#   credentials = git2r::cred_user_pass(uname, getPass::getPass()),
-#   ref = "1.8.7", build_vignettes = FALSE, quiet = TRUE)
+devtools::install_git(
+  url = "https://gitlab.com/stapm/r-packages/stapmr.git",
+  credentials = git2r::cred_user_pass(uname, getPass::getPass()),
+  ref = "1.9.4", build_vignettes = FALSE, quiet = TRUE)
 
 devtools::install_git(
   "https://github.com/stapm/tobalcepi.git",
