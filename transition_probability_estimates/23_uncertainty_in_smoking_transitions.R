@@ -89,6 +89,10 @@ genUncertainty <- function(data, var_name, n, n_samp, R) {
 #################################################
 # Do the sampling
 
+kn <- 100
+kn_samp <- 100
+kR <- 0.95
+
 ##
 # Initiation
 
