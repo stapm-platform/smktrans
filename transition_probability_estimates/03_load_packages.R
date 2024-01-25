@@ -6,7 +6,7 @@
 #file.edit(".Rprofile") # edit project specific .Rprofile
 
 #project_lib <- "X:/ScHARR/PR_STAPM/Data/smoking_transition_prob_estimation/R_packages"
-project_lib <- "C:/Users/cm1dog/Documents/libloc"
+project_lib <- "C:/Users/cm1dog/Documents/local_R_library"
 
 
 .libPaths(project_lib)
