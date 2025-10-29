@@ -201,21 +201,28 @@ quit_est <- function(
 
   master_data[ , c1 := (lx1 * current1) / (lx * current * current_px)]
   master_data[ , c2 := (1 / (current * current_px)) * (former * former_px * p_relapse + never * never_px * p_start)]
+  master_data[ , c2_no_init := (1 / (current * current_px)) * (former * former_px * p_relapse)]
 
   master_data[ , quit_prob := 1 - c1 + c2]
+  master_data[ , quit_prob_no_init := 1 - c1 + c2_no_init]
 
   master_data[age == max_age, quit_prob := 0]
+  master_data[age == max_age, quit_prob_no_init := 0]
 
   master_data[quit_prob < 0 | is.na(quit_prob), quit_prob := 0]
   master_data[quit_prob > 1 | is.na(quit_prob), quit_prob := 1]
 
+  master_data[quit_prob_no_init < 0 | is.na(quit_prob_no_init), quit_prob_no_init := 0]
+  master_data[quit_prob_no_init > 1 | is.na(quit_prob_no_init), quit_prob_no_init := 1]
+  
+  
   # no estimated quit probs for the last year of data
   master_data <- master_data[year < max_year]
 
   # Keep only required variables
-  master_data <- master_data[age < max_age, c("sex", "age", "year", "imd_quintile", "quit_prob")]
+  master_data <- master_data[age < max_age, c("sex", "age", "year", "imd_quintile", "quit_prob", "quit_prob_no_init")]
 
-  setnames(master_data, "quit_prob", "p_quit")
+  setnames(master_data, c("quit_prob", "quit_prob_no_init"), c("p_quit", "p_quit_no_init"))
 
 
 return(master_data[])

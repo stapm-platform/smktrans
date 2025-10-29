@@ -11,6 +11,8 @@
 #' ever-smoking by age, sex and IMD quintile.
 #' @param ever_smoke_data Data table - reference values for the proportion of ever-smokers.
 #' @param ref_age Integer - the index age for calibration
+#' @param fix_ref_age Logical. If TRUE, ref_age is used for all cohorts
+#' @param min_ref Integer - the minimum reference age to use for cohorts with not enough data on older ages
 #' @param cohorts Integer vector - the cohorts to be adjusted. 
 #' The min cohort might sensibly be period_start - ref_age, 
 #' and the max cohort might be the baseline year of the model e.g. 2020.
@@ -62,50 +64,59 @@
 #' }
 #'
 init_adj <- function(
-  init_data,
-  ever_smoke_data,
-  ref_age = 30,
-  cohorts = 1973:2020,
-  period_start = 2003,
-  period_end = 2018
+    init_data,
+    ever_smoke_data,
+    ref_age = 30,
+    fix_ref_age = FALSE,
+    min_ref = 25,
+    cohorts = 1973:2020,
+    period_start = 2003,
+    period_end = 2018
 ) {
-
+  
   # Select cohorts to be adjusted
   init_data <- init_data[cohort %in% cohorts]
-
-  # Set ref ages
-  # considering that some cohorts will need younger or older ref ages
-  # due to the limits of our period data
-  init_data[cohort <= (period_end - ref_age), ref_ages := ref_age]
-  init_data[cohort > (period_end - ref_age), ref_ages := period_end - cohort]
-  init_data[cohort < (period_start - ref_age), ref_ages := period_start - cohort]
-
-  # Limit the cohorts covered to those with a ref age of at least 25 years
-  init_data <- init_data[ref_ages >= 25]
-
+  
+  if(fix_ref_age == FALSE) {
+    # Set ref ages
+    # considering that some cohorts will need younger or older ref ages
+    # due to the limits of our period data
+    init_data[cohort <= (period_end - ref_age), ref_ages := ref_age]
+    init_data[cohort > (period_end - ref_age), ref_ages := period_end - cohort]
+    init_data[cohort < (period_start - ref_age), ref_ages := period_start - cohort]
+    
+    # Limit the cohorts covered to those with a ref age of at least 25 years
+    init_data <- init_data[ref_ages >= min_ref]
+    
+  } else {
+    
+    init_data[ , ref_ages := ref_age]
+    
+  }
+  
   # Take a subset of data in which only the reference ages are retained for each cohort
   ref_data <- copy(init_data[age == ref_ages])
-
+  
   # Assign the cohort to the reference values
   evr_smk_ref <- copy(ever_smoke_data)
   
   evr_smk_ref[ , cohort := year - ref_age]
   evr_smk_ref[ , year := NULL]
-
+  
   # Merge this data subset with the corresponding estimates of ever-smoking
   ref_data <- merge(ref_data, evr_smk_ref, all.x = T, all.y = F, 
                     by = c("cohort", "sex", "imd_quintile"))
-
+  
   # Calculate the factor by which to scale the cumulative curve of ever-smoking
   ref_data[ , adjustment_factor := fitted_trends / p_ever_smoker]
-
+  
   # Retain just the variables needed
   ref_data <- ref_data[ , c("cohort", "sex", "imd_quintile", "adjustment_factor")]
-
+  
   # Merge the adjustment factors back into the cohort data
   init_data <- merge(init_data, ref_data, all.x = T, all.y = F, 
                      by = c("cohort", "sex", "imd_quintile"))
-
+  
   # Adjust the cumulative probabilities of ever-smoking
   init_data[ , p_ever_smoker_adj := p_ever_smoker * adjustment_factor]
   
@@ -169,8 +180,8 @@ init_adj <- function(
     
     # Repeat the adjustment for the ongoing trend for the extrapolated cohorts
     
-    # Set ref age as 30
-    domain_ex[cohort > maxc, ref_ages := 30]
+    # Set ref age
+    domain_ex[cohort > maxc, ref_ages := ref_age]
     
     # Take a subset of data in which only the reference ages are retained for each cohort
     ref_data <- copy(domain_ex[cohort > maxc & age == ref_ages])
@@ -210,9 +221,9 @@ init_adj <- function(
     domain <- copy(domain_ex)
     
   }
-
+  
   domain[ , year := cohort + age]
   
-return(domain[])
+  return(domain[])
 }
 

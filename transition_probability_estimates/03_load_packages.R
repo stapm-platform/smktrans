@@ -34,6 +34,7 @@ library(tobalcepi)
 library(hseclean)
 library(smktrans)
 library(mort.tools)
+library(toolkitr)
 
 
 

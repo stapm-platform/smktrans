@@ -52,19 +52,19 @@
 #' }
 #'
 quit_forecast <- function(
-  data,
-  forecast_var,
-  forecast_type = c("continuing", "stationary"),
-  cont_limit = NULL,
-  oldest_year = 2003,
-  youngest_age = 11,
-  oldest_age = 88,
-  age_cont_limit = 88,
-  first_year = 2010,
-  jump_off_year = 2015,
-  time_horizon = 2050,
-  smooth_rate_dim = c(3, 3),
-  k_smooth_age = 3
+    data,
+    forecast_var,
+    forecast_type = c("continuing", "stationary"),
+    cont_limit = NULL,
+    oldest_year = 2003,
+    youngest_age = 11,
+    oldest_age = 88,
+    age_cont_limit = 88,
+    first_year = 2010,
+    jump_off_year = 2015,
+    time_horizon = 2050,
+    smooth_rate_dim = c(3, 3),
+    k_smooth_age = 3
 ) {
   
   # The ages and years
@@ -104,7 +104,7 @@ quit_forecast <- function(
     
     for(imd_quintile_i in c("1_least_deprived", "2", "3", "4", "5_most_deprived")) {
       
-      #imd_quintile_i <- "1_least_deprived"
+      #imd_quintile_i <- "2"
       cat("\t", imd_quintile_i, "\n")
       
       # Select the data for one subgroup
@@ -262,12 +262,17 @@ quit_forecast <- function(
 
 #' @export
 fill.zero <- function(x, method = "constant") {
+  #x <- qdat[1,]
   tt <- 1:length(x)
   zeros <- abs(x) < 1e-9
   xx <- x[!zeros]
   tt <- tt[!zeros]
-  x <- stats::approx(tt, xx, 1:length(x), method = method, f = 0.5, rule = 2)
-  return(x$y)
+  if(length(tt) > 0) {
+    x_approx <- stats::approx(tt, xx, 1:length(x), method = method, f = 0.5, rule = 2)
+    return(x_approx$y)
+  } else {
+    return(x + 1e-5)
+  }
 }
 
 

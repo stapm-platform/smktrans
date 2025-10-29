@@ -19,6 +19,10 @@
 
 # Load functions
 
+var_func <- function(x) {
+  mean(x ^ 2) - (mean(x) ^ 2)
+}
+
 # Function to estimate beta distribution parameters from mean and variance
 estimate_beta_params <- function(mu, var) {
   alpha <- ((1 - mu) / var - 1 / mu) * mu^2
@@ -89,9 +93,9 @@ genUncertainty <- function(data, var_name, n, n_samp, R) {
 #################################################
 # Do the sampling
 
-kn <- 100
-kn_samp <- 100
-kR <- 0.95
+# kn <- 100
+# kn_samp <- 100
+# kR <- 0.95
 
 ##
 # Initiation
@@ -115,6 +119,8 @@ stapmr::WriteToExcel(wb, sheet = "Initiation",
                      title = "Probabilities of smoking initiation (never to current smoker)",
                      init_data, startCol = 1, startRow = 1)
 
+saveRDS(init_data, paste0(path, "outputs/init_data_", country, "_uncertainty.rds"))
+
 rm(init_mat, init_data)#
 gc()
 
@@ -132,13 +138,15 @@ relapse_data[p_relapse == 0, p_relapse := 1/1000]
 relapse_mat <- genUncertainty(relapse_data, "p_relapse", n = kn, n_samp = kn_samp, R = kR)
 
 # Add the key sample quantiles to the data
-relapse_mat[ , p_relapse_low := apply(relapse_mat, 1, quantile, 0.025)]
-relapse_mat[ , p_relapse_median := apply(relapse_mat, 1, quantile, 0.5)]
-relapse_mat[ , p_relapse_high := apply(relapse_mat, 1, quantile, 0.975)]
+relapse_data[ , p_relapse_low := apply(relapse_mat, 1, quantile, 0.025)]
+relapse_data[ , p_relapse_median := apply(relapse_mat, 1, quantile, 0.5)]
+relapse_data[ , p_relapse_high := apply(relapse_mat, 1, quantile, 0.975)]
 
 stapmr::WriteToExcel(wb, sheet = "Relapse",
                      title = "Probabilities of relapse to smoking (former to current smoker). Added stratification by years since quitting.",
                      relapse_data, startCol = 1, startRow = 1)
+
+saveRDS(relapse_data, paste0(path, "outputs/relapse_data_", country, "_uncertainty.rds"))
 
 rm(relapse_mat, relapse_data)#
 gc()
@@ -156,14 +164,21 @@ quit_data[p_quit == 0, p_quit := 1/1000]
 # Generate samples
 quit_mat <- genUncertainty(data = quit_data, var_name = "p_quit", n = kn, n_samp = kn_samp, R = kR)
 
-# Add the key sample quantiles to the data
-quit_mat[ , p_quit_low := apply(quit_mat, 1, quantile, 0.025)]
-quit_mat[ , p_quit_median := apply(quit_mat, 1, quantile, 0.5)]
-quit_mat[ , p_quit_high := apply(quit_mat, 1, quantile, 0.975)]
+saveRDS(quit_mat, paste0(path, "outputs/quit_mat_", country, "_uncertainty.rds"))
 
-stapmr::WriteToExcel(wb, sheet = "Quit",
-                     title = "Probabilities of quitting smoking (current to former smoker).",
-                     quit_data, startCol = 1, startRow = 1)
+
+
+# Add the key sample quantiles to the data
+quit_data[ , p_quit_low := apply(quit_mat, 1, quantile, 0.025)]
+quit_data[ , p_quit_median := apply(quit_mat, 1, quantile, 0.5)]
+quit_data[ , p_quit_high := apply(quit_mat, 1, quantile, 0.975)]
+quit_data[ , p_quit_var := apply(quit_mat, 1, var_func)]
+
+#stapmr::WriteToExcel(wb, sheet = "Quit",
+#                     title = "Probabilities of quitting smoking (current to former smoker).",
+#                     quit_data, startCol = 1, startRow = 1)
+
+saveRDS(quit_data, paste0(path, "outputs/quit_data_", country, "_uncertainty.rds"))
 
 rm(quit_mat, quit_data)#
 gc()

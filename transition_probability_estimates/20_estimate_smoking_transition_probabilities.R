@@ -113,14 +113,32 @@ write.csv(init_forecast_data, paste0(path, "outputs/init_forecast_data_", countr
 # Relapse
 
 # Combine published estimates of long-term relapse with
+
+
+  # data = survey_data
+  # hawkins_relapse = smktrans::hawkins_relapse
+  # lowest_year = first_year_of_data
+  # highest_year = last_year_of_data
+  # youngest_age = 18
+
 relapse_data <- smktrans::prep_relapse(
   data = survey_data,
   hawkins_relapse = smktrans::hawkins_relapse,
   lowest_year = first_year_of_data,
   highest_year = last_year_of_data,
-  youngest_age = min_age)
+  youngest_age = 18)
+
 
 saveRDS(relapse_data, paste0(path, "outputs/relapse_data_", country, ".rds"))
+
+# relapse_data <- relapse_data$relapse_by_age_imd_timesincequit[year == 2017]
+# 
+# ggplot() +
+#   geom_line(data = relapse_data, aes(x = age, y = p_relapse, group = time_since_quit)) +
+#   theme_minimal() +
+#   ylab("P(relapse)") +
+#   facet_wrap(~ sex + imd_quintile, nrow = 2)
+
 
 # ggplot() +
 #   geom_line(data = relapse_data$relapse_by_age_imd, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
@@ -143,7 +161,7 @@ relapse_forecast_data <- smktrans::quit_forecast(
   first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
   jump_off_year = last_year_of_data - 1,
   time_horizon = max_year,
-  youngest_age = min_age,
+  youngest_age = 18,
   oldest_age = max_age,
   age_cont_limit = age_trend_limit_relapse,
   oldest_year = first_year_of_data,
@@ -158,8 +176,37 @@ relapse_by_age_imd_timesincequit <- smktrans::relapse_forecast(
   relapse_by_age_imd_timesincequit = relapse_data$relapse_by_age_imd_timesincequit,
   jump_off_year = last_year_of_data - 1)
 
-relapse_by_age_imd_timesincequit <- relapse_by_age_imd_timesincequit[age >= min_age & age <= max_age]
+relapse_by_age_imd_timesincequit <- relapse_by_age_imd_timesincequit[age >= 18 & age <= max_age]
 
+
+# Add ages younger than 18
+# assume younger than 18 have the relapse profile of 18 year olds
+# have the value from the last year
+temp <- relapse_by_age_imd_timesincequit[age == 18]
+#temp <- temp[ , list(p_relapse = mean(p_relapse, na.rm = T)), by = c("age", "time_since_quit", "sex", "imd_quintile")]
+
+next_age <- min_age
+
+for(i in min_age:17) {
+  
+  relapse_by_age_imd_timesincequit <- rbindlist(list(
+    relapse_by_age_imd_timesincequit,
+    copy(temp)[ , age := i]), use.names = T)
+  
+}
+
+temp <- relapse_data$relapse_by_age_imd[age == 18]
+#temp <- temp[ , list(p_relapse = mean(p_relapse, na.rm = T)), by = c("age", "time_since_quit", "sex", "imd_quintile")]
+
+next_age <- min_age
+
+for(i in min_age:17) {
+  
+  relapse_data$relapse_by_age_imd <- rbindlist(list(
+    relapse_data$relapse_by_age_imd,
+    copy(temp)[ , age := i]), use.names = T)
+  
+}
 
 # check outputs
 
@@ -290,6 +337,29 @@ forecast_data <- forecast_data[age >= min_age & age <= max_age]
 
 saveRDS(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".rds"))
 write.csv(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".csv"), row.names = FALSE)
+
+
+forecast_data_no_init <- quit_forecast(
+  data = copy(quit_data),
+  forecast_var = "p_quit_no_init",
+  forecast_type = "continuing", # continuing or stationary
+  cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
+  first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
+  jump_off_year = last_year_of_data - 1,
+  time_horizon = max_year,
+  youngest_age = min_age,
+  oldest_age = max_age - 1,
+  oldest_year = first_year_of_data,
+  age_cont_limit = age_trend_limit_quit,
+  smooth_rate_dim = smooth_rate_dim_quit,
+  k_smooth_age = k_smooth_age_quit)
+
+
+forecast_data_no_init <- forecast_data_no_init[age >= min_age & age <= max_age]
+
+saveRDS(forecast_data_no_init, paste0(path, "outputs/quit_forecast_data_no_init_", country, ".rds"))
+write.csv(forecast_data_no_init, paste0(path, "outputs/quit_forecast_data_no_init", country, ".csv"), row.names = FALSE)
+
 
 #stapmr::WriteToExcel(wb, sheet = "Quit",
 #                     title = "Probabilities of quitting smoking (current to former smoker).",
