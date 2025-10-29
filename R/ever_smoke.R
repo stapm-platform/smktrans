@@ -30,6 +30,8 @@
 #' progression of ever-smoking in a cohort should be generated. Defaults to 15 years.
 #' @param min_year Integer - the first year of survey data. For England 2003 
 #' and for Scotland 2008.
+#' @param age_cats Character vector - the names of the age categories for which the ever-smoking 
+#' reference proportion is calculated.
 #' 
 #' @importFrom data.table := setDT setnames
 #' @importFrom survey svydesign svyby svymean svyglm
@@ -56,7 +58,8 @@ ever_smoke <- function(
   num_bins = 7,
   model = c("model1", "model2", "model3", "model4", "model5")[1],
   min_age = 15,
-  min_year = c(2003, 2008)[1]
+  min_year = c(2003, 2008)[1],
+  age_cats = c("25-34")
 ) {
 
   cat("setting up data...\r")
@@ -77,11 +80,7 @@ ever_smoke <- function(
 
   # Filter data
 
-  # Test that age category 25-34 is in the data
-  if(sum(data[ , age_cat] == "25-34") == 0) {
-    message("age_cat does not contain 25-34")
-  }
-  data <- data[age_cat %in% c("25-34")]
+  data <- data[age_cat %in% age_cats]
 
   data[ , year_bin := smktrans::bin_var(year, n_bins = num_bins)]
 
@@ -131,6 +130,11 @@ ever_smoke <- function(
   # Model 4
   if(model == "model4"){
     m <- svyglm(ever_smoker ~ sex + imd_quintile + year_bin + sex:imd_quintile, design = srv.int, family = "quasibinomial")
+  }
+  
+  # Model 1
+  if(model == "model5"){
+    m <- svyglm(ever_smoker ~ imd_quintile + sex + year_bin + year_bin:sex + sex:imd_quintile, design = srv.int, family = "quasibinomial")
   }
 
   # Grab the model predictions

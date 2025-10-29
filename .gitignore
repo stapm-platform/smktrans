@@ -7,3 +7,13 @@ Archive/
 dev/
 .DS_Store
 */.DS_Store
+*.png
+*.db
+*/*.db
+*/*/*.db
+*/*/*/*.db
+*.sav
+*/*.sav
+*/*/*.sav
+*/*/*/*.sav
+*/*/*/*/*.sav

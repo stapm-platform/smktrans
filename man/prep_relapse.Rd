@@ -9,7 +9,7 @@ prep_relapse(
   hawkins_relapse = smktrans::hawkins_relapse,
   lowest_year = 2003,
   highest_year = 2018,
-  youngest_age = 11
+  youngest_age = 18
 )
 }
 \arguments{

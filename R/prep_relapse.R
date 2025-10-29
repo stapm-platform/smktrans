@@ -48,7 +48,7 @@ prep_relapse <- function(
   hawkins_relapse = smktrans::hawkins_relapse,
   lowest_year = 2003,
   highest_year = 2018,
-  youngest_age = 11
+  youngest_age = 18
 ) {
 
   data <- copy(data)
@@ -58,6 +58,7 @@ prep_relapse <- function(
 
   # Filter data and select required variables
   data_f <- data[!is.na(age) &
+                   age >= youngest_age &
                    smk.state == "former" &
                    !is.na(time_since_quit) & time_since_quit > 0 &
                    !is.na(degree) &
@@ -66,8 +67,7 @@ prep_relapse <- function(
                    !is.na(income5cat) &
                    !is.na(employ2cat) &
                    !is.na(imd_quintile),
-                 c(
-                   "wt_int",
+                 c("wt_int",
                    "year",
                    "age",
                    "sex",
@@ -77,8 +77,7 @@ prep_relapse <- function(
                    "time_since_quit",
                    "degree",
                    "relationship_status",
-                   "hse_mental"
-                 )]
+                   "hse_mental")]
 
   # Cap time since quit at 10 years, to fit with relapse estimates
   #data_f[time_since_quit > 10, time_since_quit := 10]
@@ -132,9 +131,16 @@ prep_relapse <- function(
     "hse_mental"
   ), all.x = T, all.y = F)
 
+  # ggplot() +
+  #   geom_point(data = temp[year == 2017], aes(x = age, y = p_relapse, group = time_since_quit)) +
+  #   theme_minimal() +
+  #   ylab("P(relapse)") +
+  #   facet_wrap(~ sex + imd_quintile, nrow = 2)
+  
   temp[is.na(p), p := 0]
 
   temp[ , test := sum(p), by = c("year", "age", "sex", "imd_quintile", "time_since_quit")]
+  #temp[test == 0]
   temp[test == 0, p := 1/ 160]
   temp[ , test := NULL]
 
@@ -142,11 +148,18 @@ prep_relapse <- function(
   relapse_by_age_imd_timesincequit <- temp[ , list(p_relapse = sum(p_relapse * p) / sum(p)),
                                             by = c("year", "age", "sex", "time_since_quit", "imd_quintile")]
 
+  # ggplot() +
+  #   geom_line(data = relapse_by_age_imd_timesincequit[year == 2017], aes(x = age, y = p_relapse, group = time_since_quit)) +
+  #   theme_minimal() +
+  #   ylab("P(relapse)") +
+  #   facet_wrap(~ sex + imd_quintile, nrow = 2)
+  
+  
   # Enforce the boundaries on relapse prob between 0 and 1
   relapse_by_age_imd_timesincequit[p_relapse < 0, p_relapse := 0]
   relapse_by_age_imd_timesincequit[p_relapse > 1, p_relapse := 1]
 
-  # Fill-in any missing age, sex, IMD quintile combinations with the average age and sex value
+  # Create a standardised data table will combinations of all variables
   domain <- data.frame(expand.grid(
     year = lowest_year:highest_year,
     age = youngest_age:89,
@@ -162,6 +175,13 @@ prep_relapse <- function(
 
   #relapse_by_age_imd_timesincequit[time_since_quit == 1 & sex == "Male" & imd_quintile == "5_most_deprived" & year == 2001]
 
+  # ggplot() +
+  #   geom_line(data = relapse_by_age_imd_timesincequit[year == 2017], aes(x = age, y = p_relapse, group = time_since_quit)) +
+  #   theme_minimal() +
+  #   ylab("P(relapse)") +
+  #   facet_wrap(~ sex + imd_quintile, nrow = 2)
+  
+  
   # Smooth values
   counter <- 0
 

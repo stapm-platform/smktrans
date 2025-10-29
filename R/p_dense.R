@@ -55,7 +55,7 @@ p_dense <- function(
   # Tidy
   data[ , (paste0(cum_func_var, "_lead1")) := NULL]
   
-  smk_init_data <- copy(data[age >= 5 & age <= 30 & year >= lowest_year & 
+  smk_init_data <- copy(data[age >= 10 & age <= 30 & year >= lowest_year & 
                                year <= max_year, 
                              c("sex", "imd_quintile", "age", "year", "initiation_pdf")])
   
@@ -71,7 +71,7 @@ p_dense <- function(
       #md <- "5_most_deprived"
       
       data_temp <- smktrans::p_smooth(
-        smk_init_data[sex == sx & imd_quintile == md], "p_start", 5)
+        data = smk_init_data[sex == sx & imd_quintile == md], value_var = "p_start", window_size = 5)
       
       data_temp[ , `:=`(sex = sx, imd_quintile = md)]
       

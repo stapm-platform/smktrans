@@ -68,8 +68,9 @@ p_smooth <- function(
   # rows are ages
   
   for(i in 1:length(years)) {
-  
-    x <- data_sm[ , i]
+    #cat(i)
+    #i <- 1
+    x <- data_sm[ ,i]
     tt <- 1:length(x)
     missing <- is.na(x)
     xx <- x[!missing]

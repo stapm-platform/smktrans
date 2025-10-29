@@ -78,9 +78,16 @@ uname <- "dosgillespie"
 #  credentials = git2r::cred_user_pass(uname, getPass::getPass()),
 #  ref = "1.8.4", build_vignettes = FALSE, lib = project_lib)
 
+#devtools::install_git(
+#  "https://github.com/stapm/hseclean.git",
+#  build_vignettes = FALSE, quiet = TRUE)
+
 devtools::install_git(
-  "https://github.com/stapm/hseclean.git",
-  build_vignettes = FALSE, quiet = TRUE)
+  url = "https://gitlab.com/stapm/r-packages/hseclean.git",
+  credentials = git2r::cred_user_pass(uname, getPass::getPass()),
+  ref = "1.12.1", build_vignettes = FALSE, quiet = TRUE)
+
+install.packages("C:/Users/cm1dog/Documents/hseclean_1.12.1.zip", repos=NULL)
 
 devtools::install_git(
   url = "https://gitlab.com/stapm/r-packages/stapmr.git",
