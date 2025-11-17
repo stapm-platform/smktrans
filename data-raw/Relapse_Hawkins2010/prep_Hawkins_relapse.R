@@ -15,26 +15,32 @@ library(stapmr)
 # Read in csv file from Hawkins 2010 paper.
 relapse <- fread("data-raw/Relapse_Hawkins2010/Smoking_Relapse_Hawkins_percentage.csv")
 
+###################################
 # Insert additional relapse probability for people who have quit for less than a year
 relapse0 <- data.table(Quit = as.integer(0))
 relapse <- rbindlist(list(relapse0, relapse), use.names = T, fill = T)
 
 # Calculate the expected duration of time since quitting for people who have quit
 # for less than a year, assuming use of NRT
+wk <- 1:52
+pa <- stapmr::SmkContAbst("nrt", wk)
+dur <- sum(wk * pa) / sum(pa)
+# 22 weeks
 
+# Calculate adjustment factor
+adj0 <- stapmr::SmkContAbst("nrt", 22) / stapmr::SmkContAbst("nrt", 52)
 
+# Calculate the percentage who relapse at 22 weeks
+relapse[Quit == 0, Percentage := relapse[Quit == 1, Percentage] * adj0]
+
+###################################
 
 # convert the percentage of people in continuous abstinence from percentage to probability and then to odds
 relapse[ , Probability := Percentage / 100]
 
-
-
-
 relapse[ , odds := Probability / (1 - Probability)]
 relapse <- relapse[ , c("Quit", "odds")]
 setnames(relapse, "Quit", "time_since_quit")
-
-
 
 # expand by covariates
 domain <- data.frame(expand.grid(
