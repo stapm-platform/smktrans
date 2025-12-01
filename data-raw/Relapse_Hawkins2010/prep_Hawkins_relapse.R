@@ -6,7 +6,7 @@
 # https://doi.org/10.1093/ntr/ntq175
 
 # With an adjusted relapse probability added for people who have quit for less than a year
-# based on the NRT curve from Jackson et al.
+# based on the placebo curve from Jackson et al.
 # https://doi.org/10.1111/add.14549
 
 library(data.table)
@@ -23,14 +23,14 @@ relapse <- rbindlist(list(relapse0, relapse), use.names = T, fill = T)
 # Calculate the expected duration of time since quitting for people who have quit
 # for less than a year, assuming use of NRT
 wk <- 1:52
-pa <- stapmr::SmkContAbst("nrt", wk)
+pa <- stapmr::SmkContAbst("placebo", wk)
 dur <- sum(wk * pa) / sum(pa)
-# 22 weeks
+# 21.2 weeks
 
 # Calculate adjustment factor
-adj0 <- stapmr::SmkContAbst("nrt", 22) / stapmr::SmkContAbst("nrt", 52)
+adj0 <- stapmr::SmkContAbst("placebo", dur) / stapmr::SmkContAbst("placebo", 52)
 
-# Calculate the percentage who relapse at 22 weeks
+# Calculate the percentage who relapse
 relapse[Quit == 0, Percentage := relapse[Quit == 1, Percentage] * adj0]
 
 ###################################
@@ -84,19 +84,6 @@ domain[relationship_status == "cohabit", relationship_status_or := .91]
 # add effects of health
 domain[ , mental_health_or := 1]
 domain[hse_mental == "mental", mental_health_or := 2.49]
-
-#domain[ , heart_health_or := 1]
-#domain[hse_heart == "heart", heart_health_or := .86]
-
-#domain[ , respir_health_or := 1]
-#domain[hse_respir == "respir", respir_health_or := 1.3]
-
-#domain[ , endocrine_health_or := 1]
-#domain[hse_endocrine == "endocrine", endocrine_health_or := 1.36]
-
-# effect of kids
-#domain[ , kids_or := 1]
-#domain[kids != "0", kids_or := 1.17]
 
 # effect of income
 domain[ , income_or := 1]
