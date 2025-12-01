@@ -5,10 +5,7 @@
 # Use the age range 11 - 89
 # and years 2003 - 2018
 
-# Load the required packages
-library(hseclean)
-library(magrittr)
-library(data.table)
+source("03_load_packages.R")
 
 # Apply functions to create the variables for analysis and to retain only the required variables
 
@@ -99,10 +96,11 @@ data <- combine_years(list(
   cleandata(read_2018(root = root_dir))
 ))
 
+
 # Load population data for England
 # from here - X:\ScHARR\PR_Mortality_data_TA\data\Processed pop sizes and death rates from VM
 # copied to the inputs folder in this repo
-eng_pops <- fread(paste0(path, "inputs/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv"))
+eng_pops <- fread("05_input/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv")
 setnames(eng_pops, c("pops"), c("N"))
 
 # adjust the survey weights according to the ratio of the real population to the sampled population

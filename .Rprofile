@@ -6,7 +6,8 @@
 ####################################################
 ### Create directories if they don't already exist 
 folder_paths <- c("00_R_env",
-                  "00_R_env/_R_packages")
+                  "00_R_env/_R_packages",
+                  "05_input")
 
 sapply(folder_paths, function(fpath) {
   outputDir <- fpath

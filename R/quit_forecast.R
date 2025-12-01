@@ -1,4 +1,3 @@
-
 #' Forecast probabilities of smoking initiation, quitting and relapse
 #'
 #' Forecasts the period trends in the probabilities of smoking initiation, quitting and relapse
@@ -274,14 +273,3 @@ fill.zero <- function(x, method = "constant") {
     return(x + 1e-5)
   }
 }
-
-
-
-
-
-
-
-
-
-
-

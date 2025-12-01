@@ -2,23 +2,15 @@
 # The aim of this code is to prepare the mortality data
 # for use in estimating smoking transition probabilities
 
-
 # The mortality data is stored on the university's X drive
 # in PR_STAPM/Data/smoking_transitions_paper
 # after having been processed into an aggregated form on the secure heta_study virtual machine
 
-library(data.table)
-#suppressPackageStartupMessages(library(mort.tools))
-library(readxl)
-library(ggplot2)
-library(magrittr)
-
 # Load the mortality data
-
 
 # Load the processed mortality data
 # comment-out once read-in once
-tob_mort_data <- fread(paste0(path, "inputs/tob_death_rates_england_national_2020-09-29_mort.tools_1.1.0.csv"))
+tob_mort_data <- fread("05_input/tob_death_rates_england_national_2020-09-29_mort.tools_1.1.0.csv")
 
 # Filter data
 tob_mort_data <- tob_mort_data[year %in% 2003:2018 & age %in% 11:89 & !is.na(cause) , c("age",

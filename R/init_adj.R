@@ -226,4 +226,3 @@ init_adj <- function(
   
   return(domain[])
 }
-

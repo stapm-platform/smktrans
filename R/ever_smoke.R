@@ -1,4 +1,3 @@
-
 #' Summarise and project trends in ever-smoking
 #'
 #' Calculates the expected proportion of ever-smokers, and
@@ -53,40 +52,42 @@
 #' }
 #'
 ever_smoke <- function(
-  data,
-  time_horizon = 2100,
-  num_bins = 7,
-  model = c("model1", "model2", "model3", "model4", "model5")[1],
-  min_age = 15,
-  min_year = c(2003, 2008)[1],
-  age_cats = c("25-34")
+    data,
+    time_horizon = 2100,
+    num_bins = 7,
+    model = c("model1", "model2", "model3", "model4", "model5")[1],
+    min_age = 15,
+    min_year = c(2003, 2008)[1],
+    age_cats = c("25-34")
 ) {
-
+  
   cat("setting up data...\r")
   utils::flush.console()
-
+  
   # Select required variables
   data <- data[ , list(wt_int, psu, cluster, age, year, age_cat, sex, imd_quintile, smk.state)]
-
+  
   # Create an ever smoker variable
   data[ , ever_smoker := ifelse(smk.state == "never", 0, 1)]
-
+  
   data[ , cohort := year - age]
-
+  
   # Lonely PSU (center any single-PSU strata around the sample grand mean rather than the stratum mean)
   options(survey.lonely.psu = "adjust")
-
+  
   # Fit and extrapolate time trend in ever smoking
-
+  
   # Filter data
-
+  
   data <- data[age_cat %in% age_cats]
-
+  
   data[ , year_bin := smktrans::bin_var(year, n_bins = num_bins)]
-
+  
+  data[ , cluster := as.factor(cluster)]
+  
   cat("making survey object...\r")
   utils::flush.console()
-
+  
   # Convert data to a survey object
   srv.int <- svydesign(
     id =  ~ psu,
@@ -94,29 +95,29 @@ ever_smoke <- function(
     weights = ~ wt_int,
     nest = TRUE,
     data = data)
-
+  
   cat("estimating prop. ever-smokers...\r")
   utils::flush.console()
-
+  
   # Estimate the proportions of ever smokers
   # by year, sex, age category, and IMD quintile
   current_prop <- svyby( ~ ever_smoker,
                          by =  ~ year_bin + sex + imd_quintile,
                          design = srv.int,
                          svymean)
-
+  
   setDT(current_prop)
-
+  
   setnames(current_prop, "year_bin", "year")
-
+  
   cat("fitting trend in ever-smoking\r")
   utils::flush.console()
-
+  
   # Model 1
   if(model == "model1"){
     m <- svyglm(ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + imd_quintile:year_bin + sex:imd_quintile, design = srv.int, family = "quasibinomial")
   }
-
+  
   # Model 2
   if(model == "model2"){
     m <- svyglm(ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + sex:imd_quintile, design = srv.int, family = "quasibinomial")
@@ -132,24 +133,23 @@ ever_smoke <- function(
     m <- svyglm(ever_smoker ~ sex + imd_quintile + year_bin + sex:imd_quintile, design = srv.int, family = "quasibinomial")
   }
   
-  # Model 1
+  # Model 5
   if(model == "model5"){
     m <- svyglm(ever_smoker ~ imd_quintile + sex + year_bin + year_bin:sex + sex:imd_quintile, design = srv.int, family = "quasibinomial")
   }
-
+  
   # Grab the model predictions
   newdata <- data.frame(expand.grid(year_bin = (min_year - min_age):time_horizon,
-    sex = c("Male", "Female"), imd_quintile = unique(data$imd_quintile)))
-
+                                    sex = c("Male", "Female"), imd_quintile = unique(data$imd_quintile)))
+  
   newdata$fitted_trends <- as.numeric(stats::predict(m, type = "response", newdata = newdata))
-
+  
   setDT(newdata)
-
+  
   setnames(newdata, "year_bin", "year")
-
-return(list(
-  data_points = current_prop[],
-  predicted_values = newdata[]
-))
+  
+  return(list(
+    data_points = current_prop[],
+    predicted_values = newdata[]
+  ))
 }
-
