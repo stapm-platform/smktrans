@@ -32,11 +32,11 @@
 #' }
 #'
 p_dense <- function(
-  data,
-  cum_func_var,
-  strat_vars = c("cohort", "sex", "imd_quintile"),
-  lowest_year = 2003,
-  max_year = 2100
+    data,
+    cum_func_var,
+    strat_vars = c("cohort", "sex", "imd_quintile"),
+    lowest_year = 2003,
+    max_year = 2100
 ) {
   
   # Lead the cdf
@@ -92,5 +92,3 @@ p_dense <- function(
   
   return(smk_init_data[])
 }
-
-

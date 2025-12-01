@@ -117,5 +117,5 @@ rm(temp)
 
 # Save the result to the package data folder
 hawkins_relapse <- copy(domain)
-usethis::use_data(hawkins_relapse, overwrite = TRUE)
+#usethis::use_data(hawkins_relapse, overwrite = TRUE)
 

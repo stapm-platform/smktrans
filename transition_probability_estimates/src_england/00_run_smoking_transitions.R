@@ -7,7 +7,6 @@
 
 # # Point to the location of the X drive
 root_dir <- "X:/"
-# #root_dir <- "/Volumes/Shared/"
 
 path <- "transition_probability_estimates/src_england/"
 

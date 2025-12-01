@@ -7,7 +7,7 @@
 
 # CRAN packages
 library(data.table)
-library(here)
+#library(here)
 library(stringr)
 library(flextable)
 library(magrittr)

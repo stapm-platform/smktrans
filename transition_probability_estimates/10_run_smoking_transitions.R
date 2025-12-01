@@ -4,7 +4,7 @@
 
 root_dir <- "X:/"
 
-source("transition_probability_estimates/03_load_packages.R")
+source("03_load_packages.R")
 
 # template for the summary sheet
 template <- "smoking_state_transition_probabilities_template"
@@ -40,8 +40,14 @@ max_age_init <- 30
 age_trend_limit_init <- 21
 
 # Initiation forecast
-smooth_rate_dim_init <- c(3, 7) # The dimensions of the 2d window used to smooth trends in the rates by age and year. (age, year), Defaults to c(3, 3). Must be odd numbers
-k_smooth_age_init <- 0 # the degree of smoothing to apply to the age pattern of change (rotation). If zero, then no smoothing is applied.
+smooth_rate_dim_init <- c(3, 7) 
+# The dimensions of the 2d window used to 
+# smooth trends in the rates by age and year. (age, year), 
+# Defaults to c(3, 3). Must be odd numbers
+
+k_smooth_age_init <- 0 
+# the degree of smoothing to apply to the age pattern of change (rotation). 
+# If zero, then no smoothing is applied.
 
 # Quit forecast
 smooth_rate_dim_quit <- c(5, 7)
@@ -62,7 +68,7 @@ age_trend_limit_relapse <- 75
 # Number of trials
 # this is an approximation of the sample size expected in each cell (smoking state, year, age, sex, IMD quintile)
 # vary it in orders of magnitude of 10 since this is a rough approximation
-kn <- 100
+kn <- 20
 
 # Correlation of uncertainly
 # e.g. the expected correlation of uncertainty between the initiation probability at age 20 and age 21
@@ -98,7 +104,7 @@ openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year + 10, start
 openxlsx::writeData(wb, sheet = "Cover sheet", max_year, startCol = 2, startRow = 34)
 
 # run once to build inputs
-#source("transition_probability_estimates/src_england/00_run_smoking_transitions.R")
+source("transition_probability_estimates/src_england/00_run_smoking_transitions.R")
 
 # Survey data
 survey_data <- readRDS("transition_probability_estimates/src_england/intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds")
@@ -108,7 +114,7 @@ tob_mort_data_cause <- readRDS("transition_probability_estimates/src_england/int
 
 tob_mort_data <- readRDS("transition_probability_estimates/src_england/intermediate_data/tob_mort_data_trans.rds")
 
-pop_counts_c <- fread("transition_probability_estimates/src_england/inputs/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv")
+pop_counts_c <- fread("05_input/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv")
 setnames(pop_counts_c, "pops", "N")
 
 pops <- pop_counts_c[year == max(pop_counts_c$year)]

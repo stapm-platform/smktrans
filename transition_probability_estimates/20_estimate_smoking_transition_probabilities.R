@@ -8,6 +8,8 @@
 # Initiation
 
 # Calculate the cumulative probabilities of starting to smoke for each cohort
+#source("R/init_est.R")
+
 init_data_raw <- smktrans::init_est(
   data = survey_data,
   strat_vars = c("sex", "imd_quintile"))
@@ -16,19 +18,23 @@ saveRDS(init_data_raw, paste0(path, "outputs/init_data_raw_", country, ".rds"))
 
 # Estimate the trend in the proportion of people who have ever smoked
 # in the age range 25-34
-ever_smoke_data <- smktrans::ever_smoke(
+source("R/ever_smoke.R")
+
+ever_smoke_data <- ever_smoke(
   data = survey_data,
-  time_horizon = max_year + 100,
+  time_horizon = max_year,
   num_bins = 7,
   model = "model1",
   min_age = min_age,
-  min_year = first_year_of_data)
+  min_year = first_year_of_data,
+  age_cats = c("25-34"))
 
 saveRDS(ever_smoke_data, paste0(path, "outputs/ever_smoke_data_", country, ".rds"))
 
 # Adjust and forecast data for later cohorts
+source("R/init_adj.R")
 
-init_data_adj <- smktrans::init_adj(
+init_data_adj <- init_adj(
   init_data = copy(init_data_raw),
   ever_smoke_data = copy(ever_smoke_data$predicted_values),
   ref_age = ref_age,
@@ -38,11 +44,13 @@ init_data_adj <- smktrans::init_adj(
 saveRDS(init_data_adj, paste0(path, "outputs/init_data_adj_", country, ".rds"))
 
 # Convert from cumulative probs to the prob of initiation
-smk_init_data <- smktrans::p_dense(
+source("R/p_dense.R")
+
+smk_init_data <- p_dense(
   data = copy(init_data_adj),
   cum_func_var = "p_ever_smoker_adj",
   strat_vars = c("cohort", "sex", "imd_quintile"),
-  lowest_year = first_year_of_data, max_year = max_year)
+  lowest_year = first_year_of_data, max_year = last_year_of_data)
 
 saveRDS(smk_init_data, paste0(path, "outputs/smk_init_data_", country, ".rds"))
 
@@ -51,18 +59,20 @@ saveRDS(smk_init_data, paste0(path, "outputs/smk_init_data_", country, ".rds"))
 #smooth_rate_dim_init <- c(3, 7)
 #k_smooth_age_init <- 0
 
-init_forecast_data <- smktrans::quit_forecast(
+source("R/quit_forecast.R")
+
+init_forecast_data <- quit_forecast(
   data = copy(smk_init_data),
   forecast_var = "p_start",
   forecast_type = "continuing", # continuing or stationary
   cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
-  first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
-  jump_off_year = last_year_of_data - 1,
-  time_horizon = max_year,
+  oldest_year = first_year_of_data,
   youngest_age = min_age,
   oldest_age = ref_age,
   age_cont_limit = age_trend_limit_init,
-  oldest_year = first_year_of_data,
+  first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
+  jump_off_year = last_year_of_data - 1,
+  time_horizon = max_year,
   smooth_rate_dim = smooth_rate_dim_init,
   k_smooth_age = k_smooth_age_init)
 
@@ -71,33 +81,32 @@ init_forecast_data <- init_forecast_data[age >= min_age & age <= max_age]
 
 # check estimates
 
-# init_data_plot <- merge(init_forecast_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-# init_data_plot <- init_data_plot[age >= min_age & age < 30 & year <= smokefree_target_year]
-#
-# init_data_plot <- init_data_plot[ , .(p_start = sum(p_start * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
-#
-# ggplot() +
-#   geom_line(data = init_data_plot[year <= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 1) +
-#   geom_line(data = init_data_plot[year >= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 2) +
-#   facet_wrap(~ sex, nrow = 1) +
-#   theme_minimal() +
-#   ylab("P(initiate)") +
-#   theme(axis.text.x = element_text(angle = 45)) +
-#   #ylim(0, 0.04) +
-#   scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
-#
-# # age specific plot
-#
-# init_data_plot <- init_forecast_data[age >= min_age & age < 30 & year <= smokefree_target_year]
-#
-# ggplot() +
-#   geom_line(data = init_data_plot, aes(x = age, y = p_start, colour = year, group = year), linewidth = .4, alpha = .7) +
-#   facet_wrap(~ sex + imd_quintile, nrow = 2) +
-#   theme_minimal() +
-#   ylab("P(initiate)") +
-#   theme(axis.text.x = element_text(angle = 45)) +
-#   scale_colour_viridis(option = "plasma")
+init_data_plot <- merge(init_forecast_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
+init_data_plot <- init_data_plot[age >= min_age & age < 30 & year <= smokefree_target_year]
 
+init_data_plot <- init_data_plot[ , .(p_start = sum(p_start * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
+
+ggplot() +
+  geom_line(data = init_data_plot[year <= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 1) +
+  geom_line(data = init_data_plot[year >= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 2) +
+  facet_wrap(~ sex, nrow = 1) +
+  theme_minimal() +
+  ylab("P(initiate)") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  #ylim(0, 0.04) +
+  scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
+
+# age specific plot
+
+init_data_plot <- init_forecast_data[age >= min_age & age < 30 & year <= smokefree_target_year]
+
+ggplot() +
+  geom_line(data = init_data_plot, aes(x = age, y = p_start, colour = year, group = year), linewidth = .4, alpha = .7) +
+  facet_wrap(~ sex + imd_quintile, nrow = 2) +
+  theme_minimal() +
+  ylab("P(initiate)") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  scale_colour_viridis(option = "plasma")
 
 # Save estimates
 
@@ -114,46 +123,47 @@ write.csv(init_forecast_data, paste0(path, "outputs/init_forecast_data_", countr
 
 # Combine published estimates of long-term relapse with
 
+source("R/prep_relapse.R")
+source("data-raw/Relapse_Hawkins2010/prep_Hawkins_relapse.R")
 
-  # data = survey_data
-  # hawkins_relapse = smktrans::hawkins_relapse
-  # lowest_year = first_year_of_data
-  # highest_year = last_year_of_data
-  # youngest_age = 18
+# data = survey_data
+# hawkins_relapse = smktrans::hawkins_relapse
+# lowest_year = first_year_of_data
+# highest_year = last_year_of_data
+# youngest_age = 18
 
-relapse_data <- smktrans::prep_relapse(
+relapse_data <- prep_relapse(
   data = survey_data,
-  hawkins_relapse = smktrans::hawkins_relapse,
+  hawkins_relapse = hawkins_relapse,
   lowest_year = first_year_of_data,
   highest_year = last_year_of_data,
   youngest_age = 18)
 
-
 saveRDS(relapse_data, paste0(path, "outputs/relapse_data_", country, ".rds"))
 
-# relapse_data <- relapse_data$relapse_by_age_imd_timesincequit[year == 2017]
-# 
-# ggplot() +
-#   geom_line(data = relapse_data, aes(x = age, y = p_relapse, group = time_since_quit)) +
-#   theme_minimal() +
-#   ylab("P(relapse)") +
-#   facet_wrap(~ sex + imd_quintile, nrow = 2)
+relapse_data_temp <- relapse_data$relapse_by_age_imd_timesincequit[year == 2017]
+
+ggplot() +
+  geom_line(data = relapse_data_temp, aes(x = age, y = p_relapse, group = time_since_quit)) +
+  theme_minimal() +
+  ylab("P(relapse)") +
+  facet_wrap(~ sex + imd_quintile, nrow = 2)
 
 
-# ggplot() +
-#   geom_line(data = relapse_data$relapse_by_age_imd, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
-#   facet_wrap(~ sex + imd_quintile, nrow = 2) +
-#   theme_minimal() +
-#   ylab("P(relapse)") +
-#   theme(axis.text.x = element_text(angle = 45)) +
-#   scale_colour_viridis(option = "plasma")
+ggplot() +
+  geom_line(data = relapse_data$relapse_by_age_imd, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
+  facet_wrap(~ sex + imd_quintile, nrow = 2) +
+  theme_minimal() +
+  ylab("P(relapse)") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  scale_colour_viridis(option = "plasma")
 
 
 # the probabilities that are used in the model are stratified by age, sex, IMDq and time since quitting
 # The approach will be to forecast the version of the probabilities stratified by age, sex and IMDq only
 # and then use the results to scale the higher dimensional version
 
-relapse_forecast_data <- smktrans::quit_forecast(
+relapse_forecast_data <- quit_forecast(
   data = copy(relapse_data$relapse_by_age_imd),
   forecast_var = "p_relapse",
   forecast_type = "continuing", # continuing or stationary
