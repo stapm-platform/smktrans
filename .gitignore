@@ -17,3 +17,7 @@ dev/
 */*/*.sav
 */*/*/*.sav
 */*/*/*/*.sav
+
+
+00_R_env/_R_packages*
+

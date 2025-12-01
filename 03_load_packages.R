@@ -3,13 +3,7 @@
 # to run the simulation and process the results
 
 #file.edit(file.path("~", ".Rprofile")) # edit .Rprofile in HOME
-#file.edit(".Rprofile") # edit project specific .Rprofile
-
-#project_lib <- "X:/ScHARR/PR_STAPM/Data/smoking_transition_prob_estimation/R_packages"
-project_lib <- "C:/Users/cm1dog/Documents/local_R_library"
-
-
-.libPaths(project_lib)
+#file.edit(".Rprofile") # edit project specific .Rprofile 
 
 # CRAN packages
 library(data.table)
@@ -26,7 +20,6 @@ library(RColorBrewer)
 library(ggplot2)
 library(viridis)
 library(survey)
-#library(svrep) # https://cran.r-project.org/web/packages/svrep/vignettes/bootstrap-replicates.html
 
 # STAPM packages
 library(stapmr)
@@ -37,12 +30,7 @@ library(mort.tools)
 library(toolkitr)
 
 
-
-#library(mort.tools)
-
-
 #data.table::setDTthreads(1)
 
 options(warn = 1)
-
-
+#memory.limit(size = 1e8)
