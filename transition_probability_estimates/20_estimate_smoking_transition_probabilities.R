@@ -24,7 +24,7 @@ ever_smoke_data <- ever_smoke(
   data = survey_data,
   time_horizon = max_year,
   num_bins = 7,
-  model = "model1",
+  model = "model2", # England should be model 2
   min_age = min_age,
   min_year = first_year_of_data,
   age_cats = c("25-34"))
@@ -124,13 +124,8 @@ write.csv(init_forecast_data, paste0(path, "outputs/init_forecast_data_", countr
 # Combine published estimates of long-term relapse with
 
 source("R/prep_relapse.R")
+source("R/relapse_forecast.R")
 source("data-raw/Relapse_Hawkins2010/prep_Hawkins_relapse.R")
-
-# data = survey_data
-# hawkins_relapse = smktrans::hawkins_relapse
-# lowest_year = first_year_of_data
-# highest_year = last_year_of_data
-# youngest_age = 18
 
 relapse_data <- prep_relapse(
   data = survey_data,
@@ -141,24 +136,6 @@ relapse_data <- prep_relapse(
 
 saveRDS(relapse_data, paste0(path, "outputs/relapse_data_", country, ".rds"))
 
-relapse_data_temp <- relapse_data$relapse_by_age_imd_timesincequit[year == 2017]
-
-ggplot() +
-  geom_line(data = relapse_data_temp, aes(x = age, y = p_relapse, group = time_since_quit)) +
-  theme_minimal() +
-  ylab("P(relapse)") +
-  facet_wrap(~ sex + imd_quintile, nrow = 2)
-
-
-ggplot() +
-  geom_line(data = relapse_data$relapse_by_age_imd, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
-  facet_wrap(~ sex + imd_quintile, nrow = 2) +
-  theme_minimal() +
-  ylab("P(relapse)") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  scale_colour_viridis(option = "plasma")
-
-
 # the probabilities that are used in the model are stratified by age, sex, IMDq and time since quitting
 # The approach will be to forecast the version of the probabilities stratified by age, sex and IMDq only
 # and then use the results to scale the higher dimensional version
@@ -167,7 +144,7 @@ relapse_forecast_data <- quit_forecast(
   data = copy(relapse_data$relapse_by_age_imd),
   forecast_var = "p_relapse",
   forecast_type = "continuing", # continuing or stationary
-  cont_limit = smokefree_target_year + 10, # the year at which the forecast becomes stationary
+  cont_limit = last_year_of_data + 3, # the year at which the forecast becomes stationary
   first_year = first_year_of_data_forecast, # the earliest year of data on which the forecast is based
   jump_off_year = last_year_of_data - 1,
   time_horizon = max_year,
@@ -181,19 +158,17 @@ relapse_forecast_data <- quit_forecast(
 saveRDS(relapse_forecast_data, paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 
 # Forecast the values by age, sex, IMD quintile and time since quitting
-relapse_by_age_imd_timesincequit <- smktrans::relapse_forecast(
+relapse_by_age_imd_timesincequit <- relapse_forecast(
   relapse_forecast_data = relapse_forecast_data,
   relapse_by_age_imd_timesincequit = relapse_data$relapse_by_age_imd_timesincequit,
   jump_off_year = last_year_of_data - 1)
 
 relapse_by_age_imd_timesincequit <- relapse_by_age_imd_timesincequit[age >= 18 & age <= max_age]
 
-
 # Add ages younger than 18
 # assume younger than 18 have the relapse profile of 18 year olds
 # have the value from the last year
 temp <- relapse_by_age_imd_timesincequit[age == 18]
-#temp <- temp[ , list(p_relapse = mean(p_relapse, na.rm = T)), by = c("age", "time_since_quit", "sex", "imd_quintile")]
 
 next_age <- min_age
 
@@ -206,7 +181,6 @@ for(i in min_age:17) {
 }
 
 temp <- relapse_data$relapse_by_age_imd[age == 18]
-#temp <- temp[ , list(p_relapse = mean(p_relapse, na.rm = T)), by = c("age", "time_since_quit", "sex", "imd_quintile")]
 
 next_age <- min_age
 
@@ -220,50 +194,34 @@ for(i in min_age:17) {
 
 # check outputs
 
-relapse_data_plot <- merge(relapse_by_age_imd_timesincequit, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-relapse_data_plot <- relapse_data_plot[age >= min_age & age <= max_age & year <= smokefree_target_year]
-
-relapse_data_plot <- relapse_data_plot[ , .(p_relapse = sum(p_relapse * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
-
-ggplot() +
-  geom_line(data = relapse_data_plot[year <= last_year_of_data], aes(x = year, y = p_relapse, colour = imd_quintile), linetype = 1) +
-  geom_line(data = relapse_data_plot[year >= last_year_of_data], aes(x = year, y = p_relapse, colour = imd_quintile), linetype = 2) +
-  facet_wrap(~ sex, nrow = 1) +
-  theme_minimal() +
-  ylab("P(relapse)") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
-
-# age specific plot
-
-relapse_data_plot <- relapse_by_age_imd_timesincequit[age >= min_age & age <= max_age & year <= smokefree_target_year]
-
-relapse_data_plot <- relapse_data_plot[ , .(p_relapse = mean(p_relapse)), by = c("year", "age", "sex", "imd_quintile")]
-
-ggplot() +
-  geom_line(data = relapse_data_plot, aes(x = age, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
-  facet_wrap(~ sex + imd_quintile, nrow = 2) +
-  theme_minimal() +
-  ylab("P(relapse)") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  scale_colour_viridis(option = "plasma")
-
-
-# time since quit plot
-
-relapse_data_plot <- relapse_by_age_imd_timesincequit[age >= min_age & age <= max_age & year <= smokefree_target_year]
-
-relapse_data_plot <- relapse_data_plot[ , .(p_relapse = mean(p_relapse)), by = c("year", "time_since_quit", "sex", "imd_quintile")]
-
-ggplot() +
-  geom_line(data = relapse_data_plot, aes(x = time_since_quit, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
-  facet_wrap(~ sex + imd_quintile, nrow = 2) +
-  theme_minimal() +
-  ylab("P(relapse)") +
-  xlab("years since quitting") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  scale_colour_viridis(option = "plasma")
-
+# relapse_data_plot <- merge(relapse_by_age_imd_timesincequit, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
+# relapse_data_plot <- relapse_data_plot[age >= min_age & age <= max_age & year <= smokefree_target_year]
+# 
+# relapse_data_plot <- relapse_data_plot[ , .(p_relapse = sum(p_relapse * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
+# 
+# ggplot() +
+#   geom_line(data = relapse_data_plot[year <= last_year_of_data], aes(x = year, y = p_relapse, colour = imd_quintile), linetype = 1) +
+#   geom_line(data = relapse_data_plot[year >= last_year_of_data], aes(x = year, y = p_relapse, colour = imd_quintile), linetype = 2) +
+#   facet_wrap(~ sex, nrow = 1) +
+#   theme_minimal() +
+#   ylab("P(relapse)") +
+#   theme(axis.text.x = element_text(angle = 45)) +
+#   scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
+# 
+# # time since quit plot
+# 
+# relapse_data_plot <- relapse_by_age_imd_timesincequit[age >= min_age & age <= max_age & year <= smokefree_target_year]
+# 
+# relapse_data_plot <- relapse_data_plot[ , .(p_relapse = mean(p_relapse)), by = c("year", "time_since_quit", "sex", "imd_quintile")]
+# 
+# ggplot() +
+#   geom_line(data = relapse_data_plot, aes(x = time_since_quit, y = p_relapse, colour = year, group = year), linewidth = .4, alpha = .7) +
+#   facet_wrap(~ sex + imd_quintile, nrow = 2) +
+#   theme_minimal() +
+#   ylab("P(relapse)") +
+#   xlab("years since quitting") +
+#   theme(axis.text.x = element_text(angle = 45)) +
+#   scale_colour_viridis(option = "plasma")
 
 saveRDS(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 write.csv(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".csv"), row.names = FALSE)
