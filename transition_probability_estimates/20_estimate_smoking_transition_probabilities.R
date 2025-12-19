@@ -247,12 +247,16 @@ trend_data <- trend_fit(data = survey_data,
                         imd_var = "imd_quintile",
                         weight_var = "wt_int")
 
+trend_data_temp <- melt(trend_data, 
+                        id.vars = c("age", "year", "sex", "imd_quintile", "cohort"),
+                        variable.name = "smk.status", value.name = "proportion")
 
-
-
-
-
-
+ggplot(data = trend_data_temp[sex == "Male" & imd_quintile == "5_most_deprived"], aes(x = year, y = age, fill = proportion)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "turbo") +
+  coord_equal() +
+  theme_minimal() +
+  facet_wrap(~ smk.status)
 
 saveRDS(trend_data, paste0(path, "outputs/smoking_trends_", country, ".rds"))
 
