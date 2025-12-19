@@ -52,7 +52,7 @@ k_smooth_age_init <- 0
 # Quit forecast
 smooth_rate_dim_quit <- c(5, 7)
 k_smooth_age_quit <- 6
-age_trend_limit_quit <- 75
+age_trend_limit_quit <- 79
 
 # Relapse forecast
 #smooth_rate_dim_relapse <- c(5, 3)
@@ -60,7 +60,7 @@ age_trend_limit_quit <- 75
 
 smooth_rate_dim_relapse <- c(15, 7)
 k_smooth_age_relapse <- 6
-age_trend_limit_relapse <- 75
+age_trend_limit_relapse <- 79
 
 #################################################
 #### Key assumptions for estimating uncertainty
