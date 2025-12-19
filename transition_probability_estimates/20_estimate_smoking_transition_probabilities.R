@@ -235,14 +235,24 @@ write.csv(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_foreca
 # Quit
 
 # model trends in current, former and never smoking
-trend_data <- smktrans::trend_fit(data = survey_data,
-                                  max_iterations = 1e3,
-                                  age_var = "age",
-                                  year_var = "year",
-                                  sex_var = "sex",
-                                  smoker_state_var = "smk.state",
-                                  imd_var = "imd_quintile",
-                                  weight_var = "wt_int")
+
+source("R/trend_fit.R")
+
+trend_data <- trend_fit(data = survey_data,
+                        max_iterations = 1e3,
+                        age_var = "age",
+                        year_var = "year",
+                        sex_var = "sex",
+                        smoker_state_var = "smk.state",
+                        imd_var = "imd_quintile",
+                        weight_var = "wt_int")
+
+
+
+
+
+
+
 
 saveRDS(trend_data, paste0(path, "outputs/smoking_trends_", country, ".rds"))
 
