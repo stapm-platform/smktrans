@@ -55,10 +55,6 @@ smk_init_data <- p_dense(
 saveRDS(smk_init_data, paste0(path, "outputs/smk_init_data_", country, ".rds"))
 
 # Forecast
-
-#smooth_rate_dim_init <- c(3, 7)
-#k_smooth_age_init <- 0
-
 source("R/quit_forecast.R")
 
 init_forecast_data <- quit_forecast(
@@ -78,51 +74,57 @@ init_forecast_data <- quit_forecast(
 
 init_forecast_data <- init_forecast_data[age >= min_age & age <= max_age]
 
+# ggplot(init_forecast_data[year == 2011 & age >= 16 & age <= 89]) +
+#   geom_line(aes(x = age, y = p_start, color = imd_quintile), linewidth = 1.2) +
+#   facet_wrap(~ sex) +
+#   labs(x = "Age", y = "Probability of Initiation") +
+#   theme_minimal() +
+#   scale_color_viridis_d(option = "viridis", begin = 0.2, end = 0.9) +
+#   geom_vline(xintercept = 18, linetype = "dashed", color = "grey40", linewidth = 0.8)  +
+#   scale_y_continuous(limits = c(0, NA), breaks = seq(0, 1, 0.05))
 
 # check estimates
 
-init_data_plot <- merge(init_forecast_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
-init_data_plot <- init_data_plot[age >= min_age & age < 30 & year <= smokefree_target_year]
-
-init_data_plot <- init_data_plot[ , .(p_start = sum(p_start * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
-
-ggplot() +
-  geom_line(data = init_data_plot[year <= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 1) +
-  geom_line(data = init_data_plot[year >= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 2) +
-  facet_wrap(~ sex, nrow = 1) +
-  theme_minimal() +
-  ylab("P(initiate)") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  #ylim(0, 0.04) +
-  scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
+# init_data_plot <- merge(init_forecast_data, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
+# init_data_plot <- init_data_plot[age >= min_age & age < 30 & year <= smokefree_target_year]
+# 
+# init_data_plot <- init_data_plot[ , .(p_start = sum(p_start * N) / sum(N)), by = c("year", "sex", "imd_quintile")]
+# 
+# ggplot() +
+#   geom_line(data = init_data_plot[year <= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 1) +
+#   geom_line(data = init_data_plot[year >= last_year_of_data], aes(x = year, y = p_start, colour = imd_quintile), linetype = 2) +
+#   facet_wrap(~ sex, nrow = 1) +
+#   theme_minimal() +
+#   ylab("P(initiate)") +
+#   theme(axis.text.x = element_text(angle = 45)) +
+#   #ylim(0, 0.04) +
+#   scale_colour_manual("IMD quintile", values = c("#fcc5c0", "#fa9fb5", "#f768a1", "#c51b8a", "#7a0177"))
 
 # age specific plot
 
-init_data_plot <- init_forecast_data[age >= min_age & age < 30 & year <= smokefree_target_year]
-
-ggplot() +
-  geom_line(data = init_data_plot, aes(x = age, y = p_start, colour = year, group = year), linewidth = .4, alpha = .7) +
-  facet_wrap(~ sex + imd_quintile, nrow = 2) +
-  theme_minimal() +
-  ylab("P(initiate)") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  scale_colour_viridis(option = "plasma")
+# init_data_plot <- init_forecast_data[age >= min_age & age < 30 & year <= smokefree_target_year]
+# 
+# ggplot() +
+#   geom_line(data = init_data_plot, aes(x = age, y = p_start, colour = year, group = year), linewidth = .4, alpha = .7) +
+#   facet_wrap(~ sex + imd_quintile, nrow = 2) +
+#   theme_minimal() +
+#   ylab("P(initiate)") +
+#   theme(axis.text.x = element_text(angle = 45)) +
+#   scale_colour_viridis(option = "plasma")
 
 # Save estimates
 
 saveRDS(init_forecast_data, paste0(path, "outputs/init_forecast_data_", country, ".rds"))
 write.csv(init_forecast_data, paste0(path, "outputs/init_forecast_data_", country, ".csv"), row.names = FALSE)
 
-#stapmr::WriteToExcel(wb, sheet = "Initiation",
-#                     title = "Probabilities of smoking initiation (never to current smoker)",
-#                     init_forecast_data, startCol = 1, startRow = 1)
-
+stapmr::WriteToExcel(wb, sheet = "Initiation",
+                     title = "Probabilities of smoking initiation (never to current smoker)",
+                     init_forecast_data, startCol = 1, startRow = 1)
 
 ###############################
 # Relapse
 
 # Combine published estimates of long-term relapse with
-
 source("R/prep_relapse.R")
 source("R/relapse_forecast.R")
 source("data-raw/Relapse_Hawkins2010/prep_Hawkins_relapse.R")
@@ -192,6 +194,28 @@ for(i in min_age:17) {
   
 }
 
+
+temp <- relapse_forecast_data[age == 18]
+
+next_age <- min_age
+
+for(i in min_age:17) {
+  
+  relapse_forecast_data <- rbindlist(list(
+    relapse_forecast_data,
+    copy(temp)[ , age := i]), use.names = T)
+  
+}
+
+# ggplot(relapse_forecast_data[year == 2011 & age >= 16 & age <= 89]) +
+#   geom_line(aes(x = age, y = p_relapse, color = imd_quintile), linewidth = 1.2) +
+#   facet_wrap(~ sex) +
+#   labs(x = "Age", y = "Probability of Relapse") +
+#   theme_minimal() +
+#   scale_color_viridis_d(option = "viridis", begin = 0.2, end = 0.9) +
+#   geom_vline(xintercept = 18, linetype = "dashed", color = "grey40", linewidth = 0.8)  +
+#   scale_y_continuous(limits = c(0, NA), breaks = seq(0, 1, 0.05))
+
 # check outputs
 
 # relapse_data_plot <- merge(relapse_by_age_imd_timesincequit, pops, all.x = T, all.y = F, by = c("age", "sex", "imd_quintile"))
@@ -226,16 +250,14 @@ for(i in min_age:17) {
 saveRDS(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".rds"))
 write.csv(relapse_by_age_imd_timesincequit, paste0(path, "outputs/relapse_forecast_data_", country, ".csv"), row.names = FALSE)
 
-#stapmr::WriteToExcel(wb, sheet = "Relapse",
-#                     title = "Probabilities of relapse to smoking (former to current smoker). Added stratification by years since quitting.",
-#                     relapse_by_age_imd_timesincequit, startCol = 1, startRow = 1)
-
+stapmr::WriteToExcel(wb, sheet = "Relapse",
+                     title = "Probabilities of relapse to smoking (former to current smoker). Added stratification by years since quitting.",
+                     relapse_by_age_imd_timesincequit, startCol = 1, startRow = 1)
 
 ###############################
 # Quit
 
 # model trends in current, former and never smoking
-
 source("R/trend_fit.R")
 
 trend_data <- trend_fit(data = survey_data,
@@ -247,21 +269,20 @@ trend_data <- trend_fit(data = survey_data,
                         imd_var = "imd_quintile",
                         weight_var = "wt_int")
 
-trend_data_temp <- melt(trend_data, 
-                        id.vars = c("age", "year", "sex", "imd_quintile", "cohort"),
-                        variable.name = "smk.status", value.name = "proportion")
-
-ggplot(data = trend_data_temp[sex == "Male" & imd_quintile == "5_most_deprived"], aes(x = year, y = age, fill = proportion)) +
-  geom_tile() +
-  scale_fill_viridis_c(option = "turbo") +
-  coord_equal() +
-  theme_minimal() +
-  facet_wrap(~ smk.status)
+# trend_data_temp <- melt(trend_data, 
+#                         id.vars = c("age", "year", "sex", "imd_quintile", "cohort"),
+#                         variable.name = "smk.status", value.name = "proportion")
+# 
+# ggplot(data = trend_data_temp[sex == "Male" & imd_quintile == "5_most_deprived"], aes(x = year, y = age, fill = proportion)) +
+#   geom_tile() +
+#   scale_fill_viridis_c(option = "turbo") +
+#   coord_equal() +
+#   theme_minimal() +
+#   facet_wrap(~ smk.status)
 
 saveRDS(trend_data, paste0(path, "outputs/smoking_trends_", country, ".rds"))
 
 # Estimate the shape of the cohort survivorship functions
-
 source("R/prep_surv.R")
 
 survivorship_data <- prep_surv(
@@ -272,19 +293,18 @@ survivorship_data <- prep_surv(
   min_year = first_year_of_data,
   max_year = last_year_of_data)
 
-ggplot(survivorship_data[sex == "Male" & imd_quintile == "5_most_deprived" & cohort %in% seq(1940, 1990, 10)]) +
-  geom_line(aes(x = age, y = lx, color = factor(cohort), group = cohort), 
-            linewidth = 1.2) +
-  scale_color_viridis_d(option = "viridis") +
-  labs(color = "Cohort Year", 
-       x = "Age", 
-       y = "Survivorship (lx)") +
-  theme_minimal()
+# ggplot(survivorship_data[sex == "Male" & imd_quintile == "5_most_deprived" & cohort %in% seq(1940, 1990, 10)]) +
+#   geom_line(aes(x = age, y = lx, color = factor(cohort), group = cohort), 
+#             linewidth = 1.2) +
+#   scale_color_viridis_d(option = "viridis") +
+#   labs(color = "Cohort Year", 
+#        x = "Age", 
+#        y = "Survivorship (lx)") +
+#   theme_minimal()
 
 saveRDS(survivorship_data, paste0(path, "outputs/survivorship_data_", country, ".rds"))
 
 # Estimate age-specific probabilities of death by smoking status
-
 source("R/smoke_surv.R")
 
 mortality_data <- smoke_surv(
@@ -296,25 +316,24 @@ mortality_data <- smoke_surv(
   min_year = first_year_of_data,
   max_year = last_year_of_data)
 
-mort_data_temp <- melt(mortality_data$data_for_quit_ests, 
-                       id.vars = c("year", "age", "sex", "imd_quintile"), 
-                       value.name = "px", variable.name = "smoker_status")
-
-mort_data_temp[ , cohort := year - age]
-
-ggplot(mort_data_temp[sex == "Male" & imd_quintile == "5_most_deprived" & cohort == 1940]) +
-  geom_line(aes(x = age, y = px, color = smoker_status), linewidth = 1.2) +
-  scale_color_manual(values = c("current_px" = "#d73027",
-                                "former_px" = "#fdae61",
-                                "never_px" = "#4575b4")) + 
-  labs(x = "Age", y = "Probability of Survival") +
-  theme_minimal() +
-  scale_y_continuous(limits = c(NA, 1), breaks = seq(0, 1, 0.05))
+# mort_data_temp <- melt(mortality_data$data_for_quit_ests, 
+#                        id.vars = c("year", "age", "sex", "imd_quintile"), 
+#                        value.name = "px", variable.name = "smoker_status")
+# 
+# mort_data_temp[ , cohort := year - age]
+# 
+# ggplot(mort_data_temp[sex == "Male" & imd_quintile == "5_most_deprived" & cohort == 1940]) +
+#   geom_line(aes(x = age, y = px, color = smoker_status), linewidth = 1.2) +
+#   scale_color_manual(values = c("current_px" = "#d73027",
+#                                 "former_px" = "#fdae61",
+#                                 "never_px" = "#4575b4")) + 
+#   labs(x = "Age", y = "Probability of Survival") +
+#   theme_minimal() +
+#   scale_y_continuous(limits = c(NA, 1), breaks = seq(0, 1, 0.05))
 
 saveRDS(mortality_data, paste0(path, "outputs/mortality_data_", country, ".rds"))
 
 # Calculate quit probabilities
-
 source("R/quit_est.R")
 
 quit_data <- quit_est(
@@ -328,10 +347,20 @@ quit_data <- quit_est(
   min_year = first_year_of_data,
   max_year = last_year_of_data)
 
+# quit_data_temp <- copy(quit_data)
+# 
+# quit_data_temp[ , cohort := year - age]
+# 
+# ggplot(quit_data_temp[cohort == 1982]) +
+#   geom_line(aes(x = age, y = p_quit, color = imd_quintile), linewidth = 1.2) +
+#   facet_wrap(~ sex) +
+#   labs(x = "Age", y = "Probability of Quitting") +
+#   theme_minimal() +
+#   scale_color_viridis_d(option = "viridis", begin = 0.2, end = 0.9)
+
 saveRDS(quit_data, paste0(path, "outputs/quit_data_", country, ".rds"))
 
 # Forecast a continuing trend in quit probabilities
-
 forecast_data <- quit_forecast(
   data = copy(quit_data),
   forecast_var = "p_quit",
@@ -347,13 +376,26 @@ forecast_data <- quit_forecast(
   smooth_rate_dim = smooth_rate_dim_quit,
   k_smooth_age = k_smooth_age_quit)
 
-
 forecast_data <- forecast_data[age >= min_age & age <= max_age]
+
+# quit_data_temp <- copy(forecast_data)
+# 
+# quit_data_temp[ , cohort := year - age]
+# 
+# #ggplot(quit_data_temp[cohort == 1990]) +
+# ggplot(quit_data_temp[year == 2011 & age >= 16 & age <= 89]) +
+#   geom_line(aes(x = age, y = p_quit, color = imd_quintile), linewidth = 1.2) +
+#   facet_wrap(~ sex) +
+#   labs(x = "Age", y = "Probability of Quitting") +
+#   theme_minimal() +
+#   scale_color_viridis_d(option = "viridis", begin = 0.2, end = 0.9) +
+#   geom_vline(xintercept = 18, linetype = "dashed", color = "grey40", linewidth = 0.8)  +
+#   scale_y_continuous(limits = c(0, NA), breaks = seq(0, 1, 0.05))
 
 saveRDS(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".rds"))
 write.csv(forecast_data, paste0(path, "outputs/quit_forecast_data_", country, ".csv"), row.names = FALSE)
 
-
+# Repeat without adjusting the quitting probabilities for initiation
 forecast_data_no_init <- quit_forecast(
   data = copy(quit_data),
   forecast_var = "p_quit_no_init",
@@ -369,16 +411,14 @@ forecast_data_no_init <- quit_forecast(
   smooth_rate_dim = smooth_rate_dim_quit,
   k_smooth_age = k_smooth_age_quit)
 
-
 forecast_data_no_init <- forecast_data_no_init[age >= min_age & age <= max_age]
 
 saveRDS(forecast_data_no_init, paste0(path, "outputs/quit_forecast_data_no_init_", country, ".rds"))
 write.csv(forecast_data_no_init, paste0(path, "outputs/quit_forecast_data_no_init", country, ".csv"), row.names = FALSE)
 
-
-#stapmr::WriteToExcel(wb, sheet = "Quit",
-#                     title = "Probabilities of quitting smoking (current to former smoker).",
-#                     forecast_data, startCol = 1, startRow = 1)
+stapmr::WriteToExcel(wb, sheet = "Quit",
+                     title = "Probabilities of quitting smoking (current to former smoker).",
+                     forecast_data, startCol = 1, startRow = 1)
 
 
 

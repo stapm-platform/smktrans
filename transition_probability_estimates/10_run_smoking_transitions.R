@@ -27,7 +27,7 @@ last_year_of_data <- 2018
 # the earliest year of data on which the forecast is based
 first_year_of_data_forecast <- 2013
 
-current_year <- 2023
+current_year <- 2025
 smokefree_target_year <- 2030
 max_year <- 2100
 min_age <- 12
@@ -104,7 +104,7 @@ openxlsx::writeData(wb, sheet = "Cover sheet", smokefree_target_year + 10, start
 openxlsx::writeData(wb, sheet = "Cover sheet", max_year, startCol = 2, startRow = 34)
 
 # run once to build inputs
-source("transition_probability_estimates/src_england/00_run_smoking_transitions.R")
+#source("transition_probability_estimates/src_england/00_run_smoking_transitions.R")
 
 # Survey data
 survey_data <- readRDS("transition_probability_estimates/src_england/intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds")
