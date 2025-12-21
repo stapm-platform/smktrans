@@ -261,7 +261,10 @@ ggplot(data = trend_data_temp[sex == "Male" & imd_quintile == "5_most_deprived"]
 saveRDS(trend_data, paste0(path, "outputs/smoking_trends_", country, ".rds"))
 
 # Estimate the shape of the cohort survivorship functions
-survivorship_data <- smktrans::prep_surv(
+
+source("R/prep_surv.R")
+
+survivorship_data <- prep_surv(
   mx_data_hmd = hmd_data,
   mx_data_ons = tob_mort_data,
   min_age = min_age,
@@ -269,10 +272,22 @@ survivorship_data <- smktrans::prep_surv(
   min_year = first_year_of_data,
   max_year = last_year_of_data)
 
+ggplot(survivorship_data[sex == "Male" & imd_quintile == "5_most_deprived" & cohort %in% seq(1940, 1990, 10)]) +
+  geom_line(aes(x = age, y = lx, color = factor(cohort), group = cohort), 
+            linewidth = 1.2) +
+  scale_color_viridis_d(option = "viridis") +
+  labs(color = "Cohort Year", 
+       x = "Age", 
+       y = "Survivorship (lx)") +
+  theme_minimal()
+
 saveRDS(survivorship_data, paste0(path, "outputs/survivorship_data_", country, ".rds"))
 
 # Estimate age-specific probabilities of death by smoking status
-mortality_data <- smktrans::smoke_surv(
+
+source("R/smoke_surv.R")
+
+mortality_data <- smoke_surv(
   data = survey_data,
   diseases  = tobalcepi::tob_disease_names,
   mx_data = tob_mort_data_cause,
@@ -281,9 +296,27 @@ mortality_data <- smktrans::smoke_surv(
   min_year = first_year_of_data,
   max_year = last_year_of_data)
 
+mort_data_temp <- melt(mortality_data$data_for_quit_ests, 
+                       id.vars = c("year", "age", "sex", "imd_quintile"), 
+                       value.name = "px", variable.name = "smoker_status")
+
+mort_data_temp[ , cohort := year - age]
+
+ggplot(mort_data_temp[sex == "Male" & imd_quintile == "5_most_deprived" & cohort == 1940]) +
+  geom_line(aes(x = age, y = px, color = smoker_status), linewidth = 1.2) +
+  scale_color_manual(values = c("current_px" = "#d73027",
+                                "former_px" = "#fdae61",
+                                "never_px" = "#4575b4")) + 
+  labs(x = "Age", y = "Probability of Survival") +
+  theme_minimal() +
+  scale_y_continuous(limits = c(NA, 1), breaks = seq(0, 1, 0.05))
+
 saveRDS(mortality_data, paste0(path, "outputs/mortality_data_", country, ".rds"))
 
 # Calculate quit probabilities
+
+source("R/quit_est.R")
+
 quit_data <- quit_est(
   trend_data = trend_data,
   survivorship_data = survivorship_data,
