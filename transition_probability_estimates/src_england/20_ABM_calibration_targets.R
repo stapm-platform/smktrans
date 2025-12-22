@@ -46,6 +46,7 @@ quit_data[ , year_cat := c("2011-2013", "2014-2016", "2017-2019")[findInterval(y
 # Table 3: cross tabulated averages of the annual probabilities of quitting by sex and age category (25-44, 45-64, 65-74) 
 # - corresponding to the average across calendar years 2011 - 2016.
 t3 <- quit_data[year %in% 2011:2016, .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), by = c("age_cat", "sex")]
+t3[ , year_cat := "2011-2016"]
 
 # Table 4: cross tabulated averages of the annual probabilities of quitting by calendar year categories 
 # (2011 - 2013, 2014 - 2016, 2017 - 2019) and IMD quintile
@@ -54,6 +55,7 @@ t4 <- quit_data[year %in% 2011:2016, .(p_quit = mean(p_quit), p_quit_var = mean(
 # Table 5: cross tabulated averages of the annual probabilities of quitting by sex and age category (25-44, 45-64, 65-74) 
 # - corresponding to the average across calendar years 2017 - 2019.
 t5 <- quit_data[year %in% 2017:2019, .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), by = c("age_cat", "sex")]
+t5[ , year_cat := "2017:2019"]
 
 # Table 6: annual probabilities of quitting by IMD quintile for calendar years 2017 - 2019.
 t6 <- quit_data[year %in% 2017:2019, .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), by = c("year_cat", "imd_quintile")]
@@ -71,5 +73,5 @@ setnames(data_t, c("year_cat", "age_cat", "sex", "imd_quintile"), c("arrivalYear
 
 data_t <- data_t[ , .(arrivalYearCategorical, pIMDquintile, pGender, pAgeCategorical, p_quit, p_quit_var)]
 
-write.csv(data_t, "transition_probability_estimates/src_england/outputs/quit_probability_calibration_targets_20251222_v1.csv", row.names = F)
+write.csv(data_t, "transition_probability_estimates/src_england/outputs/quit_probability_calibration_targets_20251222_v2.csv", row.names = F)
 
