@@ -174,13 +174,13 @@ quit_data[ , p_quit_median := apply(quit_mat, 1, quantile, 0.5)]
 quit_data[ , p_quit_high := apply(quit_mat, 1, quantile, 0.975)]
 quit_data[ , p_quit_var := apply(quit_mat, 1, var_func)]
 
-#stapmr::WriteToExcel(wb, sheet = "Quit",
-#                     title = "Probabilities of quitting smoking (current to former smoker).",
-#                     quit_data, startCol = 1, startRow = 1)
+stapmr::WriteToExcel(wb, sheet = "Quit",
+                     title = "Probabilities of quitting smoking (current to former smoker).",
+                     quit_data, startCol = 1, startRow = 1)
 
 saveRDS(quit_data, paste0(path, "outputs/quit_data_", country, "_uncertainty.rds"))
 
-rm(quit_mat, quit_data)#
+rm(quit_mat, quit_data)
 gc()
 
 
