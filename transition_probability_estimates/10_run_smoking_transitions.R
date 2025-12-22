@@ -74,7 +74,7 @@ kn <- 20
 # e.g. the expected correlation of uncertainty between the initiation probability at age 20 and age 21
 # We might expect that if the estimate at age 20 is high, then the estimate at age 21 will also be high
 # so set the level of correlation high but not perfect
-kR <- 0.95
+kR <- 0.9
 
 # Number of uncertainty samples
 # ideally this would be set at 10,000 but that would take ages to run in the current setup
