@@ -1,6 +1,33 @@
 
 # The aim of this code is to produce the calibration targets for calibrating the ABM probabilities of quitting smoking
 
+# Quitting
+quit_data <- readRDS("transition_probability_estimates/src_england/outputs/quit_data_england_uncertainty.rds")
+quit_data <- quit_data[age >= 16 & age <= 89]
+quit_data <- quit_data[year >= 2011 & year <= 2040, .(year, age, sex, imd_quintile, p_quit)]
+setorderv(quit_data, c("year", "age", "sex", "imd_quintile"), c(1, 1, 1, 1))
+setnames(quit_data, c("year", "age", "sex", "imd_quintile"), c("arrivalYear", "pAge", "pGender", "pIMDquintile"))
+write.csv(quit_data, "transition_probability_estimates/src_england/outputs/quit_probabilities_20251222_v1.csv", row.names = F)
+
+# Initiation
+init_data <- readRDS("transition_probability_estimates/src_england/outputs/init_data_england_uncertainty.rds")
+init_data <- init_data[age >= 16 & age <= 30]
+init_data <- init_data[year >= 2011 & year <= 2040, .(year, age, sex, imd_quintile, p_start)]
+setorderv(init_data, c("year", "age", "sex", "imd_quintile"), c(1, 1, 1, 1))
+setnames(init_data, c("year", "age", "sex", "imd_quintile"), c("arrivalYear", "pAge", "pGender", "pIMDquintile"))
+write.csv(init_data, "transition_probability_estimates/src_england/outputs/init_probabilities_20251222_v1.csv", row.names = F)
+
+# Relapse
+relapse_data <- readRDS("transition_probability_estimates/src_england/outputs/relapse_data_england_uncertainty.rds")
+relapse_data <- relapse_data[age >= 16 & age <= 89]
+relapse_data <- relapse_data[year >= 2011 & year <= 2040, .(year, age, sex, imd_quintile, time_since_quit, p_relapse)]
+setorderv(relapse_data, c("year", "age", "sex", "imd_quintile", "time_since_quit"), c(1, 1, 1, 1, 1))
+setnames(relapse_data, c("year", "age", "sex", "imd_quintile", "time_since_quit"), c("arrivalYear", "pAge", "pGender", "pIMDquintile", "bYearsSinceQuit"))
+write.csv(relapse_data, "transition_probability_estimates/src_england/outputs/relapse_probabilities_20251222_v1.csv", row.names = F)
+
+##############################
+# Quit calibration targets
+
 # Read the estimated quit probabilities with uncertainty
 quit_data <- readRDS("transition_probability_estimates/src_england/outputs/quit_data_england_uncertainty.rds")
 
@@ -40,7 +67,9 @@ data_t[is.na(age_cat), age_cat := "All"]
 data_t[is.na(sex), sex := "All"]
 data_t[is.na(imd_quintile), imd_quintile := "All"]
 
-write.csv(data_t, "transition_probability_estimates/src_england/outputs/quit_probability_calibration_targets_20251222_v1.csv")
+setnames(data_t, c("year_cat", "age_cat", "sex", "imd_quintile"), c("arrivalYearCategorical", "pAgeCategorical", "pGender", "pIMDquintile"))
 
+data_t <- data_t[ , .(arrivalYearCategorical, pIMDquintile, pGender, pAgeCategorical, p_quit, p_quit_var)]
 
+write.csv(data_t, "transition_probability_estimates/src_england/outputs/quit_probability_calibration_targets_20251222_v1.csv", row.names = F)
 

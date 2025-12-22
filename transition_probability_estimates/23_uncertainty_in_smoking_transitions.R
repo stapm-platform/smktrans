@@ -114,6 +114,7 @@ init_mat <- genUncertainty(init_data, "p_start", n = kn, n_samp = kn_samp, R = k
 init_data[ , p_start_low := apply(init_mat, 1, quantile, 0.025)]
 init_data[ , p_start_median := apply(init_mat, 1, quantile, 0.5)]
 init_data[ , p_start_high := apply(init_mat, 1, quantile, 0.975)]
+init_data[ , p_start_var := apply(init_mat, 1, var_func)]
 
 stapmr::WriteToExcel(wb, sheet = "Initiation",
                      title = "Probabilities of smoking initiation (never to current smoker)",
