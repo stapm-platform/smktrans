@@ -27,7 +27,7 @@ packages <- c("DiagrammeR", "data.table", "ggplot2", "devtools",
               "survival", "codetools", "nlme", "tibble", "ggthemes",    
               "foreign", "shiny", "tidyverse", "gt", "extrafont", "forcats", 
               "snakecase", "paletteer", "scales", "ggtext", "car",
-              "plotly", "gganimate", "ggpubr", "seecolor", "survey")
+              "plotly", "gganimate", "ggpubr", "seecolor", "survey", "distill")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -81,10 +81,10 @@ devtools::install_git(
   ref = versions[4],
   build_vignettes = FALSE, quiet = FALSE)
 
-devtools::install_git(
-  "https://github.com/stapm/smktrans.git", 
-  ref = versions[5],
-  build_vignettes = FALSE, quiet = FALSE)
+#devtools::install_git(
+#  "https://github.com/stapm/smktrans.git", 
+#  ref = versions[5],
+#  build_vignettes = FALSE, quiet = FALSE)
 
 devtools::install_github(
   "https://github.com/stapm-platform/toolkitr.git",
