@@ -7,8 +7,8 @@
 ^public$
 ^pkgdown$
 ^LICENSE\.md$
-^\.github
+^\.github$
 ^\.gitlab-ci\.yml$
 ^examples$
-README.Rmd
-02_install_packages.R
+^README\.Rmd$
+^02_install_packages\.R$

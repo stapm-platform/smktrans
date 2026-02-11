@@ -18,7 +18,7 @@ dev/
 */*/*/*.sav
 */*/*/*/*.sav
 
-
 00_R_env/_R_packages*
 05_input*
 
+public/
