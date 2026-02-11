@@ -1,46 +1,39 @@
-destination: public
-home:
-  title: Smoking Initiation and Quit Probabilities from Cross-sectional Survey Data
-url: https://stapm.gitlab.io/r-packages/smktrans
+url: https://stapm-platform.github.io/smktrans
 template:
+  bootstrap: 5
+  bootswatch: flatly
   params:
-    bootswatch: flatly
     ganalytics: UA-167990045-1
+
 authors:
   Duncan Gillespie:
-    href: https://www.sheffield.ac.uk/scharr/sections/heds/staff/gillespie_d
+    href: https://sheffield.ac.uk/smph/duncan-gillespie
   Alan Brennan:
-    href: https://www.sheffield.ac.uk/scharr/sections/heds/staff/brennan_a
+    href: https://sheffield.ac.uk/smph/people/academic/population-health/alan-brennan
 
 navbar:
   structure:
     left:  [home, intro, reference, articles]
-    right: [github, gitlab, software]
+    right: [github, software]
   components:
     home: ~
     intro:
-     text: Get started
-     href: articles/smktrans.html
+      text: Get started
+      href: articles/smktrans.html
     reference:
-     text: Functions
-     href: reference/index.html
+      text: Functions
+      href: reference/index.html
     articles:
-     text: Technical documentation
-     menu:
+      text: Technical documentation
+      menu:
       - text: Estimation workflow
         href: articles/smk_trans_prob_estimation.html
       - text: "Methods notes: Smoking state transition probability estimation"
         href: articles/smoking_transition_probabilities_modelling_report.pdf
     github:
       icon: fab fa-github fa-lg
-      href: https://github.com/STAPM/smktrans
-    gitlab:
-      icon: fab fa-gitlab fa-lg
-      href: https://gitlab.com/stapm/r-packages/smktrans
-    software:
-      icon: fa-code
-      href: https://stapm.gitlab.io/software.html
-
+      href: https://github.com/stapm-platform/smktrans
+      aria-label: GitHub
 
 reference:
 - title: Smoking trends

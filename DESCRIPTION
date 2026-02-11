@@ -30,6 +30,8 @@ Authors@R:
 Maintainer: Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
 Description: Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
 License: CC BY 4.0
+URL: https://github.com/stapm-platform/smktrans, https://stapm-platform.github.io/smktrans
+BugReports: https://github.com/stapm-platform/smktrans/issues
 Encoding: UTF-8
 LazyData: true
 Imports: 
@@ -68,6 +70,7 @@ Imports:
     ggthemes
 RdMacros: Rdpack, lifecycle
 Suggests: 
+    distill,
     hseclean (>= 1.11.2),
     mort.tools (>= 1.6.0),
     tobalcepi (>= 1.6.2)
@@ -76,6 +79,6 @@ Depends:
     R (>= 3.5)
 RoxygenNote: 7.2.3
 Remotes: 
-    STAPM/hseclean,
-    STAPM/tobalcepi,
-    STAPM/mort.tools
+    stapm-platform/hseclean,
+    stapm-platform/tobalcepi,
+    stapm-platform/mort.tools
