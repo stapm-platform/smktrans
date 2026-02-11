@@ -8,62 +8,28 @@ ever_smoke(
   data,
   time_horizon = 2100,
   num_bins = 7,
-  model = c("model1", "model2", "model3", "model4", "model5")[1],
+  model = "model2",
   min_age = 15,
-  min_year = c(2003, 2008)[1]
+  min_year = 2003,
+  age_cats = c("25-34")
 )
 }
 \arguments{
 \item{data}{Data table of individual characteristics.}
 
-\item{time_horizon}{Integer - the last year for which to generate
-predictions for ever-smoking at the index age.}
+\item{time_horizon}{Integer - the last year for projection.}
 
-\item{num_bins}{Integer - the number of bins to create from the continuous period (year) variable. 
-Wider bins = fewer data points from which to estimate the period trend, but less random uncertainty on each data point.}
+\item{num_bins}{Integer - bins for the period trend to reduce noise.}
 
-\item{model}{Character - c("model1", "model2", "model3", "model4"). 
-Model 1 - two-way interactions of the year trend with both sex and IMD quintile. 
-Model 2 - two-way interaction of the year trend with sex only.
-Model 3 - two-way interaction of the year trend with IMD quintile only.
-Model 4 - no two-way interactions of the year trend with either sex or IMD quintile.}
+\item{model}{Character - Model specification (interaction terms).}
 
-\item{min_age}{Integer - the youngest age for which a prediction of the 
-progression of ever-smoking in a cohort should be generated. Defaults to 15 years.}
+\item{min_age}{Integer - youngest age for prediction.}
 
-\item{min_year}{Integer - the first year of survey data. For England 2003 
-and for Scotland 2008.}
-}
-\value{
-Returns two data tables:
-\itemize{
-\item "data_points", the proportions of ever-smokers at age 25 observed in the survey data;
-\item "predicted_values", the model predictions up to the time horizon.
-}
+\item{min_year}{Integer - first year of survey data.}
+
+\item{age_cats}{Character vector - age category for reference (e.g., "25-34").}
 }
 \description{
-Calculates the expected proportion of ever-smokers, and
-fits a linear trend over time to the proportion of people who have ever smoked in the
-age category 25-34 years.
-}
-\details{
-Uses the 'survey' package to fit a model to the trends in
-ever-smoking that accounts for survey sampling
-error and survey design.
-
-The linear model is fitted to a binary response variable, 1 = ever smoker,
-0 = never smoker and estimates
-variation in the trend
-by sex and quintiles of the Index of Multiple Deprivation.
-The fitted model is then used to predict /
-extrapolate the trend up to the year specified by 'time horizon'.
-}
-\examples{
-
-\dontrun{
-
-test_data_trend <- ever_smoke(data = hse_data)
-
-}
-
+Fits a survey-weighted GLM (quasibinomial) to the trend in ever-smoking 
+at age 25-34. This provides the "target" level for the Holford adjustment.
 }

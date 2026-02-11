@@ -13,49 +13,19 @@ prep_relapse(
 )
 }
 \arguments{
-\item{data}{Data table containing individual characteristics from the population survey data.}
+\item{data}{Data table of individual survey data.}
 
-\item{hawkins_relapse}{Data table containing a tidied version of the estimates of
-long-term smoking relapse probability
- from \insertCite{hawkins2010long;textual}{smktrans}.}
+\item{hawkins_relapse}{Data table of Hawkins et al. odds ratios/probs.}
 
-\item{lowest_year}{integer - lowest year of data available (for England this is 2003
-and for Scotland this is 2008). Default is 2003.}
+\item{lowest_year}{Integer.}
 
-\item{highest_year}{integer - highest year of data available.}
+\item{highest_year}{Integer.}
 
-\item{youngest_age}{integer - youngest age in data (for England 11, for
-Scotland 16).}
-}
-\value{
-Returns two data tables: First, with relapse probabilities stratified by year,
-age, IMD quintile and time since quit
-(for use in the STAPM simulation);
- Second, with relapse probabilities stratified by just year, age and IMD
- quintile (for use in transition prob estimation).
+\item{youngest_age}{Integer.}
 }
 \description{
-Combines published estimates of long-term relapse with the population survey data
-to arrive at the expected values for relapse probabilities within defined subgroups.
-}
-\details{
-This function takes the estimates of relapse to smoking from 
-\insertCite{hawkins2010long;textual}{smktrans}
-and processes them into probabilities of relapse to smoking by the significant
-variables from the above paper (age, time since quit, degree or not, mental health condition or not,
-married or not). Note that physical health / gp visits was also significant but not included here
-partly because the surveys do not have the right variables to do so.
-Once we have mapped relapse probabilities onto the survey data by the above variables,
- we can then calculate the variation in expected probability of relapse by age, sex, time since quit and IMD quintile.
-}
-\examples{
-\dontrun{
-test_data <- prep_relapse(
-  data = hse_data,
-  hawkins_relapse = smktrans::hawkins_relapse
-)
-}
-}
-\references{
-\insertRef{hawkins2010long}{smktrans}
+Combines published estimates of long-term relapse (Hawkins 2010) with 
+population survey data. It maps these probabilities onto the survey population's 
+demographic structure (education, mental health, etc.) to derive 
+aggregate relapse rates by Age, Sex, IMD, and Time Since Quit.
 }

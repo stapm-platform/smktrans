@@ -1,55 +1,34 @@
 #' Forecast probabilities of smoking initiation, quitting and relapse
 #'
-#' Forecasts the period trends in the probabilities of smoking initiation, quitting and relapse
-#' by age, sex and IMD quintile. This function was designed originally to forecast just 
-#' the probabilities of quitting but has since been extended to forecast initiation and relapse 
-#' probabilities too.
+#' @description
+#' Forecasts trends in transition probabilities using a Lee-Carter style 
+#' Singular Value Decomposition (SVD) model.
 #'
-#' The forecast is based on applying a Singular value decomposition (SVD)
-#' to the logit transformed matrix of quit probabilities by
-#' age and year for each subgroup.
+#' @details
+#' The model assumes the logit of the probability can be decomposed into:
+#' Logit(P_xt) = Alpha_x + Beta_x * Kappa_t
+#' Where:
+#' - Alpha_x: Average age profile
+#' - Kappa_t: Time trend index
+#' - Beta_x: Sensitivity of each age to the time trend
 #'
-#' @param data Data table containing the probabilities to be forecast.
-#' @param forecast_var Character - the name of the probability variable to be forecast.
-#' @param forecast_type Character - whether to apply the estimated 
-#' rates of proportional change ("continuing")
-#' or to keep the forecast variable constant at its last observed value ("stationary").
-#' @param cont_limit Integer - the year at which a continuing forecast becomes stationary.
-#' @param oldest_year Integer - the oldest year of data we have. Default is set to 2003 for England. 
-#' @param youngest_age Integer - the youngest age we have in the data. 
-#' Default is set to 11 for England.
-#' @param oldest_age Integer - the oldest age we have in the data - set to 88 for quitting and relapse 
-#' and 30 for initiation.
-#' @param age_cont_limit Integer - the age after which the forecast transition probabilities 
-#' for a year, sex and IMD quintile are assumed not to change.
-#' @param first_year Integer - the earliest year of data on which the forecast is based.
-#' @param jump_off_year Integer - the last year of data.
-#' @param time_horizon Integer - the last year of the forecast period.
-#' @param smooth_rate_dim Numeric vector length 2. The dimensions of the 2d window used to smooth trends 
-#' in the rates by age and year. (age, year), Defaults to c(3, 3). Must be odd numbers.  
-#' @param k_smooth_age Integer - the degree of smoothing to apply to the age pattern of change (rotation). 
-#' If zero, then no smoothing is applied.
-#' 
-#' @importFrom data.table copy := setDT melt rbindlist dcast
-#' 
-#' @return Returns a data.table containing the observed and forecast data.
+#' @param data Data table with input probabilities.
+#' @param forecast_var Character - variable to forecast.
+#' @param forecast_type "continuing" (linear trend) or "stationary" (constant).
+#' @param cont_limit Integer - year where forecast becomes stationary.
+#' @param oldest_year Integer - start of historical data.
+#' @param youngest_age Integer - min age.
+#' @param oldest_age Integer - max age.
+#' @param first_year Integer - start year for trend fitting.
+#' @param jump_off_year Integer - end year of historical data.
+#' @param time_horizon Integer - end year of forecast.
+#' @param smooth_rate_dim Vector - dimensions for raster smoothing (c(3,3)).
+#' @param k_smooth_age Integer - knots for smoothing age component.
+#' @importFrom data.table copy := setDT dcast melt rbindlist
+#' @importFrom raster raster as.matrix focal
+#' @importFrom VGAM logitlink
+#' @importFrom mgcv gam
 #' @export
-#'
-#' @examples
-#'
-#' \dontrun{
-#'
-#' forecast_data <- quit_forecast(
-#'   data = copy(quit_data),
-#'   forecast_var = "quit_prob",
-#'   forecast_type = "continuing",
-#'   first_year = 2010,
-#'   jump_off_year = 2015,
-#'   time_horizon = 2030
-#' )
-#'
-#' }
-#'
 quit_forecast <- function(
     data,
     forecast_var,
@@ -66,202 +45,164 @@ quit_forecast <- function(
     k_smooth_age = 3
 ) {
   
-  # The ages and years
+  forecast_type <- match.arg(forecast_type)
   
-  ages1 <- youngest_age:oldest_age
-  ages2 <- youngest_age:age_cont_limit
+  # Define Ranges
+  ages_model <- youngest_age:age_cont_limit
+  years_hist <- oldest_year:jump_off_year
+  years_proj <- (jump_off_year + 1):time_horizon
   
-  years <- oldest_year:jump_off_year
-  proj_years <- (jump_off_year + 1):time_horizon
+  # Filter Data
+  dt <- copy(data[age %in% ages_model & year <= jump_off_year])
   
-  n <- length(ages2)
-  m <- length(years)
-  
-  data <- copy(data[age %in% ages2 & year <= jump_off_year])
-  
-  
-  domain <- data.frame(expand.grid(
-    year = years,
-    age = ages2,
+  # Create full grid to ensure no missing cells
+  domain <- data.table(expand.grid(
+    year = years_hist,
+    age = ages_model,
     sex = c("Male", "Female"),
     imd_quintile = c("1_least_deprived", "2", "3", "4", "5_most_deprived")
   ))
   
-  setDT(domain)
+  dt <- merge(domain, dt, by = c("year", "age", "sex", "imd_quintile"), all.x = TRUE)
   
-  data <- merge(domain, data, by = c("year", "age", "sex", "imd_quintile"), all.x = T, all.y = F)
-  
+  # Storage for results
+  results_list <- list()
   
   # Loop through subgroups
-  
-  counter <- 1
-  
+  # (Loop is acceptable here as models are independent and N=10)
   for(sex_i in c("Male", "Female")) {
-    
-    #sex_i <- "Male"
-    cat(sex_i, "\n")
-    
-    for(imd_quintile_i in c("1_least_deprived", "2", "3", "4", "5_most_deprived")) {
+    for(imd_i in c("1_least_deprived", "2", "3", "4", "5_most_deprived")) {
       
-      #imd_quintile_i <- "2"
-      cat("\t", imd_quintile_i, "\n")
+      subdata <- dt[sex == sex_i & imd_quintile == imd_i]
       
-      # Select the data for one subgroup
+      # 1. Matrix Prep
+      # Cast to Wide: Rows=Age, Cols=Year
+      mat_wide <- dcast(subdata, age ~ year, value.var = forecast_var)
+      mat_vals <- as.matrix(mat_wide[, -1]) # Drop age col
       
-      subdata <- copy(data[sex == sex_i & imd_quintile == imd_quintile_i])
+      # 2. Clamping and Smoothing
+      # Clamp 0/1 to avoid Inf in logit
+      mat_vals[mat_vals <= 0] <- 1e-6
+      mat_vals[mat_vals >= 1] <- 1 - 1e-6
+      mat_vals[is.na(mat_vals)] <- 1e-6
       
-      subdata[ , `:=`(sex = NULL, imd_quintile = NULL)]
+      # Raster Smoothing (Reduces survey noise)
+      r <- raster::raster(mat_vals)
+      mat_smooth <- raster::as.matrix(raster::focal(r, matrix(1, smooth_rate_dim[1], smooth_rate_dim[2]), mean, pad = TRUE, padValue = NA, na.rm = TRUE))
       
-      # Reshape to wide form with years as columns
-      # then make into a matrix
+      # Handle edges/NAs from smoothing
+      mat_smooth[is.na(mat_smooth)] <- 1e-6
       
-      qdat <- dcast(subdata, age ~ year, value.var = forecast_var)
+      # 3. SVD Decomposition (Lee-Carter)
+      # Transpose so Rows=Year, Cols=Age for standard SVD processing
+      # (Note: Original code transposed here, sticking to that logic)
+      mat_t <- t(mat_smooth) 
       
-      qdat[ , age := NULL]
+      # Logit Transform
+      logit_mat <- VGAM::logitlink(mat_t)
       
-      qdat <- as.matrix(qdat)
+      # Center (Alpha_x)
+      alpha_x <- colMeans(logit_mat, na.rm = TRUE)
+      centered_mat <- sweep(logit_mat, 2, alpha_x, "-")
       
-      # Transpose matrix data and get deaths and logrates
-      # replace extreme quit probabilities with NA - then fill with approx trend
-      # then logit transform
+      # SVD
+      svd_res <- svd(centered_mat)
       
-      qdat[qdat == 0] <- NA
-      #qdat[qdat > .4] <- .4
-      qdat[qdat > 1] <- 1
+      # Components
+      # k_t (Time Index)
+      # b_x (Age Sensitivity)
+      sum_v <- sum(svd_res$v[, 1])
+      k_t <- svd_res$d[1] * svd_res$u[, 1] * sum_v
+      b_x <- svd_res$v[, 1] / sum_v
       
-      # smooth values in sliding a 3x3 window
-      r <- raster::raster(qdat) # convert to rasterLayer
-      qdat <- raster::as.matrix(raster::focal(r, matrix(1, smooth_rate_dim[1], smooth_rate_dim[2]), mean, pad = T, padValue = NA, na.rm = T))
-      
-      # Fill any remaining missing values
-      
-      # and remove 0s and 1s from the data because they don't play well with the logit link
-      
-      qdat[is.na(qdat)] <- 0
-      qdat[qdat == 1] <- 0
-      
-      for(i in 1:n) {
-        qdat[i,] <- fill.zero(qdat[i,])
+      # Smooth Age Component (b_x)
+      if(k_smooth_age > 0) {
+        b_x <- predict(mgcv::gam(b_x ~ s(I(1:length(b_x)), k = k_smooth_age)))
+        b_x <- b_x / sum(b_x) # Re-normalize
       }
       
-      # Transpose and transform
-      
-      qdat <- t(qdat)
-      
-      qtrans <- VGAM::logitlink(qdat)
-      
-      # Do SVD
-      age_means <- apply(qtrans, 2, mean, na.rm = TRUE) # age_means is mean of qtrans by column
-      cqtrans <- sweep(qtrans, 2 , age_means) # logit quit probs (with age_means subtracted) (dimensions m*n)
-      svd_qdat <- svd(cqtrans)
-      
-      # Extract first principal component
-      sumv <- sum(svd_qdat$v[ , 1])
-      kt <- svd_qdat$d[1] * svd_qdat$u[ , 1] * sumv
-      
-      bx <- svd_qdat$v[ , 1] / sumv
-      
-      if(k_smooth_age == 0) {
-        
-        bx_fit <- bx
-        
-      } else {
-        
-        bx_fit <- stats::predict(mgcv::gam(bx ~ s(I(1:length(bx)), k = k_smooth_age)))
-        
-      }
-      
-      bx_fit <- bx_fit / sum(bx_fit)
-      
+      # 4. Forecast Time Component (k_t)
+      # Match years to k_t
+      kt_df <- data.frame(kt = k_t, year = years_hist)
       
       if(forecast_type == "continuing") {
+        # Linear trend on k_t
+        model_data <- kt_df[kt_df$year >= first_year, ]
+        m_trend <- lm(kt ~ year, data = model_data)
         
-        # Fit a linear model through the trend
-        kt_data <- data.frame(kt, years)
+        preds <- predict(m_trend, newdata = data.frame(year = years_proj))
         
-        m1 <- stats::lm(kt ~ years, data = kt_data[kt_data$years >= first_year, ])
-        newdata <- data.frame(years = proj_years)
-        newdata$preds <- stats::predict(m1, newdata = newdata)
+        # Handle Stationary Limit
+        if(!is.null(cont_limit)) {
+          limit_val <- preds[years_proj == cont_limit]
+          # If limit year not in projection, take last
+          if(length(limit_val) == 0) limit_val <- tail(preds, 1)
+          
+          preds[years_proj > cont_limit] <- limit_val
+        }
+        kt_proj <- preds
         
-        #x <- kt_data[kt_data$years >= first_year, ]$kt
-        #m1 <- forecast::auto.arima(x)
-        #f1 <- forecast::forecast(m1, h = length(proj_years))
-        #newdata$preds <- as.vector(f1$mean)
-        
-        kval <- newdata$preds[newdata$years == cont_limit]
-        newdata <- newdata[newdata$years <= cont_limit, ]
-        kt_proj <- c(kt, newdata$preds, rep(kval, time_horizon - cont_limit))
-        #kt_proj <- c(kt, newdata$preds)
-        
-      }
-      
-      if(forecast_type == "stationary") {
-        
-        # Hold last value constant
-        kt_proj <- c(kt, rep(kt[length(kt)], length(proj_years)))
-        
-      }
-      
-      # Estimate probabilities from forecast fitted values
-      
-      cqtransfit <- outer(kt_proj, bx_fit)
-      qtransfit <- sweep(cqtransfit, 2, age_means, "+")
-      fit <- boot::inv.logit(qtransfit)
-      
-      colnames(fit) <- ages2
-      rownames(fit) <- c(years, proj_years)
-      
-      fit <- as.data.frame(fit)
-      fit$year <- c(years, proj_years)
-      
-      setDT(fit)
-      
-      fit <- melt(fit, id.vars = "year", variable.name = "age", value.name = forecast_var)
-      
-      fit[ , age := as.numeric(as.vector(age))]
-      fit[ , sex := as.character(sex_i)]
-      fit[ , imd_quintile := as.character(imd_quintile_i)]
-      
-      if(counter == 1) {
-        data_proj <- copy(fit)
       } else {
-        data_proj <- rbindlist(list(data_proj, copy(fit)), use.names = T)
+        # Stationary: Hold last value
+        kt_proj <- rep(tail(k_t, 1), length(years_proj))
       }
       
-      counter <- counter + 1
+      # Combined Time Vector
+      kt_full <- c(k_t, kt_proj)
+      years_full <- c(years_hist, years_proj)
+      
+      # 5. Reconstruct Rates
+      # Logit = Alpha + b_x * k_t
+      recon_logit <- outer(kt_full, b_x)
+      recon_logit <- sweep(recon_logit, 2, alpha_x, "+")
+      
+      # Inverse Logit
+      recon_prob <- boot::inv.logit(recon_logit)
+      
+      # 6. Format Output
+      colnames(recon_prob) <- ages_model
+      out_df <- as.data.frame(recon_prob)
+      out_df$year <- years_full
+      
+      setDT(out_df)
+      out_long <- melt(out_df, id.vars = "year", variable.name = "age", value.name = forecast_var)
+      
+      out_long[, age := as.numeric(as.character(age))]
+      out_long[, sex := sex_i]
+      out_long[, imd_quintile := imd_i]
+      
+      results_list[[paste(sex_i, imd_i)]] <- out_long
     }
   }
   
-  data_proj[get(forecast_var) < 0, (forecast_var) := 0]
-  data_proj[get(forecast_var) > 1, (forecast_var) := 1]
+  final_dt <- rbindlist(results_list)
   
-  # duplicate estimates for age_cont_limit up to oldest_age
+  # Final Safety Clamp
+  final_dt[get(forecast_var) < 0, (forecast_var) := 0]
+  final_dt[get(forecast_var) > 1, (forecast_var) := 1]
   
-  domain <- data.frame(expand.grid(
-    year = union(years, proj_years),
-    age = ages1,
+  # Fill older ages (constant assumption beyond age_cont_limit)
+  # Create full domain including oldest_age
+  full_domain <- data.table(expand.grid(
+    year = unique(final_dt$year),
+    age = youngest_age:oldest_age,
     sex = c("Male", "Female"),
     imd_quintile = c("1_least_deprived", "2", "3", "4", "5_most_deprived")
   ))
   
-  setDT(domain)
+  full_domain <- merge(full_domain, final_dt, by = c("year", "age", "sex", "imd_quintile"), all.x = TRUE)
   
-  domain <- merge(domain, data_proj, by = c("year", "age", "sex", "imd_quintile"), all.x = T, all.y = F)
+  # LOCF for older ages
+  full_domain[, temp_lim := get(forecast_var)[age == age_cont_limit], by = .(year, sex, imd_quintile)]
+  full_domain[age > age_cont_limit, (forecast_var) := temp_lim]
+  full_domain[, temp_lim := NULL]
   
-  domain[ , temp := get(forecast_var)[age == age_cont_limit], by = c("year", "sex", "imd_quintile")]
-  
-  domain[age > age_cont_limit, (forecast_var) := temp]
-  
-  domain[ , temp := NULL]
-  
-  
-  return(domain[])
+  return(full_domain[])
 }
-
 
 #' @export
 fill.zero <- function(x, method = "constant") {
-  #x <- qdat[1,]
+  # Helper for imputation if needed
   tt <- 1:length(x)
   zeros <- abs(x) < 1e-9
   xx <- x[!zeros]

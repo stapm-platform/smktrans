@@ -143,8 +143,8 @@ adjustment.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Adjust and forecast</span></span>
 <span><span class="va">init_data_adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/init_adj.html">init_adj</a></span><span class="op">(</span></span>
-<span>  init_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">init_data_raw</span><span class="op">)</span>,</span>
-<span>  ever_smoke_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">ever_smoke_data</span><span class="op">$</span><span class="va">predicted_values</span><span class="op">)</span>,</span>
+<span>  init_data <span class="op">=</span> <span class="fu">copy</span><span class="op">(</span><span class="va">init_data_raw</span><span class="op">)</span>,</span>
+<span>  ever_smoke_data <span class="op">=</span> <span class="fu">copy</span><span class="op">(</span><span class="va">ever_smoke_data</span><span class="op">$</span><span class="va">predicted_values</span><span class="op">)</span>,</span>
 <span>  ref_age <span class="op">=</span> <span class="fl">30</span>,</span>
 <span>  cohorts <span class="op">=</span> <span class="fl">1971</span><span class="op">:</span><span class="fl">2100</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="fl">2001</span>, period_end <span class="op">=</span> <span class="fl">2016</span><span class="op">)</span></span></code></pre></div>
@@ -152,7 +152,7 @@ adjustment.</p>
 convert the probabilities of ever-smoking (the cumulative density
 function) into the probabilities of initiating smoking at each age.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">smk_init_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/p_dense.html">p_dense</a></span><span class="op">(</span>data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">init_data_adj</span><span class="op">)</span>, cum_func_var <span class="op">=</span> <span class="st">"p_ever_smoker_adj"</span>,</span>
+<code class="sourceCode R"><span><span class="va">smk_init_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/p_dense.html">p_dense</a></span><span class="op">(</span>data <span class="op">=</span> <span class="fu">copy</span><span class="op">(</span><span class="va">init_data_adj</span><span class="op">)</span>, cum_func_var <span class="op">=</span> <span class="st">"p_ever_smoker_adj"</span>,</span>
 <span>                     strat_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cohort"</span>, <span class="st">"sex"</span>, <span class="st">"imd_quintile"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>For our modelling of smoking dynamics, we want initiation
 probabilities for ages up to 30 years (after which we assume no new
@@ -407,7 +407,7 @@ play with the forecast scenario, but this might be more easily done
 outside of the function).</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">forecast_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/quit_forecast.html">quit_forecast</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">quit_data</span><span class="op">)</span>,</span>
+<span>  data <span class="op">=</span> <span class="fu">copy</span><span class="op">(</span><span class="va">quit_data</span><span class="op">)</span>,</span>
 <span>  forecast_var <span class="op">=</span> <span class="st">"p_quit"</span>,</span>
 <span>  forecast_type <span class="op">=</span> <span class="st">"continuing"</span>, <span class="co"># continuing or stationary</span></span>
 <span>  cont_limit <span class="op">=</span> <span class="fl">2030</span>, <span class="co"># the year at which the forecast becomes stationary</span></span>

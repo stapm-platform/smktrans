@@ -2,7 +2,7 @@
 % Please edit documentation in R/quit_est.R
 \name{quit_est}
 \alias{quit_est}
-\title{Estimate smoking quit probabilities}
+\title{Estimate smoking quit probabilities (The Flow Equation)}
 \usage{
 quit_est(
   trend_data,
@@ -17,117 +17,24 @@ quit_est(
 )
 }
 \arguments{
-\item{trend_data}{Data table containing the statistically model trends in
-current, former and never smoking
-The output of \code{trend_fit()}.}
+\item{trend_data}{Output of trend_fit().}
 
-\item{survivorship_data}{Data table containing estimates of cohort survivorship by
-age, sex and IMD quintile. The output of \code{prep_surv()}.}
+\item{survivorship_data}{Output of prep_surv().}
 
-\item{mortality_data}{Data table containing the estimated age-specific
-probabilities of death by smoking status.
-The output of \code{smoke_surv()}.}
+\item{mortality_data}{Output of smoke_surv().}
 
-\item{relapse_data}{Data table containing estimates of long-term relapse probabilities.
-The output of \code{prep_relapse()}.}
+\item{relapse_data}{Output of prep_relapse() (aggregated version).}
 
-\item{initiation_data}{Data table containing estimates of initiation probabilities
-by age, cohort, sex and IMD quintile.
-The output of \code{init_adj()}.}
+\item{initiation_data}{Output of init_adj().}
 
-\item{min_age}{Integer - the youngest age considered.}
-
-\item{max_age}{Integer - the oldest age considered.}
-
-\item{min_year}{Integer - the earliest year of observed data.}
-
-\item{max_year}{Integer - the latest year of observed data.}
-}
-\value{
-Returns a data.table containing the estimated quit probabilities.
+\item{min_age, max_age, min_year, max_year}{Integers.}
 }
 \description{
-Combines the various inputs together to estimate smoking quit
-probabilities according to the formula given.
+Calculates the probability of quitting required to balance the population 
+stocks (Current, Former, Never) given the flows (Initiation, Relapse, Mortality).
 }
-\examples{
-
-\dontrun{
-
-## SMOKING INITIATION
-
-# Calculate the cumulative probabilities of starting to smoke for each cohort
-init_data_raw <- smktrans::init_est(
- data = hse_data,
- strat_vars = c("sex", "imd_quintile")
-)
-
-# Estimate the trends in ever-smoking
-ever_smoke_data <- smktrans::ever_smoke(
-  data = hse_data,
-  time_horizon = 2200,
-  num_bins = 7,
-  model = "England"
-)
-
-# Adjust and forecast
-init_data_adj <- init_adj(
-  init_data = copy(init_data_raw),
-  ever_smoke_data = copy(ever_smoke_data$predicted_values),
-  ref_age = 30,
-  cohorts = 1971:2100,
-  period_start = 2001, period_end = 2016)
-
-# Convert the probabilities of ever-smoking to
-# age-specific probabilities of smoking initiation
-smk_init_data <- p_dense(data = copy(init_data_adj),
-  cum_func_var = "p_ever_smoker_adj",
-  strat_vars = c("cohort", "sex", "imd_quintile"))
-
-
-## SMOKING QUIT
-
-# Fit multinomial model to trends in proportion of current, former and never smokers
-trend_data <- smktrans::trend_fit(hse_data,
-   max_iterations = 1e3,
-   age_var = "age",
-   year_var = "year",
-   sex_var = "sex",
-   smoker_state_var = "smk.state",
-   imd_var = "imd_quintile",
-   weight_var = "wt_int")
-
-# Estimate cohort survivorship stratified by age, sex and IMD quintile
-survivorship_data <- smktrans::prep_surv(
-  mx_data_hmd = smktrans::hmd_data,
-  mx_data_ons = smktrans::tob_mort_data
-)
-
-# Estimate age-specific probabilities of death by smoking status
-mortality_data <- smktrans::smoke_surv(
-  data = hse_data,
-  diseases  = unique(tobalcepi::tobacco_relative_risks$condition),
-  mx_data = stapmr::tob_mort_data_cause
-)
-
-# Prepare probabilities of long-term relapse
-relapse_data <- smktrans::prep_relapse(
-  data = hse_data,
-  hawkins_relapse = smktrans::hawkins_relapse,
-  lowest_year = 2001,
-  highest_year = 2016,
-  youngest_age = 11
-)
-
-# Estimate the quit probabilities
-quit_data <- quit_est(
-  trend_data = copy(trend_data),
-  survivorship_data = copy(survivorship_data),
-  mortality_data = copy(mortality_data$data_for_quit_ests),
-  relapse_data = copy(relapse_data$relapse_by_age_imd),
-  initiation_data = copy(init_data_final)
-)
-
-}
-
+\details{
+Solves the equation:
+N(t+1) = N(t) * Survival * (1 - Quit) + (Former * Relapse) + (Never * Init)
+Rearranged to solve for Quit.
 }

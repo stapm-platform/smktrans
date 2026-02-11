@@ -6,7 +6,18 @@
 \alias{smktrans-package}
 \title{smktrans: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/stapm-platform/smktrans}
+  \item \url{https://stapm-platform.github.io/smktrans}
+  \item Report bugs at \url{https://github.com/stapm-platform/smktrans/issues}
+}
+
 }
 \author{
 \strong{Maintainer}: Duncan Gillespie \email{duncan.gillespie@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-3450-5747}{ORCID})

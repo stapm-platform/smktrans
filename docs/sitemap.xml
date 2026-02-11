@@ -7,7 +7,12 @@
 <url><loc>https://stapm-platform.github.io/smktrans/index.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/LICENSE.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/bin_var.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/calculate_net_initiation.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/estimate_initiation.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/estimate_quitting.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/estimate_relapse.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/ever_smoke.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/generate_uncertainty.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/hawkins_relapse.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/hmd_data_eng.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/hmd_data_scot.html</loc></url>
@@ -16,6 +21,7 @@
 <url><loc>https://stapm-platform.github.io/smktrans/reference/init_est.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/prep_relapse.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/prep_surv.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/process_country.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/p_dense.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/p_smooth.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/quit_est.html</loc></url>
@@ -23,6 +29,7 @@
 <url><loc>https://stapm-platform.github.io/smktrans/reference/relapse_forecast.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/smktrans-package.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/smoke_surv.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/summarise_smoking_transitions.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/trend_fit.html</loc></url>
 </urlset>
 

@@ -15,46 +15,16 @@ smoke_surv(
 )
 }
 \arguments{
-\item{data}{Data table of individual characteristics, including age, sex, 
-IMD quintile and smoking status.}
+\item{data}{Data table of individual characteristics (survey data).}
 
-\item{diseases}{Character vector of smoking related conditions.}
+\item{diseases}{Character vector of disease names.}
 
-\item{mx_data}{Data table containing the cause-specific rates of death 
-from smoking related diseases.}
+\item{mx_data}{Data table of cause-specific mortality rates.}
 
-\item{min_age}{Integer - the youngest age considered.}
-
-\item{max_age}{Integer - the oldest age considered.}
-
-\item{min_year}{Integer - the earliest year of observed data.}
-
-\item{max_year}{Integer - the latest year of observed data.}
-}
-\value{
-Returns two data tables containing the age-specific 
-probabilities of death in and survival through a
-1 year age interval, stratified by sex, year, imd_quintile and smoking state. 
-One data table has the detailed estimates and the
-other has been tidied into the form needed for quit probability estimation.
+\item{min_age, max_age, min_year, max_year}{Integers.}
 }
 \description{
-Estimates the probability that an individual will survive 
-from the beginning to the end of a year interval
-with different probabilities of survival depending on an individuals smoking status
-where the probability of survival for former smokers is adjusted according to our estimates
-of how risk declines by the time since some has quit.
-}
-\examples{
-
-\dontrun{
-
-test_data <- smoke_surv(
-  data = hse_data,
-  diseases  = tobalcepi::tob_disease_names,
-  mx_data = tob_mort_data_cause
-)
-
-}
-
+Calculates survival probabilities (px) stratified by Smoking Status.
+It uses the relative risks (RR) of smoking-related diseases to adjust
+background mortality rates.
 }

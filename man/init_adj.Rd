@@ -2,77 +2,38 @@
 % Please edit documentation in R/init_adj.R
 \name{init_adj}
 \alias{init_adj}
-\title{Adjust probabilities of ever-smoking}
+\title{Adjust probabilities of ever-smoking (Holford Method)}
 \usage{
 init_adj(
   init_data,
   ever_smoke_data,
   ref_age = 30,
+  fix_ref_age = FALSE,
+  min_ref = 25,
   cohorts = 1973:2020,
   period_start = 2003,
   period_end = 2018
 )
 }
 \arguments{
-\item{init_data}{Data table - raw estimates of the probabilities of 
-ever-smoking by age, sex and IMD quintile.}
+\item{init_data}{Data table - raw estimates from init_est().}
 
-\item{ever_smoke_data}{Data table - reference values for the proportion of ever-smokers.}
+\item{ever_smoke_data}{Data table - trend targets from ever_smoke().}
 
-\item{ref_age}{Integer - the index age for calibration}
+\item{ref_age}{Integer - the index age for calibration (default 30).}
 
-\item{cohorts}{Integer vector - the cohorts to be adjusted. 
-The min cohort might sensibly be period_start - ref_age, 
-and the max cohort might be the baseline year of the model e.g. 2020.}
+\item{fix_ref_age}{Logical. If TRUE, forces ref_age even if data is sparse.}
 
-\item{period_start}{Integer - the first year of data (England - 2003, Scotland - 2008)}
+\item{min_ref}{Integer - minimum age to allow for reference.}
 
-\item{period_end}{Integer - the last year of data}
-}
-\value{
-Returns an updated version of init_data with a new 
-variable containing the adjusted values for
-the probabilities of ever smoking. The data has also 
-been filtered to only include cohorts for which it is possible
-to make an adjustment.
+\item{cohorts}{Integer vector - cohorts to adjust.}
+
+\item{period_start}{Integer - first year of data.}
+
+\item{period_end}{Integer - last year of data.}
 }
 \description{
-Takes the probabilities of ever-smoking estimated from respondent recall and adjusts them
-according to the reported proportions of ever-smokers at a reference age.
-}
-\details{
-This is based on the method applied by \insertCite{holford2014patterns;textual}{smktrans}.
-}
-\examples{
-
-\dontrun{
-
-# Estimate the raw probabilities of ever-smoking
-init_data_raw <- init_est(
-  data = hse_data,
-  strat_vars = c("sex", "imd_quintile")
-)
-
-# Estimate the reference values - observed proportions of ever-smokers
-ever_smoke_data <- ever_smoke(
-  data = hse_data,
-  time_horizon = 2100
-)
-
-# Adjust the probabilities of ever-smoking
-init_data_adj <- init_adj(
-  init_data = copy(init_data_raw),
-  ever_smoke_data = copy(ever_smoke_data$predicted_values),
-  ref_age = 30,
-  cohorts = 1971:2020, # 50 cohorts
-  period_start = 2001,
-  period_end = 2016
-)
-
-
-}
-
-}
-\references{
-\insertRef{holford2014patterns}{smktrans}
+Calibrates retrospective recall data against observed period trends using 
+the Holford (2014) method. This ensures that cohort histories sum up to 
+match the "truth" seen in cross-sectional surveys at specific ages.
 }

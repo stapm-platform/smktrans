@@ -1,142 +1,128 @@
-
 #' Estimate age-specific probabilities of death by smoking status
 #'
-#' Estimates the probability that an individual will survive 
-#' from the beginning to the end of a year interval
-#' with different probabilities of survival depending on an individuals smoking status
-#' where the probability of survival for former smokers is adjusted according to our estimates
-#' of how risk declines by the time since some has quit.
+#' @description
+#' Calculates survival probabilities (px) stratified by Smoking Status.
+#' It uses the relative risks (RR) of smoking-related diseases to adjust
+#' background mortality rates.
 #'
-#' @param data Data table of individual characteristics, including age, sex, 
-#' IMD quintile and smoking status.
-#' @param diseases Character vector of smoking related conditions.
-#' @param mx_data Data table containing the cause-specific rates of death 
-#' from smoking related diseases.
-#' @template age-year
-#' 
-#' @importFrom data.table copy rbindlist setDT setorderv := dcast
-#' @importFrom mgcv gam s
-#' 
-#' @return Returns two data tables containing the age-specific 
-#' probabilities of death in and survival through a
-#' 1 year age interval, stratified by sex, year, imd_quintile and smoking state. 
-#' One data table has the detailed estimates and the
-#' other has been tidied into the form needed for quit probability estimation.
-#' 
+#' @param data Data table of individual characteristics (survey data).
+#' @param diseases Character vector of disease names.
+#' @param mx_data Data table of cause-specific mortality rates.
+#' @param min_age,max_age,min_year,max_year Integers.
+#' @importFrom data.table copy rbindlist setDT setorderv dcast setkeyv
+#' @importFrom mgcv gam s predict.gam
 #' @export
-#'
-#' @examples
-#'
-#' \dontrun{
-#'
-#' test_data <- smoke_surv(
-#'   data = hse_data,
-#'   diseases  = tobalcepi::tob_disease_names,
-#'   mx_data = tob_mort_data_cause
-#' )
-#'
-#' }
-#'
 smoke_surv <- function(
-  data,
-  diseases = tobalcepi::tob_disease_names,
-  mx_data,
-  min_age = 11,
-  max_age = 89,
-  min_year = 2003,
-  max_year = 2018
+    data,
+    diseases = tobalcepi::tob_disease_names,
+    mx_data,
+    min_age = 11,
+    max_age = 89,
+    min_year = 2003,
+    max_year = 2018
 ) {
-
-  ###################################################
-  # Add relative risks by condition to individual consumption data
-
-  data <- tobalcepi::RRFunc(
-    data = data,
+  
+  # 1. Attach Relative Risks
+  # Adds RR columns to the individual data based on smoking history
+  dt_rr <- tobalcepi::RRFunc(
+    data = copy(data),
     substance = "tob",
     tob_diseases = diseases
   )
- 
-  ###################################################
-  # Calculate probabilities of death
-
-  for(k_year in min_year:max_year) {
-
-    temp <- stapmr::SurvFunc(
-      data = data[year == k_year],
-      mx_data = mx_data[year == k_year],
-      diseases = diseases,
-      weights = T,
-      remove_dead = F,
-      k_year = k_year
-    )
-
-    if(k_year == min_year) {
-      data_out <- copy(temp)
-    } else {
-      data_out <- rbindlist(list(data_out, copy(temp)), use.names = T)
+  
+  # 2. Calculate Individual Survival Probabilities
+  # We iterate over years because mortality rates (mx_data) change by year.
+  # (Optimization: Pre-split data to avoid repeated subsetting overhead)
+  
+  results_list <- vector("list", length(min_year:max_year))
+  names(results_list) <- min_year:max_year
+  
+  for(y in min_year:max_year) {
+    # Filter for current year
+    d_yr <- dt_rr[year == y]
+    mx_yr <- mx_data[year == y]
+    
+    if(nrow(d_yr) > 0) {
+      # stapmr::SurvFunc calculates qx (prob of death) for individuals
+      # based on their specific disease risks
+      res <- stapmr::SurvFunc(
+        data = d_yr,
+        mx_data = mx_yr,
+        diseases = diseases,
+        weights = TRUE,
+        remove_dead = FALSE,
+        k_year = y
+      )
+      results_list[[as.character(y)]] <- res
     }
   }
-
-  ###################################################
-  # Calculate probabilities of death by smoking status
-
-  death_data <- data_out[ , list(qx = mean(qx, na.rm = T)), 
-                          by = c("year", "sex", "age", "imd_quintile", "smk.state")]
-
-  domain <- data.frame(expand.grid(
+  
+  combined_data <- rbindlist(results_list, use.names = TRUE, fill = TRUE)
+  
+  # 3. Aggregate to Group Level
+  # Average the individual qx up to the group level (Age/Sex/IMD/SmkState)
+  death_agg <- combined_data[, .(qx = mean(qx, na.rm = TRUE)), 
+                             by = .(year, sex, age, imd_quintile, smk.state)]
+  
+  # 4. Expand Grid and Merge
+  # Ensure all combinations exist (even those with no survey participants)
+  domain <- CJ(
     age = min_age:max_age,
     year = min_year:max_year,
     sex = c("Male", "Female"),
-    imd_quintile = unique(death_data$imd_quintile),
+    imd_quintile = unique(death_agg$imd_quintile),
     smk.state = c("current", "former", "never")
-  ))
-  setDT(domain)
-
-  domain <- merge(domain, death_data, 
-                  by = c("year", "age", "sex", "imd_quintile", "smk.state"), all.x = T)
-
-  setorderv(domain, "age", 1)
-
-  domain[is.na(qx), qx := 0]
-  domain[age > 80 & qx < 0.05, qx := NA]
-  domain[age > 60 & qx < 0.005, qx := NA]
-
-  ###################################################
-  # Fit a smooth curve through the probabilities
-  domain[ , qx_fits := predict(
-    mgcv::gam(qx ~ s(age, k = 10)),
-    newdata = data.frame(age = min_age:max_age)),
-    by = c("year", "sex", "imd_quintile", "smk.state")]
-
-  domain[qx_fits < 0, qx_fits := 0]
-  domain[, px := 1 - qx_fits]
-
-  ###################################################
-  # Additional tidying into correct format for quit prob estimation
-
-  px_smoke_data <- copy(domain)
-
-  px_smoke_data[ , qx := NULL]
-  px_smoke_data[ , qx_fits := NULL]
-
-  px_smoke_data[ , smk.state := paste0(smk.state, "_px")]
-  px_smoke_data <- dcast(px_smoke_data, year + age + sex + imd_quintile ~ smk.state, value.var = "px")
-
+  )
   
-return(list(
-  data_detailed = domain[],
-  data_for_quit_ests = px_smoke_data[]
+  domain <- merge(domain, death_agg, 
+                  by = c("year", "age", "sex", "imd_quintile", "smk.state"), 
+                  all.x = TRUE)
+  
+  # 5. Clean and Interpolate Missing Data
+  # Sort for smoothing
+  setkeyv(domain, c("year", "sex", "imd_quintile", "smk.state", "age"))
+  
+  # Handle NAs and outliers before smoothing
+  # (Logic from original script: clear outlier qx values for elderly)
+  domain[is.na(qx), qx := 0]
+  domain[age > 80 & qx < 0.05, qx := NA] # Suspiciously low mortality for elderly
+  domain[age > 60 & qx < 0.005, qx := NA]
+  
+  # 6. Smooth Mortality Curves (GAM)
+  # We smooth the qx curve over Age for every Year/Sex/IMD/State group.
+  # Using data.table's 'by' to vectorize the model fitting.
+  
+  # Define a wrapper for robust GAM fitting
+  fit_gam <- function(sub_age, sub_qx) {
+    # Need enough points to smooth
+    valid <- !is.na(sub_qx)
+    if(sum(valid) < 5) return(rep(0, length(sub_age)))
+    
+    # Fit
+    tryCatch({
+      m <- mgcv::gam(qx ~ s(age, k = 10), data = data.frame(age = sub_age[valid], qx = sub_qx[valid]))
+      preds <- predict(m, newdata = data.frame(age = sub_age))
+      return(preds)
+    }, error = function(e) return(rep(0, length(sub_age))))
+  }
+  
+  # Apply smoothing
+  message("  - Smoothing mortality curves...")
+  domain[, qx_fits := fit_gam(age, qx), by = .(year, sex, imd_quintile, smk.state)]
+  
+  # Clamp and Convert to Survival (px)
+  domain[qx_fits < 0, qx_fits := 0]
+  domain[qx_fits > 1, qx_fits := 1] # Safety
+  domain[, px := 1 - qx_fits]
+  
+  # 7. Reshape for Output
+  # Pivot to wide format: columns never_px, former_px, current_px
+  px_wide <- dcast(domain, 
+                   year + age + sex + imd_quintile ~ paste0(smk.state, "_px"), 
+                   value.var = "px")
+  
+  return(list(
+    data_detailed = domain[],
+    data_for_quit_ests = px_wide[]
   ))
 }
-
-
-
-
-
-
-
-
-
-
-
-

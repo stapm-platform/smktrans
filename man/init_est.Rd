@@ -7,33 +7,20 @@
 init_est(data, strat_vars = c("sex", "imd_quintile"))
 }
 \arguments{
-\item{data}{Data table of individual characteristics.}
+\item{data}{Data table of individual characteristics. Must contain 'start_age'.}
 
-\item{strat_vars}{Character vector - the variables by which to 
-stratify the cohort estimates e.g. sex and/or
-IMD quintile.}
+\item{strat_vars}{Character vector of stratification variables (e.g., "sex", "imd_quintile").}
 }
 \value{
-Returns a data table containing the age-specific probabilities and 
-cumulative probabilities of
-starting to smoke, and of being an ever or never smoker.
+A summarized data.table of initiation probabilities by age/year/cohort.
 }
 \description{
-Calculate the age-specific probabilities and cumulative probabilities of 
-starting to smoke cigarettes regularly
-based on self-reported smoking histories.
+Reconstructs longitudinal smoking histories from cross-sectional recall data.
+It expands each individual's record into a time-series of 0s (non-smoker)
+and 1s (initiation event).
 }
 \details{
-Takes the self-reported age that cigarettes were first smoked regularly 
-and constructs a vector of 0s, 1s and NAs
-corresponding to each age for each individual. 1 = initiated smoking, NA = censored.
-}
-\examples{
-
-\dontrun{
-
-test_data <- init_est(data = hse_data)
-
-}
-
+This function avoids row-wise looping for speed. It uses an "expansion"
+approach where we create a grid of all possible ages and join the
+events to it.
 }
