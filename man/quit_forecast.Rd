@@ -21,66 +21,39 @@ quit_forecast(
 )
 }
 \arguments{
-\item{data}{Data table containing the probabilities to be forecast.}
+\item{data}{Data table with input probabilities.}
 
-\item{forecast_var}{Character - the name of the probability variable to be forecast.}
+\item{forecast_var}{Character - variable to forecast.}
 
-\item{forecast_type}{Character - whether to apply the estimated 
-rates of proportional change ("continuing")
-or to keep the forecast variable constant at its last observed value ("stationary").}
+\item{forecast_type}{"continuing" (linear trend) or "stationary" (constant).}
 
-\item{cont_limit}{Integer - the year at which a continuing forecast becomes stationary.}
+\item{cont_limit}{Integer - year where forecast becomes stationary.}
 
-\item{oldest_year}{Integer - the oldest year of data we have. Default is set to 2003 for England.}
+\item{oldest_year}{Integer - start of historical data.}
 
-\item{youngest_age}{Integer - the youngest age we have in the data. 
-Default is set to 11 for England.}
+\item{youngest_age}{Integer - min age.}
 
-\item{oldest_age}{Integer - the oldest age we have in the data - set to 88 for quitting and relapse 
-and 30 for initiation.}
+\item{oldest_age}{Integer - max age.}
 
-\item{age_cont_limit}{Integer - the age after which the forecast transition probabilities 
-for a year, sex and IMD quintile are assumed not to change.}
+\item{first_year}{Integer - start year for trend fitting.}
 
-\item{first_year}{Integer - the earliest year of data on which the forecast is based.}
+\item{jump_off_year}{Integer - end year of historical data.}
 
-\item{jump_off_year}{Integer - the last year of data.}
+\item{time_horizon}{Integer - end year of forecast.}
 
-\item{time_horizon}{Integer - the last year of the forecast period.}
+\item{smooth_rate_dim}{Vector - dimensions for raster smoothing (c(3,3)).}
 
-\item{smooth_rate_dim}{Numeric vector length 2. The dimensions of the 2d window used to smooth trends 
-in the rates by age and year. (age, year), Defaults to c(3, 3). Must be odd numbers.}
-
-\item{k_smooth_age}{Integer - the degree of smoothing to apply to the age pattern of change (rotation). 
-If zero, then no smoothing is applied.}
-}
-\value{
-Returns a data.table containing the observed and forecast data.
+\item{k_smooth_age}{Integer - knots for smoothing age component.}
 }
 \description{
-Forecasts the period trends in the probabilities of smoking initiation, quitting and relapse
-by age, sex and IMD quintile. This function was designed originally to forecast just 
-the probabilities of quitting but has since been extended to forecast initiation and relapse 
-probabilities too.
+Forecasts trends in transition probabilities using a Lee-Carter style 
+Singular Value Decomposition (SVD) model.
 }
 \details{
-The forecast is based on applying a Singular value decomposition (SVD)
-to the logit transformed matrix of quit probabilities by
-age and year for each subgroup.
-}
-\examples{
-
-\dontrun{
-
-forecast_data <- quit_forecast(
-  data = copy(quit_data),
-  forecast_var = "quit_prob",
-  forecast_type = "continuing",
-  first_year = 2010,
-  jump_off_year = 2015,
-  time_horizon = 2030
-)
-
-}
-
+The model assumes the logit of the probability can be decomposed into:
+Logit(P_xt) = Alpha_x + Beta_x * Kappa_t
+Where:
+- Alpha_x: Average age profile
+- Kappa_t: Time trend index
+- Beta_x: Sensitivity of each age to the time trend
 }

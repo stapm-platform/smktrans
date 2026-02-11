@@ -14,7 +14,7 @@ authors:
 navbar:
   structure:
     left:  [home, intro, reference, articles]
-    right: [github, software]
+    right: [github]
   components:
     home: ~
     intro:
@@ -36,6 +36,13 @@ navbar:
       aria-label: GitHub
 
 reference:
+- title: High level functions
+  contents:
+  - process_country
+  - calculate_net_initiation
+  - generate_uncertainty
+  - summarise_smoking_transitions
+
 - title: Smoking trends
   contents:
   - ever_smoke
@@ -43,11 +50,13 @@ reference:
 
 - title: Smoking initiation
   contents:
+  - estimate_initiation
   - init_est
   - init_adj
 
 - title: Quitting smoking
   contents:
+  - estimate_quitting
   - quit_est
   - quit_forecast
   - smoke_surv
@@ -55,6 +64,7 @@ reference:
 
 - title: Relapse to smoking
   contents:
+  - estimate_relapse
   - prep_relapse
   - relapse_forecast
 

@@ -1,36 +1,17 @@
-
-#' Convert probabilities of ever-smoking to age-specific probabilities of smoking initiation
+#' Convert probabilities of ever-smoking to age-specific probabilities
 #'
-#' Converts the cumulative density function to the probability density function,
-#' assuming an interval of 1.
+#' @description
+#' Converts the Cumulative Distribution Function (CDF) of ever-smoking 
+#' into the Probability Density Function (PDF), which represents the 
+#' probability of initiating smoking at a specific age.
 #'
-#' @param data Data table containing estimates of the cumulative 
-#' probabilities of ever-smoking by age.
-#' @param cum_func_var Character - the name of the variable 
-#' containing the cumulative probabilities.
-#' @param strat_vars Character vector - the variables by which to stratify the calculation.
-#' @param lowest_year integer - lowest year of data available 
-#' (for England this is 2003 and for Scotland this is 2008). 
-#' Default is set to 2003, for HSE.
-#' @param max_year integer - the latest year considered in the data + forecast
-#' 
+#' @param data Data table with cumulative probabilities.
+#' @param cum_func_var Character - name of cumulative variable.
+#' @param strat_vars Character vector - stratification variables.
+#' @param lowest_year integer - start year filter.
+#' @param max_year integer - end year filter.
 #' @importFrom data.table shift := copy setnames rbindlist
-#' 
-#' @return Returns an updated version of data with a new variable 
-#' for the age-specific probabilities of
-#' smoking initiation.
-#' 
 #' @export
-#'
-#' @examples
-#'
-#' \dontrun{
-#'
-#' init_data <- p_dense(data = copy(init_data_adj), cum_func_var = "p_ever_smoker_adj",
-#'                     strat_vars = c("cohort", "sex", "imd_quintile"))
-#'
-#' }
-#'
 p_dense <- function(
     data,
     cum_func_var,
@@ -39,56 +20,65 @@ p_dense <- function(
     max_year = 2100
 ) {
   
-  # Lead the cdf
-  data[ , (paste0(cum_func_var, "_lead1")) := shift(get(cum_func_var), type = "lead"), 
-        by = strat_vars]
+  dt <- copy(data)
   
-  # Calculate the pdf
-  data[ , initiation_pdf := (1 - ((1 - get(paste0(cum_func_var, "_lead1"))) / 
-                                    (1 - get(cum_func_var))))]
+  # 1. Calculate PDF from CDF
+  # p_init = 1 - (Survival_t+1 / Survival_t)
+  # Where Survival = 1 - Cumulative_Ever_Smoker
   
-  data[is.na(initiation_pdf), initiation_pdf := 0]
+  # Create Lead variable
+  dt[, (paste0(cum_func_var, "_lead1")) := shift(get(cum_func_var), type = "lead"), by = strat_vars]
   
-  data[initiation_pdf < 0, initiation_pdf := 0]
-  data[initiation_pdf > 1, initiation_pdf := 1]
+  # Calculate conditional probability
+  dt[, initiation_pdf := (1 - ((1 - get(paste0(cum_func_var, "_lead1"))) / 
+                                 (1 - get(cum_func_var))))]
   
-  # Tidy
-  data[ , (paste0(cum_func_var, "_lead1")) := NULL]
+  # 2. Safety Clamping
+  # Numerical noise can cause <0 or >1
+  dt[is.na(initiation_pdf), initiation_pdf := 0]
+  dt[initiation_pdf < 0, initiation_pdf := 0]
+  dt[initiation_pdf > 1, initiation_pdf := 1]
   
-  smk_init_data <- copy(data[age >= 10 & age <= 30 & year >= lowest_year & 
-                               year <= max_year, 
-                             c("sex", "imd_quintile", "age", "year", "initiation_pdf")])
+  # Cleanup
+  dt[, (paste0(cum_func_var, "_lead1")) := NULL]
+  
+  # Filter relevant ages/years
+  smk_init_data <- dt[age >= 10 & age <= 30 & year >= lowest_year & year <= max_year, 
+                      .(sex, imd_quintile, age, year, initiation_pdf)]
   
   setnames(smk_init_data, "initiation_pdf", "p_start")
   
-  # Smooth values
-  counter <- 0
+  # 3. Smoothing
+  # We apply smoothing within subgroups to reduce jaggedness
   
-  for(sx in c("Male", "Female")) {
-    for(md in c("1_least_deprived", "2", "3", "4", "5_most_deprived")) {
-      
-      #sx <- "Male"
-      #md <- "5_most_deprived"
-      
-      data_temp <- smktrans::p_smooth(
-        data = smk_init_data[sex == sx & imd_quintile == md], value_var = "p_start", window_size = 5)
-      
-      data_temp[ , `:=`(sex = sx, imd_quintile = md)]
-      
-      
-      if(counter == 0) {
-        data_sm <- copy(data_temp)
-      } else {
-        data_sm <- rbindlist(list(data_sm, copy(data_temp)), use.names = T)
-      }
-      
-      counter <- counter + 1
-      
+  # Define subgroups
+  subgroups <- expand.grid(
+    sex = c("Male", "Female"),
+    imd = c("1_least_deprived", "2", "3", "4", "5_most_deprived"),
+    stringsAsFactors = FALSE
+  )
+  
+  smoothed_list <- list()
+  
+  for(i in 1:nrow(subgroups)) {
+    sx <- subgroups$sex[i]
+    md <- subgroups$imd[i]
+    
+    subset_data <- smk_init_data[sex == sx & imd_quintile == md]
+    
+    if(nrow(subset_data) > 0) {
+      # Apply smoothing function (assumes smktrans::p_smooth exists)
+      smoothed <- smktrans::p_smooth(
+        data = subset_data, 
+        value_var = "p_start", 
+        window_size = 5
+      )
+      smoothed[, `:=`(sex = sx, imd_quintile = md)]
+      smoothed_list[[i]] <- smoothed
     }
   }
   
-  smk_init_data <- copy(data_sm)
+  final_data <- rbindlist(smoothed_list, use.names = TRUE)
   
-  
-  return(smk_init_data[])
+  return(final_data[])
 }

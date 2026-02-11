@@ -14,36 +14,14 @@ prep_surv(
 )
 }
 \arguments{
-\item{mx_data_hmd}{Data table containing mortality rates from 1922
-from the Human Mortality Database.}
+\item{mx_data_hmd}{Data table of HMD mortality rates (1922+).}
 
-\item{mx_data_ons}{Data table containing socioeconomically stratified
-mortality rates - that we process ourselves
-from mortality data.}
+\item{mx_data_ons}{Data table of ONS stratified mortality rates.}
 
-\item{min_age}{Integer - the youngest age considered.}
-
-\item{max_age}{Integer - the oldest age considered.}
-
-\item{min_year}{Integer - the earliest year of observed data.}
-
-\item{max_year}{Integer - the latest year of observed data.}
-}
-\value{
-Returns a data table containing the socioeconomically stratified cohort survivorship functions.
-Note that these data will only be stratified by IMD quintile for
-year ages and years needed for the estimation of smoking state transition probabilities.
+\item{min_age, max_age, min_year, max_year}{Integers defining the scope.}
 }
 \description{
-Takes mortality rates from birth since 1922 and combines
-them with socioeconomically stratified mortality
-data from the period under investigation to produce an estimate of the socioeconomic differences in cohort survivorship.
-}
-\examples{
-\dontrun{
-test_data <- prep_surv(
-  mx_data_hmd = smktrans::hmd_data_eng,
-  mx_data_ons = tob_mort_data
-)
-}
+Combines long-term historical mortality rates (HMD) with recent socioeconomically 
+stratified mortality data (ONS) to produce cohort survivorship curves (lx) 
+stratified by Age, Sex, and IMD Quintile.
 }
