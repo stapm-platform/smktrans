@@ -28,11 +28,10 @@ Sheffield](https://www.sheffield.ac.uk/scharr).
 
 ------------------------------------------------------------------------
 
-## 📦 Package Structure: A “Vertical” Approach
+## 📦 Package Structure
 
 While `smktrans` can be installed and used like a standard R package, it
-is designed to be “vertical” — meaning the package encompasses both the
-tools *and* the analysis.
+is designed to encompass both the tools *and* the analysis.
 
 The estimates produced by this workflow are probabilities of **smoking
 initiation**, **quitting**, and **relapse**, stratified by: \* Age \*
