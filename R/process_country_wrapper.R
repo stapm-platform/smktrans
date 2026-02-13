@@ -7,22 +7,11 @@ process_country <- function(config) {
   message(sprintf(" PROCESSING: %s", config$country))
   message(paste0(paste(rep("=", 60), collapse = ""), "\n"))
   
-  # 1. Load Population Data
+  # 1A. Load Population Data
   # -----------------------
-  # Assuming pop_file path is relative to root_dir or absolute. 
-  # You might need to adjust 'file.path' depending on your folder structure consistency.
-  if (file.exists(config$pop_file)) {
-    pop_path <- config$pop_file
-  } else {
-    # Try prepending path if file not found (handling relative paths in config)
-    pop_path <- file.path(config$path, config$pop_file)
-  }
+  pop_path <- config$pop_file
   
-  if (!file.exists(pop_path) && !file.exists(config$pop_file)) {
-    stop("Population file not found: ", config$pop_file)
-  }
-  
-  # Load data (supporting both CSV and RDS based on your config snippets)
+  # Load data
   if (grepl(".rds$", pop_path, ignore.case = TRUE)) {
     pops <- readRDS(pop_path)
   } else {
@@ -31,13 +20,25 @@ process_country <- function(config) {
     if(!"N" %in% names(pops) && "pop" %in% names(pops)) setnames(pops, "pop", "N")
   }
   
+  # 1B. Load Survey Data
+  # -----------------------
+  survey_path <- file.path(config$path, config$survey_file)
+  
+  # Load data
+  if (grepl(".rds$", survey_path, ignore.case = TRUE)) {
+    survey_data <- readRDS(survey_path)
+  } else {
+    survey_data <- fread(survey_path)
+  }
+  
   # 2. Run Estimations
   # ------------------
   # Passing the whole config list to the sub-functions
   
-  estimate_initiation(config)
-  estimate_quitting(config)
+  estimate_initiation(config, survey_data)
   estimate_relapse(config)
+  estimate_quitting(config)
+  
   
   # 3. Net Initiation (Synthetic Cohort)
   # ------------------------------------

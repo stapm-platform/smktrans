@@ -10,18 +10,29 @@ root_dir <- "X:/"
 # Load standard packages
 source("03_load_packages.R")
 
-# --- LOAD NEW MODULAR FUNCTIONS ---
-# Assuming you saved the functions I provided in a 'functions' subfolder.
-# If they are in the root of 'transition_probability_estimates', remove 'functions/'.
+# --- LOAD FUNCTIONS ---
+func_path <- "R/"
 
-func_path <- "transition_probability_estimates/functions/"
-
+source(paste0(func_path, "bin_var.R"))
+source(paste0(func_path, "calculate_net_initiation.R"))
 source(paste0(func_path, "estimate_initiation.R"))
 source(paste0(func_path, "estimate_quitting.R"))
 source(paste0(func_path, "estimate_relapse.R"))
-source(paste0(func_path, "calculate_net_initiation.R"))      # The new Net Init function
-source(paste0(func_path, "summarise_smoking_transitions.R")) # The new Summary function
-source(paste0(func_path, "process_country_wrapper.R"))       # The master wrapper (see below)
+source(paste0(func_path, "ever_smoke.R"))
+source(paste0(func_path, "generate_uncertainty.R"))
+source(paste0(func_path, "init_adj.R"))
+source(paste0(func_path, "init_est.R"))
+source(paste0(func_path, "p_dense.R"))
+source(paste0(func_path, "p_smooth.R"))
+source(paste0(func_path, "prep_relapse.R"))
+source(paste0(func_path, "prep_surv.R"))
+source(paste0(func_path, "process_country_wrapper.R"))
+source(paste0(func_path, "quit_est.R"))
+source(paste0(func_path, "quit_forecast.R"))
+source(paste0(func_path, "relapse_forecast.R"))
+source(paste0(func_path, "smoke_surv.R"))
+source(paste0(func_path, "summarise_smoking_transitions.R"))
+source(paste0(func_path, "trend_fit.R"))
 
 # -------------------------------------------------------------------------
 # 2. Execution Configuration
@@ -31,12 +42,12 @@ source(paste0(func_path, "process_country_wrapper.R"))       # The master wrappe
 config_eng <- list(
   country = "England",
   survey_name = "Health Survey for England",
-  path = "transition_probability_estimates/src_england/",
-  survey_file = "HSE_2003_to_2018_tobacco_imputed.rds",
+  path = "transition_probability_estimates/src_england",
+  survey_file = "intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds",
   pop_file = "05_input/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv",
   
   first_year = 2003, last_year = 2018,
-  min_age = 12, max_age = 89, ref_age = 30,
+  min_age = 11, max_age = 89, ref_age = 30,
   
   # Initiation Params
   max_age_init = 30, age_trend_limit_init = 21,
@@ -47,9 +58,11 @@ config_eng <- list(
   smooth_rate_dim_relapse = c(15, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 20, kR = 0.9, kn_samp = 100,
+  kn = 50, kR = 0.9, kn_samp = 1000,
   smokefree_target_year = 2030
 )
+
+config <- config_eng
 
 # --- Scotland Config ---
 config_scot <- list(
@@ -68,7 +81,7 @@ config_scot <- list(
   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
   
-  kn = 20, kR = 0.9, kn_samp = 100,
+  kn = 50, kR = 0.9, kn_samp = 1000,
   smokefree_target_year = 2034 # Scotland's target is usually 2034
 )
 
@@ -91,7 +104,7 @@ config_wales <- list(
   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
   smooth_rate_dim_relapse = c(15, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
   
-  kn = 100, kR = 0.95, kn_samp = 100,
+  kn = 50, kR = 0.95, kn_samp = 1000,
   smokefree_target_year = 2030
 )
 
@@ -109,6 +122,3 @@ process_country(config_scot)
 # Run Wales
 process_country(config_wales)
 
-message("\n=======================================================")
-message(" ALL COUNTRIES PROCESSED SUCCESSFULLY.")
-message("=======================================================")
