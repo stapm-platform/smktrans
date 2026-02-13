@@ -1,5 +1,9 @@
 #' Master Process Wrapper
-#' @param config A named list containing all country-specific parameters
+#'
+#' @description Orchestrates the estimation of smoking transition probabilities,
+#' calculates uncertainty, and exports to a professional Excel report.
+#' @param config A named list of country-specific parameters.
+#' @return A list containing the final datasets and samples.
 #' @export
 process_country <- function(config) {
   
@@ -52,13 +56,30 @@ process_country <- function(config) {
   # Load the fresh estimates
   init_data    <- readRDS(file.path(out_dir, paste0("init_forecast_data_", config$country, ".rds")))
   quit_data    <- readRDS(file.path(out_dir, paste0("quit_forecast_data_", config$country, ".rds")))
+  quit_data_no_init    <- readRDS(file.path(out_dir, paste0("quit_forecast_data_no_init_", config$country, ".rds")))
   relapse_data <- readRDS(file.path(out_dir, paste0("relapse_forecast_data_", config$country, ".rds")))
   
-  calculate_net_initiation(init_data, quit_data, relapse_data, pops, config)
+  net_init_dt <- calculate_net_initiation(init_data, quit_data, relapse_data, pops, config)
   
-  # 4. Summaries & Plots
-  # --------------------
-  summarise_smoking_transitions(config, pops)
+  # 4. Generate uncertainty intervals
+  # ------------------------------------
+  message(">> Calculating uncertainty... if kn_samp = 100 -> time to go grab a coffee (and maybe some biscuits).")
+  message("    if kn_samp = 1000 -> time to go to bed.")
   
-  message(sprintf(">> Completed %s", config$country))
+  init_data_uncertainty <- generate_uncertainty(init_data, "p_start", config$kn, config$kn_samp, config$kR)
+  quit_data_uncertainty <- generate_uncertainty(quit_data, "p_quit", config$kn, config$kn_samp, config$kR)
+  relapse_data_uncertainty <- generate_uncertainty(relapse_data, "p_relapse", config$kn, config$kn_samp, config$kR) # takes the longest to run
+  net_init_uncertainty <- generate_uncertainty(net_init_dt, "p_start_net", config$kn, config$kn_samp, config$kR)
+  quit_no_init_uncertainty <- generate_uncertainty(quit_data_no_init, "p_quit_no_init", config$kn, config$kn_samp, config$kR)
+  
+  # 5. Export Report
+  write_excel_report(config, 
+                     init_data_uncertainty$data, 
+                     quit_data_uncertainty$data, 
+                     relapse_data_uncertainty$data, 
+                     net_init_uncertainty$data,
+                     quit_no_init_uncertainty$data)
+  
+  message(paste(">> Done with", config$country))
+  return(invisible(TRUE))
 }

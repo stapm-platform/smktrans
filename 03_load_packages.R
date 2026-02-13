@@ -16,6 +16,7 @@ library(RColorBrewer)
 library(ggplot2)
 library(viridis)
 library(survey)
+library(matrixStats)
 
 # STAPM packages
 library(stapmr)
