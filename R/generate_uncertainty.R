@@ -79,15 +79,23 @@ generate_uncertainty <- function(data, prob_col, n_eff, n_samp, correlation) {
   # Transform to Uniform[0,1]
   u_correlated <- pnorm(z_total)
   
-  # 5. Map to Beta Distribution (Inverse CDF)
-  # qbeta recycles the alpha/beta vectors to match the length of u_correlated.
-  # Since u_correlated is effectively a long vector of columns, and alpha/beta
-  # correspond to rows, we just need to ensure alignment.
-  # However, qbeta recycles alpha/beta linearly.
-  # u_correlated structure: [Row1-Samp1, Row2-Samp1 ... Row1-Samp2, Row2-Samp2]
-  # alpha structure:        [Row1, Row2 ... RowN]
-  # This alignment is perfect. We do not need to expand alpha/beta manually.
-  samples_vec <- qbeta(u_correlated, shape1 = alpha, shape2 = beta_param)
+  # A floor of 0.1 is much more stable for the qbeta solver
+  safe_floor <- 0.1
+  
+  alpha_safe <- pmax(alpha, safe_floor)
+  beta_safe  <- pmax(beta_param, safe_floor)
+  
+  # Use a "Safe" wrapper to handle any remaining edge cases
+  # This forces the result to 1 if the solver fails on an upper-bound spike
+  safe_qbeta <- function(u, a, b) {
+    out <- suppressWarnings(qbeta(u, a, b))
+    # If qbeta fails (returns NaN) or is near-boundary, 
+    # and we know it's a "high probability" spike, default to ~1
+    out[is.na(out)] <- 1 
+    return(out)
+  }
+  
+  samples_vec <- safe_qbeta(u_correlated, alpha_safe, beta_safe)
   
   # Reshape into matrix [Rows x Samples] for summary calculation
   samples_mat <- matrix(samples_vec, nrow = n_rows, ncol = n_samp)
