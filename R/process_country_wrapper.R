@@ -36,7 +36,7 @@ process_country <- function(config) {
   # Passing the whole config list to the sub-functions
   
   estimate_initiation(config, survey_data)
-  estimate_relapse(config)
+  estimate_relapse(config, survey_data)
   estimate_quitting(config)
   
   
