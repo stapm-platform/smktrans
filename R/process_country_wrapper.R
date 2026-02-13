@@ -67,7 +67,7 @@ process_country <- function(config) {
   message("    if kn_samp = 1000 -> time to go to bed.")
   
   init_data_uncertainty <- generate_uncertainty(init_data, "p_start", config$kn, config$kn_samp, config$kR)
-  quit_data_uncertainty <- generate_uncertainty(quit_data, "p_quit", config$kn, config$kn_samp, config$kR)
+  quit_data_uncertainty <- generate_uncertainty(data = quit_data, prob_col = "p_quit", n_eff = config$kn, n_samp = config$kn_samp, correlation = config$kR)
   relapse_data_uncertainty <- generate_uncertainty(relapse_data, "p_relapse", config$kn, config$kn_samp, config$kR) # takes the longest to run
   net_init_uncertainty <- generate_uncertainty(net_init_dt, "p_start_net", config$kn, config$kn_samp, config$kR)
   quit_no_init_uncertainty <- generate_uncertainty(quit_data_no_init, "p_quit_no_init", config$kn, config$kn_samp, config$kR)
