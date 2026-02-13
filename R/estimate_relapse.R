@@ -3,7 +3,7 @@
 #' @description
 #' 1. Prepares base relapse rates (Hawkins).
 #' 2. Forecasts the Age/Sex/IMD specific trend using `quit_forecast`.
-#' 3. Scales the Time-Since-Quit (TSQ) data using `relapse_forecast`.
+#' 3. Scales the Time-Since-Quit data using `relapse_forecast`.
 #' 4. Imputes data for ages < 18.
 #'
 #' @export
@@ -13,17 +13,42 @@ estimate_relapse <- function(config, survey_data) {
   
   # A. Base Relapse Estimates
   # -------------------------------------------------------------------------
-  # Requires hawkins_relapse data to be available (usually in smktrans or loaded raw)
-  # If 'hawkins_relapse' is not global, load it here. 
-  # Assuming it is passed or available via smktrans package data.
+  # Logic: Use package data if available, otherwise load from local data/ directory
   
-  relapse_data <- smktrans::prep_relapse(
+  if (requireNamespace("smktrans", quietly = TRUE)) {
+    message("   > Loading Hawkins relapse data from 'smktrans' package...")
+    hawkins_data <- smktrans::hawkins_relapse
+  } else {
+    message("   > 'smktrans' not detected. Loading 'data/hawkins_relapse.rda'...")
+    
+    # Load into a temporary environment to keep the global namespace clean
+    temp_env <- new.env()
+    
+    # Check if file exists to prevent hard crash
+    if (!file.exists("data/hawkins_relapse.rda")) {
+      stop("Error: 'smktrans' package not loaded and 'data/hawkins_relapse.rda' not found.")
+    }
+    
+    load("data/hawkins_relapse.rda", envir = temp_env)
+    
+    # Assumes the object inside the .rda is named 'hawkins_relapse'
+    if (exists("hawkins_relapse", envir = temp_env)) {
+      hawkins_data <- temp_env$hawkins_relapse
+    } else {
+      # Fallback: grab the first object in the environment if name differs
+      obj_name <- ls(temp_env)[1]
+      hawkins_data <- temp_env[[obj_name]]
+    }
+  }
+  
+  relapse_data <- prep_relapse(
     data = survey_data,
-    hawkins_relapse = smktrans::hawkins_relapse,
+    hawkins_relapse = hawkins_data,
     lowest_year = config$first_year,
     highest_year = config$last_year,
     youngest_age = 18
   )
+  
   saveRDS(relapse_data, file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds")))
   
   # B. Forecast Age/Sex/IMD Trend
@@ -34,7 +59,7 @@ estimate_relapse <- function(config, survey_data) {
     data = copy(relapse_data$relapse_by_age_imd),
     forecast_var = "p_relapse",
     forecast_type = "continuing",
-    cont_limit = config$last_year + 3, # Specific logic from your script
+    cont_limit = config$last_year + 3,
     first_year = config$first_year,
     jump_off_year = config$last_year - 1,
     time_horizon = 2100,
@@ -50,7 +75,6 @@ estimate_relapse <- function(config, survey_data) {
   
   # C. Apply Trend to Time-Since-Quit Data
   # -------------------------------------------------------------------------
-  # Note: Assumes relapse_forecast() is loaded from R/relapse_forecast.R
   relapse_by_age_imd_timesincequit <- relapse_forecast(
     relapse_forecast_data = relapse_forecast_data,
     relapse_by_age_imd_timesincequit = relapse_data$relapse_by_age_imd_timesincequit,
@@ -61,7 +85,7 @@ estimate_relapse <- function(config, survey_data) {
   
   # D. Impute Ages < 18 (Loop)
   # -------------------------------------------------------------------------
-  # Your workflow manually copies age 18 data to ages min_age..17
+  # manually copy age 18 data to ages min_age..17
   
   if(config$min_age < 18) {
     message("   > Imputing Relapse for ages < 18...")
