@@ -36,68 +36,87 @@
 #' @export
 generate_uncertainty <- function(data, prob_col, n_eff, n_samp, correlation) {
   
-  # 1. Validation and Setup
+  # 1. Setup
   dt <- copy(data)
-  p <- dt[[prob_col]]
+  setDT(dt)
   
-  # Clamp probabilities to avoid variance = 0 (which breaks Beta calculation)
-  # effectively assuming at least 1/1000 risk even if estimate is 0
+  p_vec <- dt[[prob_col]]
+  n_rows <- length(p_vec)
+  
+  # 2. Vectorized Clamping
+  # Prevent variance from being zero
   epsilon <- 1e-4
-  p_clamped <- p
-  p_clamped[p_clamped < epsilon] <- epsilon
-  p_clamped[p_clamped > (1 - epsilon)] <- 1 - epsilon
+  p_clamped <- pmax(epsilon, pmin(p_vec, 1 - epsilon))
   
-  # 2. Calculate Beta Parameters (Vectorized)
+  # 3. Calculate Beta Parameters (Vectorized)
   # Var = p(1-p) / n
-  var_p <- (p_clamped * (1 - p_clamped)) / n_eff
+  term_num <- p_clamped * (1 - p_clamped)
+  var_p <- term_num / n_eff
   
-  # Method of moments for Beta distribution
+  # Method of moments
   # alpha = ((1 - mu) / var - 1 / mu) * mu^2
-  # beta = alpha * (1 / mu - 1)
-  term <- (p_clamped * (1 - p_clamped) / var_p) - 1
-  alpha <- p_clamped * term
-  beta_param <- (1 - p_clamped) * term
+  # Simplifies to: alpha = mu * ( (mu(1-mu)/var) - 1 )
+  common_factor <- (term_num / var_p) - 1
+  alpha <- p_clamped * common_factor
+  beta_param <- (1 - p_clamped) * common_factor
   
-  # 3. Generate Correlated Random Matrix (Gaussian Copula)
-  # We want a matrix [Rows x Samples]
-  # U_correlated = pnorm( sqrt(R)*Z_shared + sqrt(1-R)*Z_indiv )
-  
-  n_rows <- nrow(dt)
-  
-  # Z_shared: One random value per SAMPLE column (broadcast across all rows)
-  # This represents the systematic shift for that specific simulation run
-  Z_shared <- matrix(rnorm(n_samp), nrow = n_rows, ncol = n_samp, byrow = TRUE)
+  # 4. Generate Correlated Random Matrix
+  # We use vector recycling to build the matrix implicitly, which is faster.
+  # Z_shared: Represents the systematic shift for a specific simulation run.
+  # We want the same random value for the entire COLUMN (Sample), repeated N_ROW times.
+  # generating n_samp values and repeating each one n_rows times ensures
+  # that when R fills the matrix (Column Major), the columns are uniform.
+  z_shared_vec <- rep(rnorm(n_samp), each = n_rows)
   
   # Z_indiv: Unique random value per cell
-  Z_indiv <- matrix(rnorm(n_rows * n_samp), nrow = n_rows, ncol = n_samp)
+  z_indiv_vec <- rnorm(n_rows * n_samp)
   
-  # Combine
-  Z_total <- (sqrt(correlation) * Z_shared) + (sqrt(1 - correlation) * Z_indiv)
+  # Combine using weights
+  # sqrt(R) * Shared + sqrt(1-R) * Indiv
+  z_total <- (sqrt(correlation) * z_shared_vec) +
+    (sqrt(1 - correlation) * z_indiv_vec)
   
   # Transform to Uniform[0,1]
-  U_correlated <- pnorm(Z_total)
+  u_correlated <- pnorm(z_total)
   
-  # 4. Map to Beta Distribution (Inverse CDF)
-  # qbeta is vectorized, so we can pass the matrix U and vectors alpha/beta directly
-  # (R recycles alpha/beta columns to match the matrix)
-  samples_mat <- qbeta(U_correlated, shape1 = alpha, shape2 = beta_param)
+  # 5. Map to Beta Distribution (Inverse CDF)
+  # qbeta recycles the alpha/beta vectors to match the length of u_correlated.
+  # Since u_correlated is effectively a long vector of columns, and alpha/beta
+  # correspond to rows, we just need to ensure alignment.
+  # However, qbeta recycles alpha/beta linearly.
+  # u_correlated structure: [Row1-Samp1, Row2-Samp1 ... Row1-Samp2, Row2-Samp2]
+  # alpha structure:        [Row1, Row2 ... RowN]
+  # This alignment is perfect. We do not need to expand alpha/beta manually.
+  samples_vec <- qbeta(u_correlated, shape1 = alpha, shape2 = beta_param)
   
-  # Handle potential numerical NaNs if p was exactly 0 or 1 originally
+  # Reshape into matrix [Rows x Samples] for summary calculation
+  samples_mat <- matrix(samples_vec, nrow = n_rows, ncol = n_samp)
+  
+  # Handle numerical issues (NaNs turn to 0)
   samples_mat[is.na(samples_mat)] <- 0
   
-  # 5. Calculate Summaries
-  # Row-wise quantiles (much faster than apply)
-  # Note: If matrixStats is not available, we use a simple loop or apply 
-  # (apply is acceptable here as calculation is lightweight compared to the loops in the old script)
+  # 6. Calculate Summaries (High Performance)
+  # using matrixStats to avoid the slow apply() loop
+  if (requireNamespace("matrixStats", quietly = TRUE)) {
+    
+    quants <- matrixStats::rowQuantiles(samples_mat, probs = c(0.025, 0.5, 0.975))
+    
+    vars <- matrixStats::rowVars(samples_mat)
+    
+    dt[, (paste0(prob_col, "_low")) := quants[, 1]]
+    dt[, (paste0(prob_col, "_median")) := quants[, 2]]
+    dt[, (paste0(prob_col, "_high")) := quants[, 3]]
+    dt[, (paste0(prob_col, "_var")) := vars]
+    
+  } else {
+    warning("Package 'matrixStats' not found. Falling back to slow base R 'apply'.")
+    
+    dt[, (paste0(prob_col, "_low")) := apply(samples_mat, 1, quantile, probs = 0.025, na.rm = TRUE)]
+    dt[, (paste0(prob_col, "_median")) := apply(samples_mat, 1, quantile, probs = 0.50, na.rm = TRUE)]
+    dt[, (paste0(prob_col, "_high")) := apply(samples_mat, 1, quantile, probs = 0.975, na.rm = TRUE)]
+    dt[, (paste0(prob_col, "_var")) := apply(samples_mat, 1, var, na.rm = TRUE)]
+    
+  }
   
-  dt[, paste0(prob_col, "_low") := apply(samples_mat, 1, quantile, probs = 0.025, na.rm = TRUE)]
-  dt[, paste0(prob_col, "_median") := apply(samples_mat, 1, quantile, probs = 0.50, na.rm = TRUE)]
-  dt[, paste0(prob_col, "_high") := apply(samples_mat, 1, quantile, probs = 0.975, na.rm = TRUE)]
-  
-  # Variance of the samples (Mean of squares - Square of mean)
-  row_means <- rowMeans(samples_mat)
-  row_means_sq <- rowMeans(samples_mat^2)
-  dt[, paste0(prob_col, "_var") := row_means_sq - (row_means^2)]
-  
-  return(list(data = dt, samples = samples_mat))
+  return(list(data = dt[], samples = samples_mat))
 }

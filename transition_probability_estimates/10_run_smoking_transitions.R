@@ -33,6 +33,7 @@ source(paste0(func_path, "relapse_forecast.R"))
 source(paste0(func_path, "smoke_surv.R"))
 source(paste0(func_path, "summarise_smoking_transitions.R"))
 source(paste0(func_path, "trend_fit.R"))
+source(paste0(func_path, "write_excel_report.R"))
 
 # -------------------------------------------------------------------------
 # 2. Execution Configuration
@@ -62,8 +63,6 @@ config_eng <- list(
   smokefree_target_year = 2030
 )
 
-config <- config_eng
-
 # --- Scotland Config ---
 config_scot <- list(
   country = "Scotland",
@@ -90,8 +89,6 @@ config_wales <- list(
   country = "Wales",
   survey_name = "National Survey for Wales",
   path = "transition_probability_estimates/src_wales/",
-  # NOTE: Your original script pointed to HSE (England) data here. 
-  # Please verify if this should be "NSW_...rds" or if you are using England as a proxy.
   survey_file = "HSE_2003_to_2018_tobacco_imputed.rds", 
   pop_file = "transition_probability_estimates/src_wales/inputs/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv",
   
