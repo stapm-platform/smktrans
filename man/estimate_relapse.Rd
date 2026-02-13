@@ -9,6 +9,6 @@ estimate_relapse(config, survey_data)
 \description{
 1. Prepares base relapse rates (Hawkins).
 2. Forecasts the Age/Sex/IMD specific trend using `quit_forecast`.
-3. Scales the Time-Since-Quit (TSQ) data using `relapse_forecast`.
+3. Scales the Time-Since-Quit data using `relapse_forecast`.
 4. Imputes data for ages < 18.
 }

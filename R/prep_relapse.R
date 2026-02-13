@@ -11,7 +11,7 @@
 #' @param lowest_year Integer.
 #' @param highest_year Integer.
 #' @param youngest_age Integer.
-#' @importFrom data.table copy := setDT rbindlist merge CJ setkeyv
+#' @importFrom data.table copy := setDT rbindlist CJ setkeyv
 #' @export
 prep_relapse <- function(
     data,

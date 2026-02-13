@@ -4,13 +4,7 @@
 \alias{estimate_quitting}
 \title{Estimate and Forecast Smoking Quitting}
 \usage{
-estimate_quitting(
-  config,
-  survey_data,
-  hmd_data,
-  tob_mort_data,
-  tob_mort_data_cause
-)
+estimate_quitting(config, survey_data, tob_mort_data, tob_mort_data_cause)
 }
 \description{
 1. Trend fitting & Mortality calculation.

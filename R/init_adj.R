@@ -13,7 +13,7 @@
 #' @param cohorts Integer vector - cohorts to adjust.
 #' @param period_start Integer - first year of data.
 #' @param period_end Integer - last year of data.
-#' @importFrom data.table setDT := copy merge
+#' @importFrom data.table setDT := copy
 #' @export
 init_adj <- function(
     init_data,

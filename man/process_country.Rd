@@ -7,8 +7,12 @@
 process_country(config)
 }
 \arguments{
-\item{config}{A named list containing all country-specific parameters}
+\item{config}{A named list of country-specific parameters.}
+}
+\value{
+A list containing the final datasets and samples.
 }
 \description{
-Master Process Wrapper
+Orchestrates the estimation of smoking transition probabilities,
+calculates uncertainty, and exports to a professional Excel report.
 }

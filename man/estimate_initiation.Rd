@@ -9,8 +9,6 @@ estimate_initiation(config, survey_data)
 \arguments{
 \item{config}{List. Must contain: first_year, last_year, min_age, max_age, ref_age, 
 smokefree_target_year, age_trend_limit_init, smooth_rate_dim_init, k_smooth_age_init.}
-
-\item{survey_data}{Data.table. Cleaned survey data.}
 }
 \description{
 1. Estimates historical initiation (cumulative -> density).

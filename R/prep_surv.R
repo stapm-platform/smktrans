@@ -8,7 +8,7 @@
 #' @param mx_data_hmd Data table of HMD mortality rates (1922+).
 #' @param mx_data_ons Data table of ONS stratified mortality rates.
 #' @param min_age,max_age,min_year,max_year Integers defining the scope.
-#' @importFrom data.table copy := setDT shift merge CJ setkeyv
+#' @importFrom data.table copy := setDT shift CJ setkeyv
 #' @export
 prep_surv <- function(
     mx_data_hmd = smktrans::hmd_data_eng,

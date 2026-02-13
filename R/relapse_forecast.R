@@ -8,7 +8,7 @@
 #' @param relapse_forecast_data Data table - output from quit_forecast() (The trend).
 #' @param relapse_by_age_imd_timesincequit Data table - detailed base rates from prep_relapse().
 #' @param jump_off_year Integer.
-#' @importFrom data.table copy := setnames merge
+#' @importFrom data.table copy := setnames
 #' @export
 relapse_forecast <- function(
     relapse_forecast_data,
