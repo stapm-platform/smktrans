@@ -45,7 +45,6 @@ quit_est <- function(
                        by = c("sex", "age", "year", "imd_quintile"), all.x = TRUE)
   
   # Prevalence Trends (current, former, never)
-  # Note: trend_data might have cohort col, remove if duplicative
   t_data <- copy(trend_data)
   if("cohort" %in% names(t_data)) t_data[, cohort := NULL]
   master_data <- merge(master_data, t_data, 
@@ -70,7 +69,7 @@ quit_est <- function(
   # 3. The Flow Calculation
   master_data[, cohort := year - age]
   
-  # CRITICAL: Sort by cohort and age to ensure 'shift' works along the life-course
+  # Sort by cohort and age to ensure 'shift' works along the life-course
   setkeyv(master_data, c("cohort", "sex", "imd_quintile", "age"))
   
   # Get next year's values (Lead)
