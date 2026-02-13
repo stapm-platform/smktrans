@@ -66,16 +66,27 @@ p_dense <- function(
     
     subset_data <- smk_init_data[sex == sx & imd_quintile == md]
     
-    if(nrow(subset_data) > 0) {
-      # Apply smoothing function (assumes smktrans::p_smooth exists)
-      smoothed <- smktrans::p_smooth(
-        data = subset_data, 
-        value_var = "p_start", 
-        window_size = 5
-      )
-      smoothed[, `:=`(sex = sx, imd_quintile = md)]
-      smoothed_list[[i]] <- smoothed
+    # DEBUG: Check if data actually exists here
+    if(nrow(subset_data) == 0) {
+      message(paste("Skipping: No data found for", sx, md))
+      next
     }
+    
+    # Check if all values are NA
+    if(all(is.na(subset_data$p_start))) {
+      message(paste("Skipping: All values are NA for", sx, md))
+      next
+    }
+    
+    # Apply smoothing function
+    smoothed <- p_smooth(
+      data = subset_data, 
+      value_var = "p_start", 
+      window_size = 5
+    )
+    smoothed[, `:=`(sex = sx, imd_quintile = md)]
+    smoothed_list[[i]] <- smoothed
+    
   }
   
   final_data <- rbindlist(smoothed_list, use.names = TRUE)

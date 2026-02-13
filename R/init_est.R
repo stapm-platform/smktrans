@@ -2,75 +2,91 @@
 #'
 #' @description
 #' Reconstructs longitudinal smoking histories from cross-sectional recall data.
-#' It expands each individual's record into a time-series of 0s (non-smoker)
-#' and 1s (initiation event).
-#'
-#' @details
-#' This function avoids row-wise looping for speed. It uses an "expansion"
-#' approach where we create a grid of all possible ages and join the
-#' events to it.
 #'
 #' @param data Data table of individual characteristics. Must contain 'start_age'.
-#' @param strat_vars Character vector of stratification variables (e.g., "sex", "imd_quintile").
-#' @importFrom data.table := setDT melt setnames setkeyv
+#' @param strat_vars Character vector of stratification variables.
+#' @importFrom data.table := setDT setnames setkeyv CJ
 #' @return A summarized data.table of initiation probabilities by age/year/cohort.
 #' @export
 init_est <- function(data, strat_vars = c("sex", "imd_quintile")) {
   
   # 1. Filter valid data
-  # We only want people who have a known start age
-  # Standardize start_age and filter
   dt <- copy(data)
   dt <- dt[!is.na(start_age)]
   dt[, start_age := round(start_age, 0)]
   dt <- dt[start_age >= 8]
   
-  # Keep only necessary columns to save memory
+  # Keep only necessary columns
   cols_to_keep <- c("wt_int", "year", "age", "start_age", "censor_age", strat_vars)
   dt <- dt[, ..cols_to_keep]
   
   # 2. Vectorized Expansion
-  # Instead of looping, we create a 'long' template of all relevant ages for everyone.
-  # We use a list column approach which is very fast in data.table.
+  # Create a list of ages for each person (from 8 up to censoring age)
+  # NOTE: The logic here creates the "Observed Risk Set"
+  dt_long <- dt[, .(
+    age_long = 8:(min(98, censor_age) - 1)
+  ), by = cols_to_keep]
   
-  # Create a list of ages for each person (from 8 up to their censoring age or 98)
-  # capped at 98 to match original logic
-  dt[, age_long := lapply(1:.N, function(i) 8:min(98, censor_age[i]))]
+  # 3. Assign Event Status (1 = Initiated, 0 = At Risk)
+  dt_long[, start_bin := as.integer(age_long == start_age)]
   
-  # Unnest this list column (Explode the data)
-  dt_long <- dt[, .(age_long = unlist(age_long)), by = setdiff(names(dt), "age_long")]
-  
-  # 3. Assign Event Status
-  # 1 = Initiated at this age
-  # 0 = At risk but did not initiate
-  dt_long[, start_bin := ifelse(age_long == start_age, 1, 0)]
-  
-  # Remove years after initiation (they are no longer "at risk" of starting for the first time)
+  # Remove years after initiation 
   dt_long <- dt_long[age_long <= start_age]
   
-  # 4. Calculate Cohorts and Calendar Years
+  # 4. Calculate Cohorts
   dt_long[, year_long := year - age + age_long]
   dt_long[, cohort_long := year_long - age_long]
   
-  # Filter for relevant cohorts (born >= 1930) and valid years
+  # Filter for relevant cohorts (born >= 1930) and max year check
   dt_long <- dt_long[cohort_long >= 1930 & year_long <= max(year)]
   
   # 5. Aggregate (The Numerator and Denominator)
-  # We calculate the weighted sum of initiators vs total risk pool
-  group_cols <- c("age_long", "year_long", strat_vars)
+  group_cols <- c("age_long", "cohort_long", strat_vars) # Removed year_long from group to recalculate later
   
-  smk_data <- dt_long[age_long < 90, .(
+  smk_data <- dt_long[age_long <= 30, .(
     p_start = sum(start_bin * wt_int, na.rm = TRUE) / sum(wt_int, na.rm = TRUE)
   ), by = group_cols]
   
-  # 6. Cumulative Calculations
-  smk_data[, cohort_long := year_long - age_long]
+  # --- 5.5 Standardization (Grid Expansion) ---
   
-  # Ensure data is sorted for cumulative product
+  # Define the full grid of required combinations
+  # We use data.table::CJ (Cross Join) to create every possible combination
+  # This ensures Age 8-30 exists for EVERY cohort and subgroup
+  unique_cohorts <- unique(smk_data$cohort_long)
+  unique_ages    <- 8:30 
+  
+  # Helper to get unique levels of stratification variables dynamically
+  strat_levels <- lapply(strat_vars, function(v) unique(dt[[v]]))
+  names(strat_levels) <- strat_vars
+  
+  # Create the skeleton table
+  grid_args <- c(list(cohort_long = unique_cohorts, age_long = unique_ages), strat_levels)
+  full_grid <- do.call(CJ, grid_args)
+  
+  # Merge observed data onto the full skeleton
+  smk_data <- merge(full_grid, smk_data, 
+                    by = c("cohort_long", "age_long", strat_vars), 
+                    all.x = TRUE)
+  
+  # FILL GAPS: 
+  # If a row is missing (NA), it means no initiation was observed there.
+  # We set p_start to 0. When we calculate CumProd later, 
+  # a 0 probability of start results in the Cumulative Value staying flat (LOCF).
+  smk_data[is.na(p_start), p_start := 0]
+  
+  # Recalculate 'year' since we may have added rows where it didn't exist
+  smk_data[, year_long := cohort_long + age_long]
+  
+  # ---------------------------------------------------------
+  
+  # 6. Cumulative Calculations
+  
+  # Ensure data is sorted strictly for cumprod
   setkeyv(smk_data, c("cohort_long", strat_vars, "age_long"))
   
   # Calculate Survival (Never Smoker) then convert to Ever Smoker
-  # p_ever = 1 - product(1 - p_start)
+  # If p_start is 0 for imputed rows, p_ever_smoker will effectively "carry forward" 
+  # the previous value.
   smk_data[, p_ever_smoker := 1 - cumprod(1 - p_start), by = c("cohort_long", strat_vars)]
   smk_data[, p_never_smoker := 1 - p_ever_smoker]
   

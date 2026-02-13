@@ -44,7 +44,7 @@ ever_smoke <- function(
   dt <- dt[age_cat %in% age_cats]
   
   # Bin the year variable to smooth out annual survey noise
-  dt[, year_bin := smktrans::bin_var(year, n_bins = num_bins)]
+  dt[, year_bin := bin_var(year, n_bins = num_bins)]
   dt[, cluster := as.factor(cluster)]
   
   # Create survey design object
