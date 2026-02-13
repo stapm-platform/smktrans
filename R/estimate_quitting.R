@@ -20,6 +20,22 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   smk_init_data <- readRDS(init_file)
   relapse_data  <- readRDS(rel_file)
   
+  relapse_by_age_imd <- relapse_data$relapse_by_age_imd
+  
+  # If necessary impute relapse for younger ages, 
+  # assuming same as age 18 (the source - Hawkins - is 18+ only)
+  if(config$min_age < 18) {
+    
+    temp <- relapse_by_age_imd[age == 18]
+    
+    for(i in config$min_age:17) {
+      relapse_by_age_imd <- rbindlist(list(
+        relapse_by_age_imd,
+        copy(temp)[, age := i]
+      ), use.names = TRUE)
+    }
+  }
+  
   # A. Trend Fit & Mortality
   # -------------------------------------------------------------------------
   trend_data <- trend_fit(
@@ -105,14 +121,14 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     trend_data = trend_data,
     survivorship_data = survivorship_data,
     mortality_data = mortality_data$data_for_quit_ests,
-    relapse_data = relapse_data$relapse_by_age_imd,
+    relapse_data = relapse_by_age_imd,
     initiation_data = smk_init_data,
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
   saveRDS(quit_data, file.path(config$path, "outputs", paste0("quit_data_", config$country, ".rds")))
   
-  # C. Forecast Quitting (Standard)
+  # C. Forecast Quitting
   # -------------------------------------------------------------------------
   message("   > Forecasting Quit Rates...")
   
