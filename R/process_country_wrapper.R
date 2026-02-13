@@ -31,13 +31,19 @@ process_country <- function(config) {
     survey_data <- fread(survey_path)
   }
   
+  # 1C. Load mortality data
+  # -----------------------
+  mort_data_dir <- file.path(config$path, "intermediate_data")
+  tob_mort_data_cause <- readRDS(file.path(mort_data_dir, "tob_mort_data_cause.rds"))
+  tob_mort_data <- readRDS(file.path(mort_data_dir, "tob_mort_data_trans.rds"))
+  
   # 2. Run Estimations
   # ------------------
   # Passing the whole config list to the sub-functions
   
   estimate_initiation(config, survey_data)
   estimate_relapse(config, survey_data)
-  estimate_quitting(config)
+  estimate_quitting(config, survey_data, tob_mort_data, tob_mort_data_cause)
   
   
   # 3. Net Initiation (Synthetic Cohort)

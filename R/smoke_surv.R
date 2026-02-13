@@ -32,7 +32,6 @@ smoke_surv <- function(
   
   # 2. Calculate Individual Survival Probabilities
   # We iterate over years because mortality rates (mx_data) change by year.
-  # (Optimization: Pre-split data to avoid repeated subsetting overhead)
   
   results_list <- vector("list", length(min_year:max_year))
   names(results_list) <- min_year:max_year
@@ -83,7 +82,6 @@ smoke_surv <- function(
   setkeyv(domain, c("year", "sex", "imd_quintile", "smk.state", "age"))
   
   # Handle NAs and outliers before smoothing
-  # (Logic from original script: clear outlier qx values for elderly)
   domain[is.na(qx), qx := 0]
   domain[age > 80 & qx < 0.05, qx := NA] # Suspiciously low mortality for elderly
   domain[age > 60 & qx < 0.005, qx := NA]

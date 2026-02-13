@@ -95,7 +95,6 @@ quit_forecast <- function(
       
       # 3. SVD Decomposition (Lee-Carter)
       # Transpose so Rows=Year, Cols=Age for standard SVD processing
-      # (Note: Original code transposed here, sticking to that logic)
       mat_t <- t(mat_smooth) 
       
       # Logit Transform
