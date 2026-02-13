@@ -9,18 +9,11 @@ init_est(data, strat_vars = c("sex", "imd_quintile"))
 \arguments{
 \item{data}{Data table of individual characteristics. Must contain 'start_age'.}
 
-\item{strat_vars}{Character vector of stratification variables (e.g., "sex", "imd_quintile").}
+\item{strat_vars}{Character vector of stratification variables.}
 }
 \value{
 A summarized data.table of initiation probabilities by age/year/cohort.
 }
 \description{
 Reconstructs longitudinal smoking histories from cross-sectional recall data.
-It expands each individual's record into a time-series of 0s (non-smoker)
-and 1s (initiation event).
-}
-\details{
-This function avoids row-wise looping for speed. It uses an "expansion"
-approach where we create a grid of all possible ages and join the
-events to it.
 }

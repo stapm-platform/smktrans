@@ -15,7 +15,7 @@
 #' @param relapse_data Output of prep_relapse() (aggregated version).
 #' @param initiation_data Output of init_adj().
 #' @param min_age,max_age,min_year,max_year Integers.
-#' @importFrom data.table setDT := setnames shift merge setkeyv
+#' @importFrom data.table setDT := setnames shift setkeyv
 #' @export
 quit_est <- function(
     trend_data,

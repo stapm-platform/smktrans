@@ -42,6 +42,7 @@ reference:
   - calculate_net_initiation
   - generate_uncertainty
   - summarise_smoking_transitions
+  - write_excel_report
 
 - title: Smoking trends
   contents:

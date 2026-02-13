@@ -24,8 +24,8 @@ prep_relapse(
 \item{youngest_age}{Integer.}
 }
 \description{
-Combines published estimates of long-term relapse (Hawkins 2010) with 
-population survey data. It maps these probabilities onto the survey population's 
-demographic structure (education, mental health, etc.) to derive 
+Combines published estimates of long-term relapse (Hawkins 2010) with
+population survey data. It maps these probabilities onto the survey population's
+demographic structure (education, mental health, etc.) to derive
 aggregate relapse rates by Age, Sex, IMD, and Time Since Quit.
 }
