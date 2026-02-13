@@ -45,7 +45,6 @@ process_country <- function(config) {
   estimate_relapse(config, survey_data)
   estimate_quitting(config, survey_data, tob_mort_data, tob_mort_data_cause)
   
-  
   # 3. Net Initiation (Synthetic Cohort)
   # ------------------------------------
   out_dir <- file.path(config$path, "outputs")
