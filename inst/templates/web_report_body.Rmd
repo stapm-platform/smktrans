@@ -1,0 +1,195 @@
+```{r setup_child, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = FALSE, 
+  warning = FALSE, 
+  message = FALSE,
+  fig.width = 9, 
+  fig.height = 6
+)
+
+library(data.table)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(viridis)
+
+# 1. DEFINE DATA PATHS
+# --------------------
+# We try to find the root of the project, then append the specific path you gave.
+tryCatch({
+  proj_root <- rprojroot::find_root(rprojroot::is_rstudio_project)
+}, error = function(e) {
+  # Fallback if not in RStudio project
+  proj_root <- getwd()
+})
+
+# Construct the path specifically for England (or make it dynamic if folder names differ)
+# Assuming the folder structure is consistent: transition_probability_estimates/src_{country}/outputs
+# We convert country name to lower case for the folder name (England -> src_england)
+country_slug <- tolower(gsub(" ", "_", cfg$country))
+data_dir <- file.path(proj_root, "transition_probability_estimates", paste0("src_", country_slug), "outputs")
+
+# Fallback: If that folder doesn't exist, try the absolute path from the config
+if (!dir.exists(data_dir)) {
+  message(paste("Could not find relative path:", data_dir))
+  message("Falling back to cfg$path...")
+  data_dir <- file.path(cfg$path, "outputs")
+}
+
+# 2. HELPER TO LOAD FILES
+# -----------------------
+get_res <- function(prefix) {
+  # Construct filename: e.g., "init_forecast_data_England.rds"
+  f_name <- paste0(prefix, "_forecast_data_", cfg$country, ".rds")
+  f_path <- file.path(data_dir, f_name)
+  
+  if(file.exists(f_path)) {
+    return(readRDS(f_path))
+  } else {
+    warning(paste("Missing file:", f_path))
+    return(NULL)
+  }
+}
+
+# 3. LOAD THE DATA
+# ----------------
+init_dt        <- get_res("init")
+quit_dt        <- get_res("quit")
+rel_dt         <- get_res("relapse")
+
+# Basic color scale
+imd_pal <- viridis::viridis(5, option = "D", end = 0.9)
+
+# --- GITHUB DOWNLOAD LINK SETUP ---
+gh_user <- "stapm-platform"
+gh_repo <- "smktrans"
+gh_branch <- "master" 
+
+
+excel_name <- paste0("SmokeStateTransProbs_", cfg$country, "_", Sys.Date(), ".xlsx")
+download_url <- paste0("[https://github.com/](https://github.com/)", gh_user, "/", gh_repo, "/raw/", gh_branch, 
+                       "/transition_probability_estimates/outputs/", excel_name)
+```
+
+# Summary
+
+**Analysis Region:** `r cfg$country`  
+**Data Source:** `r cfg$survey_name` (`r cfg$first_year` - `r cfg$last_year`)  
+**Year projection becomes stationary:** `r cfg$cont_limit`
+
+This report shows the estimated baseline transition probabilities used in the simulation model. 
+
+<a href="`r download_url`" class="btn btn-primary" role="button" style="color: white; text-decoration: none; padding: 10px 20px;">
+  <i class="fa fa-download"></i> Download Full Excel Estimates
+</a>
+
+---
+
+# 1. Initiation
+
+```{r init_trend}
+if(!is.null(init_dt)) {
+  
+  # 1. Prepare Data
+  # Ensure IMD is a factor so the legend is discrete, not a continuous bar
+  plot_data <- init_dt[age <= 30]
+  plot_data[, imd_quintile := as.factor(imd_quintile)]
+
+  # 2. Create Base Plot
+  g <- ggplot(plot_data, aes(x = age, y = p_start, 
+                             color = imd_quintile, 
+                             frame = year)) + 
+    geom_line(linewidth = 1.2) +
+    facet_wrap(~sex) +
+    scale_color_manual(values = imd_pal, name = "IMD Quintile") +
+    labs(title = "Initiation Probability by Age", 
+         y = "Probability", x = "Age") +
+    theme_minimal() 
+
+  # 3. Convert to Plotly object
+  gp <- ggplotly(g)
+  
+  # 4. FIX DUPLICATE LEGEND ENTRIES
+  # We loop through the plot data. If we see a name (e.g. "1") that we have 
+  # seen before, we turn off its legend entry.
+  unique_names <- c()
+  for (i in seq_along(gp$x$data)) {
+    # Get the name of this trace (e.g., "1", "2", "3")
+    trace_name <- gp$x$data[[i]]$name
+    
+    if (trace_name %in% unique_names) {
+      # If we've seen it, hide the legend for this specific trace
+      gp$x$data[[i]]$showlegend <- FALSE
+    } else {
+      # If it's new, add to our list and keep the legend
+      unique_names <- c(unique_names, trace_name)
+    }
+  }
+
+  # 5. Final Layout & Animation Settings
+  gp %>%
+    layout(shapes = list(
+      list(type = "line", 
+           x0 = 18, x1 = 18, 
+           y0 = 0, y1 = 1, 
+           yref = "paper",
+           line = list(color = "grey", width = 1, dash = "dash"))
+    )) %>%
+    animation_opts(frame = 100, transition = 0, redraw = FALSE) %>%
+    animation_slider(currentvalue = list(prefix = "Year: "))
+
+} else {
+  cat("No Initiation Data Found.")
+}
+```
+
+
+---
+
+# 2. Quitting
+
+```{r quit_trend}
+if(!is.null(quit_dt)) {
+  trend_quit <- quit_dt[, .(p = mean(p_quit)), by = .(year, sex, imd_quintile)]
+  g3 <- ggplot(trend_quit, aes(x = year, y = p, color = imd_quintile)) +
+    geom_line() +
+    facet_wrap(~sex) +
+    scale_color_manual(values = imd_pal) +
+    labs(title = "Mean Quit Probability (All Ages)", 
+         y = "Probability", x = "Year") +
+    theme_minimal()
+  ggplotly(g3)
+}
+```
+
+### Quit Rates Table (2024)
+
+```{r quit_table}
+if(!is.null(quit_dt)) {
+  t_dt <- quit_dt[year == 2024, .(sex, age, imd_quintile, p_quit)]
+  datatable(t_dt, filter = 'top', rownames = FALSE,
+            options = list(pageLength = 10, autoWidth = TRUE)) %>%
+    formatRound(columns = "p_quit", digits = 4)
+}
+```
+
+---
+
+# 3. Relapse
+
+```{r rel_trend}
+if(!is.null(rel_dt)) {
+  rel_curve <- rel_dt[year == 2024, .(p = mean(p_relapse)), by = .(time_since_quit, sex)]
+  g4 <- ggplot(rel_curve, aes(x = time_since_quit, y = p, color = sex)) +
+    geom_line(linewidth = 1) +
+    labs(title = "Relapse Decay Curve (Year 2024)", 
+         x = "Years Since Quitting", y = "Probability") +
+    theme_minimal()
+  ggplotly(g4)
+}
+```
+
+---
+*Report generated on `r Sys.Date()` using `smktrans`.*

@@ -50,10 +50,20 @@ config_eng <- list(
   
   first_year = 2003, last_year = 2018,
   min_age = 11, max_age = 89, ref_age = 30,
+  time_horizon = 2040,
   
   # Initiation Params
-  max_age_init = 30, age_trend_limit_init = 21,
-  smooth_rate_dim_init = c(3, 7), k_smooth_age_init = 0,
+  max_age_init = 30, age_trend_limit_init = 30,
+  init_model_choice = "model8",
+  
+  smooth_rate_dim_init = c(3, 15), 
+  # The dimensions of the 2d window used to 
+  # smooth trends in the rates by age and year. (age, year), 
+  # Defaults to c(3, 3). Must be odd numbers
+  
+  k_smooth_age_init = 0,
+  # the degree of smoothing to apply to the age pattern of change (rotation). 
+  # If zero, then no smoothing is applied.
   
   # Quit/Relapse Params
   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 79,
@@ -61,50 +71,52 @@ config_eng <- list(
   
   # Uncertainty Params
   kn = 50, kR = 0.9, kn_samp = 3,
-  smokefree_target_year = 2030
+  cont_limit = 2019
 )
 
 # --- Scotland Config ---
-config_scot <- list(
-  country = "Scotland",
-  survey_name = "Scottish Health Survey",
-  path = "transition_probability_estimates/src_scotland/",
-  survey_file = "SHeS_2008_to_2019_tobacco_imputed.rds",
-  pop_file = "transition_probability_estimates/src_scotland/inputs/pop_sizes_scotland_national_v1_2022-12-13_mort.tools_1.5.0.csv",
-  
-  first_year = 2008, last_year = 2019,
-  min_age = 16, max_age = 89, ref_age = 30,
-  
-  max_age_init = 30, age_trend_limit_init = 22,
-  smooth_rate_dim_init = c(3, 5), k_smooth_age_init = 0,
-  
-  smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
-  smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
-  
-  kn = 50, kR = 0.9, kn_samp = 1000,
-  smokefree_target_year = 2034 # Scotland's target is usually 2034
-)
+# config_scot <- list(
+#   country = "Scotland",
+#   survey_name = "Scottish Health Survey",
+#   path = "transition_probability_estimates/src_scotland/",
+#   survey_file = "SHeS_2008_to_2019_tobacco_imputed.rds",
+#   pop_file = "transition_probability_estimates/src_scotland/inputs/pop_sizes_scotland_national_v1_2022-12-13_mort.tools_1.5.0.csv",
+#   
+#   first_year = 2008, last_year = 2019,
+#   min_age = 16, max_age = 89, ref_age = 30,
+#   time_horizon = 2040,
+#   
+#   max_age_init = 30, age_trend_limit_init = 22,
+#   smooth_rate_dim_init = c(3, 5), k_smooth_age_init = 0,
+#   
+#   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
+#   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
+#   
+#   kn = 50, kR = 0.9, kn_samp = 1000,
+#   smokefree_target_year = 2034 # Scotland's target is usually 2034
+# )
 
 # --- Wales Config ---
-config_wales <- list(
-  country = "Wales",
-  survey_name = "National Survey for Wales",
-  path = "transition_probability_estimates/src_wales/",
-  survey_file = "HSE_2003_to_2018_tobacco_imputed.rds", 
-  pop_file = "transition_probability_estimates/src_wales/inputs/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv",
-  
-  first_year = 2016, last_year = 2023,
-  min_age = 18, max_age = 89, ref_age = 30,
-  
-  max_age_init = 30, age_trend_limit_init = 21,
-  smooth_rate_dim_init = c(3, 7), k_smooth_age_init = 0,
-  
-  smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
-  smooth_rate_dim_relapse = c(15, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
-  
-  kn = 50, kR = 0.95, kn_samp = 1000,
-  smokefree_target_year = 2030
-)
+# config_wales <- list(
+#   country = "Wales",
+#   survey_name = "National Survey for Wales",
+#   path = "transition_probability_estimates/src_wales/",
+#   survey_file = "HSE_2003_to_2018_tobacco_imputed.rds", 
+#   pop_file = "transition_probability_estimates/src_wales/inputs/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv",
+#   
+#   first_year = 2016, last_year = 2023,
+#   min_age = 18, max_age = 89, ref_age = 30,
+#   time_horizon = 2040,
+#   
+#   max_age_init = 30, age_trend_limit_init = 21,
+#   smooth_rate_dim_init = c(3, 7), k_smooth_age_init = 0,
+#   
+#   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 75,
+#   smooth_rate_dim_relapse = c(15, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 75,
+#   
+#   kn = 50, kR = 0.95, kn_samp = 1000,
+#   smokefree_target_year = 2030
+# )
 
 
 # -------------------------------------------------------------------------
@@ -115,16 +127,30 @@ config_wales <- list(
 process_country(config_eng)
 
 # Run Scotland
-process_country(config_scot)
+#process_country(config_scot)
 
 # Run Wales
-process_country(config_wales)
+#process_country(config_wales)
 
 # -------------------------------------------------------------------------
 # 4. Generate Web Reports
 # -------------------------------------------------------------------------
-# Put your configs into a list
-all_configs <- list(config_eng)#, config_scot, config_wales)
 
-# Run the builder
-build_web_reports(all_configs)
+# Create the folder if it doesn't exist
+if(!dir.exists("inst/extdata")) dir.create("inst/extdata", recursive = TRUE)
+
+# Name the list items
+all_configs <- list(
+  "England"  = config_eng#, 
+  #"Scotland" = config_scot, 
+  #"Wales"    = config_wales
+)
+
+# Save to disk
+saveRDS(all_configs, "inst/extdata/report_configs.rds")
+
+# Generate the Rmd wrappers
+build_web_reports()
+
+# Build the site
+pkgdown::build_site()

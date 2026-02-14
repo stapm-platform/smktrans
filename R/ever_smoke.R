@@ -73,10 +73,13 @@ ever_smoke <- function(
   # Model Selection
   f <- switch(model,
               "model1" = ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + imd_quintile:year_bin + sex:imd_quintile,
-              "model2" = ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + sex:imd_quintile,
-              "model3" = ever_smoker ~ sex + imd_quintile + year_bin + imd_quintile:year_bin + sex:imd_quintile,
-              "model4" = ever_smoker ~ sex + imd_quintile + year_bin + sex:imd_quintile,
-              "model5" = ever_smoker ~ imd_quintile + sex + year_bin + year_bin:sex + sex:imd_quintile
+              "model2" = ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + imd_quintile:year_bin,
+              "model3" = ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin + sex:imd_quintile,
+              "model4" = ever_smoker ~ sex + imd_quintile + year_bin + imd_quintile:year_bin + sex:imd_quintile,
+              "model5" = ever_smoker ~ sex + imd_quintile + year_bin + sex:year_bin,
+              "model6" = ever_smoker ~ sex + imd_quintile + year_bin + sex:imd_quintile,
+              "model7" = ever_smoker ~ sex + imd_quintile + year_bin + imd_quintile:year_bin,
+              "model8" = ever_smoker ~ sex + imd_quintile + year_bin,
   )
   
   if(is.null(f)) stop("Invalid model selection")
