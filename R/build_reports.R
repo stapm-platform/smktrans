@@ -1,47 +1,60 @@
 #' Build Web Reports for Pkgdown
 #'
-#' @description Generates HTML articles for the package website based on the
-#' configuration lists used in the analysis.
-#' @param config_list A list of configuration objects (e.g. list(config_eng, config_scot))
+#' @description Generates RMarkdown wrapper files in vignettes/articles.
+#' These wrappers load the saved configuration and render the report body.
 #' @export
-build_web_reports <- function(config_list) {
+build_web_reports <- function() {
   
-  options(rmarkdown.html_vignette.check_title = FALSE)
-  
-  # 1. Ensure Directory Exists
-  # pkgdown looks for "vignettes/" or "vignettes/articles/"
+  # 1. Define Paths
   article_dir <- "vignettes/articles"
   if (!dir.exists(article_dir)) dir.create(article_dir, recursive = TRUE)
   
-  # 2. Locate Template
-  # We assume the file is in inst/templates
-  # When the package is loaded, system.file finds it. 
-  # If running locally (dev), we look in relative path.
-  tmpl <- system.file("templates", "web_report.Rmd", package = "smktrans")
-  if (tmpl == "") tmpl <- "inst/templates/web_report.Rmd"
+  # Check for the configs file (we will save this in Step 3)
+  config_path <- system.file("extdata", "report_configs.rds", package = "smktrans")
+  if (config_path == "") {
+    # Fallback for dev mode
+    config_path <- "inst/extdata/report_configs.rds"
+  }
   
-  if (!file.exists(tmpl)) stop("Could not find inst/templates/web_report.Rmd")
+  if (!file.exists(config_path)) {
+    stop("Could not find inst/extdata/report_configs.rds. Did you save the configs in your master script?")
+  }
   
-  # 3. Loop through configs
-  for (cfg in config_list) {
+  # Load configs to get the names
+  all_configs <- readRDS(config_path)
+  
+  # 2. Loop through configs and create Rmd wrappers
+  for (country in names(all_configs)) {
     
-    country_name <- cfg$country
-    message(paste(">> Rendering Web Report for:", country_name))
+    message(paste(">> Creating Rmd Wrapper for:", country))
     
-    # Output filename (pkgdown friendly: lowercase, no spaces)
-    out_name <- paste0("report_", tolower(gsub(" ", "_", country_name)), ".html")
-    out_path <- file.path(article_dir, out_name)
+    # Filename: report_england.Rmd
+    fname <- paste0("report_", tolower(gsub(" ", "_", country)), ".Rmd")
+    fpath <- file.path(article_dir, fname)
     
-    # Render
-    rmarkdown::render(
-      input = tmpl,
-      output_file = out_name,
-      output_dir = article_dir,
-      params = list(config = cfg),
-      quiet = TRUE
+    # The content of the wrapper Rmd
+    # It loads the config list, extracts the right country, and includes the body template
+    yaml_header <- paste0(
+      "---\n",
+      "title: \"Smoking Transition Estimates: ", country, "\"\n",
+      "resource_files:\n",
+      "  - ../../inst/extdata/report_configs.rds\n",
+      "---\n\n"
     )
     
-    message(paste("   Created:", out_path))
+    r_chunk <- paste0(
+      "```{r setup_wrapper, include=FALSE}\n",
+      "# Load the config for this specific country\n",
+      "configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))\n",
+      "cfg <- configs[['", country, "']]\n",
+      "```\n\n",
+      "```{r child, child='../../inst/templates/web_report_body.Rmd'}\n",
+      "```\n"
+    )
+    
+    # Write the file
+    writeLines(paste0(yaml_header, r_chunk), fpath)
+    message(paste("   Generated:", fpath))
   }
   
 }

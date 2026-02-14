@@ -67,7 +67,8 @@ Imports:
     openxlsx,
     demography,
     Hmisc,
-    ggthemes
+    ggthemes,
+    rprojroot
 RdMacros: Rdpack, lifecycle
 Suggests: 
     distill,
