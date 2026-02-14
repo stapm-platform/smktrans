@@ -49,6 +49,8 @@ estimate_relapse <- function(config, survey_data) {
     youngest_age = 18
   )
   
+  relapse_data$relapse_by_age_imd_timesincequit <- relapse_data$relapse_by_age_imd_timesincequit[year <= config$time_horizon]
+  
   saveRDS(relapse_data, file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds")))
   
   # B. Forecast Age/Sex/IMD Trend

@@ -14,6 +14,7 @@ library(ggplot2)
 library(plotly)
 library(DT)
 library(viridis)
+library(crosstalk)
 
 # 1. DEFINE DATA PATHS
 # --------------------
@@ -145,7 +146,119 @@ if(!is.null(init_dt)) {
 }
 ```
 
+---
 
+# 2. Relapse
+```{r rel_trend}
+# 1. Load Libraries
+library(ggplot2)
+library(plotly)
+library(crosstalk)
+library(htmltools)
+library(viridis)
+
+# Check data availability
+if(exists("rel_dt") && !is.null(rel_dt)) {
+
+  # 2. Performance & Data Prep
+  # Take ONLY the columns we need (speeds up loading significantly)
+  plot_data <- as.data.frame(rel_dt)[, c("age", "p_relapse", "imd_quintile", "sex", "year", "time_since_quit")]
+  
+  # Filter by time horizon if config exists
+  if(exists("config") && is.list(config) && !is.null(config[["time_horizon"]])) {
+    plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
+  }
+
+  # Ensure factors for cleaner dropdowns
+  plot_data$imd_quintile <- as.factor(plot_data$imd_quintile)
+  
+  # CRITICAL FIX: Create a unique Row ID. 
+  # This acts as the 'address' for every data point, ensuring lines don't break when filtering.
+  plot_data$row_id <- seq_len(nrow(plot_data))
+
+  # 3. Create SharedData with Explicit Key
+  # 'key = ~row_id' fixes the "invisible lines" bug
+  shared_relapse <- SharedData$new(plot_data, key = ~row_id)
+
+  # 4. Create the Filters
+  filters_ui <- htmltools::div(
+    id = "filter_row",
+    style = "display: flex; gap: 20px; margin-bottom: 20px; align-items: center;", 
+    
+    # Filter 1: TSQ
+    htmltools::div(style = "flex: 1;",
+      filter_select("tsq_sel", "Years Since Quitting", shared_relapse, ~time_since_quit, multiple = FALSE)
+    ),
+    
+    # Filter 2: Year
+    htmltools::div(style = "flex: 1;",
+      filter_select("year_sel", "Calendar Year", shared_relapse, ~year, multiple = FALSE)
+    )
+  )
+
+  # 5. Create GGPlot
+  g4 <- ggplot(shared_relapse, aes(x = age, y = p_relapse, color = imd_quintile, group = imd_quintile)) +   
+    geom_line(linewidth = 1) +
+    # Use grid instead of wrap for better alignment
+    facet_grid(. ~ sex) +
+    scale_color_viridis_d("IMD Quintile", option = "D", end = 0.9) +
+    labs(x = "Age", y = "Probability") +
+    theme_minimal() +
+    theme(
+      # Moving legend to bottom fixes the "uneven panel width" issue
+      legend.position = "bottom",
+      panel.spacing = unit(2, "lines")
+    ) +
+    scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+
+  # 6. Convert to Plotly
+  gp4 <- ggplotly(g4, tooltip = c("x", "y", "colour")) %>%
+    layout(
+      legend = list(
+        orientation = "h",   # Horizontal legend
+        xanchor = "center",  # Center it
+        x = 0.5,             # Middle of plot
+        y = -0.2             # Below the plot
+      ),
+      margin = list(t = 30, b = 80) # Add bottom margin for legend
+    )
+
+  # 7. Render Layout with Auto-Select Script
+  htmltools::tagList(
+    # CSS to hide "Clear" buttons
+    tags$style(HTML("#filter_row .selectize-control.single .selectize-input.allow-single-deselect .item .remove { display: none !important; }")),
+    
+    # JS to auto-select first options and fix empty plot on load
+    tags$script(HTML("
+      function initFilters() {
+        var container = document.getElementById('filter_row');
+        if (!container) return false;
+        var selects = container.querySelectorAll('.selectized');
+        if (selects.length < 2) return false;
+        
+        selects.forEach(function(sel) {
+          if (sel.selectize) {
+             var s = sel.selectize;
+             s.removeOption(''); // Remove 'All'
+             if (s.getValue() === '') {
+                var first = Object.keys(s.options)[0];
+                if (first === '') first = Object.keys(s.options)[1];
+                if (first) s.setValue(first);
+             }
+          }
+        });
+        return true;
+      }
+      var checkInt = setInterval(function() { if (initFilters()) clearInterval(checkInt); }, 200);
+    ")),
+
+    bscols(widths = 12, filters_ui, gp4)
+  )
+
+} else {
+  cat("No Data.")
+}
+```
 ---
 
 # 2. Quitting
@@ -175,21 +288,6 @@ if(!is.null(quit_dt)) {
 }
 ```
 
----
-
-# 3. Relapse
-
-```{r rel_trend}
-if(!is.null(rel_dt)) {
-  rel_curve <- rel_dt[year == 2024, .(p = mean(p_relapse)), by = .(time_since_quit, sex)]
-  g4 <- ggplot(rel_curve, aes(x = time_since_quit, y = p, color = sex)) +
-    geom_line(linewidth = 1) +
-    labs(title = "Relapse Decay Curve (Year 2024)", 
-         x = "Years Since Quitting", y = "Probability") +
-    theme_minimal()
-  ggplotly(g4)
-}
-```
 
 ---
 *Report generated on `r Sys.Date()` using `smktrans`.*

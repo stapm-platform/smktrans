@@ -38,7 +38,16 @@ ggplot(init_data[year == 2020 & age <= config$age_trend_limit_init]) +
 # Relapse
 ###############
 
+relapse_data <- readRDS(file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
 
+ggplot(relapse_data[year == 2020 & time_since_quit == 0]) +
+  geom_line(aes(x = age, y = p_relapse, color = imd_quintile), linewidth = 1.2) +
+  facet_wrap(~ sex) +
+  labs(x = "Age", y = "Probability of Relapse") +
+  theme_minimal() +
+  scale_color_viridis_d("IMD quintile", option = "viridis", begin = 0.2, end = 0.9, labels = c("1 (least deprived)", "2", "3", "4", "5 (most deprived)")) +
+  geom_vline(xintercept = 18, linetype = "dashed", color = "grey40", linewidth = 0.8)  +
+  scale_y_continuous(limits = c(0, NA), breaks = seq(0, 1, 0.05))
 
 
 

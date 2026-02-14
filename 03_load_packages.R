@@ -19,6 +19,8 @@ library(survey)
 library(matrixStats)
 library(plotly)
 library(DT)
+library(crosstalk)
+library(htmltools)
 
 # STAPM packages
 library(stapmr)
