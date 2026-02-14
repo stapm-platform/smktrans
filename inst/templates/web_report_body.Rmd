@@ -99,12 +99,16 @@ quit_dt        <- get_res("quit")
 rel_dt         <- get_res("relapse")
 
 # 7. GITHUB LINK SETUP
-# --------------------
 gh_user <- "stapm-platform"
 gh_repo <- "smktrans"
 gh_branch <- "master" 
+
+# NOTE: This assumes the Excel file was generated on the SAME day this report is rendered.
+# If the Excel files are older, you might need to find the specific file rather than using Sys.Date()
 excel_name <- paste0("SmokeStateTransProbs_", config$country, "_", Sys.Date(), ".xlsx")
-download_url <- paste0("[https://github.com/](https://github.com/)", gh_user, "/", gh_repo, 
+
+# CLEAN URL CONSTRUCTION (No brackets or markdown syntax here)
+download_url <- paste0("https://github.com/", gh_user, "/", gh_repo, 
                        "/raw/", gh_branch, 
                        "/transition_probability_estimates/outputs/", excel_name)
 ```
