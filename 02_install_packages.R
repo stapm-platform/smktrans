@@ -81,10 +81,10 @@ devtools::install_git(
   ref = versions[4],
   build_vignettes = FALSE, quiet = FALSE)
 
-#devtools::install_git(
-#  "https://github.com/stapm/smktrans.git", 
-#  ref = versions[5],
-#  build_vignettes = FALSE, quiet = FALSE)
+devtools::install_git(
+  "https://github.com/stapm-platform/smktrans.git", 
+  #ref = versions[5],
+  build_vignettes = FALSE, quiet = FALSE)
 
 devtools::install_github(
   "https://github.com/stapm-platform/toolkitr.git",

@@ -76,9 +76,7 @@ process_country <- function(config) {
   write_excel_report(config, 
                      init_data_uncertainty$data, 
                      quit_data_uncertainty$data, 
-                     relapse_data_uncertainty$data, 
-                     net_init_uncertainty$data,
-                     quit_no_init_uncertainty$data)
+                     relapse_data_uncertainty$data)
   
   message(paste(">> Done with", config$country))
   return(invisible(TRUE))
