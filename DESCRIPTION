@@ -1,31 +1,39 @@
 Package: smktrans
 Type: Package
 Title: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data
-Version: 1.6.0
+Version: 2.0.0
 Authors@R: 
-    c(
-    person(given = "Duncan",
-           family = "Gillespie",
-           role = c("aut", "cre"),
-           email = "duncan.gillespie@sheffield.ac.uk",
-           comment = c(ORCID = "0000-0003-3450-5747")),
-    person(given = "Laura",
-           family = "Webster",
-           role = c("aut"),
-           comment = c(ORCID = "0000-0002-4307-9631")),
-    person(given = "Grace",
-           family = "Leeming",
-           role = c("aut"),
-           email = "g.leeming@sheffield.ac.uk",
-           comment = c(ORCID = "0000-0003-4836-7840")),
-    person(given = "Magdalena",
-           family = "Opazo-Breton",
-           role = c("aut")),        
-    person(given = "Alan",
-           family = "Brennan",
-           role = c("aut"),
-           email = "a.brennan@sheffield.ac.uk",
-           comment = c(ORCID = "0000-0002-1025-312X"))
+    c(person(given = "Duncan",
+             family = "Gillespie",
+             role = c("aut", "cre"),
+             email = "duncan.gillespie@sheffield.ac.uk",
+             comment = c(ORCID = "0000-0003-3450-5747")),
+      person(given = "Alan",
+             family = "Brennan",
+             role = c("aut"),
+             email = "a.brennan@sheffield.ac.uk",
+             comment = c(ORCID = "0000-0002-1025-312X")),
+      person(given = "Laura",
+             family = "Webster",
+             role = c("ctb"),
+             comment = c(ORCID = "0000-0002-4307-9631", "Original code and methodology")),
+      person(given = "Grace",
+             family = "Leeming",
+             role = c("ctb"),
+             email = "g.leeming@sheffield.ac.uk",
+             comment = c(ORCID = "0000-0003-4836-7840", "Code extension to Scotland")),
+      person(given = "Robin",
+             family = "Purshouse",
+             role = c("ctb"),
+             comment = "Methodological review and feedback"),
+      person(given = "Hazel",
+             family = "Squires",
+             role = c("ctb"),
+             comment = "Methodological review and feedback"),
+      person(given = "Shangshang",
+             family = "Gu",
+             role = c("ctb"),
+             comment = "Methodological review and feedback")
     )
 Maintainer: Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
 Description: Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.

@@ -4,12 +4,9 @@
 \alias{build_web_reports}
 \title{Build Web Reports for Pkgdown}
 \usage{
-build_web_reports(config_list)
-}
-\arguments{
-\item{config_list}{A list of configuration objects (e.g. list(config_eng, config_scot))}
+build_web_reports()
 }
 \description{
-Generates HTML articles for the package website based on the
-configuration lists used in the analysis.
+Generates RMarkdown wrapper files in vignettes/articles.
+These wrappers load the saved configuration and render the report body.
 }

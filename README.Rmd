@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 # smktrans <img src="man/figures/logo.png" align="right" style="padding-left:10px;background-color:white;" width="120" />
 
-### An R Package and Workflow for estimating smoking state transition probabilities
+### Smoking State Transition Probability Estimation
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
@@ -23,55 +23,86 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-**smktrans** is an estimation workflow structured as an R package. It serves two purposes:  
+The **smktrans** R package provides a methodological framework and automated workflow for estimating the probabilities of individuals transitioning between smoking states (initiation, quitting, and relapse) using repeat cross-sectional survey data. 
 
-1.  **Toolbox:** It provides a set of R functions to estimate transition probabilities among current, former, and never smoking states (initiation, quitting, and relapse) from repeat cross-sectional survey data.  
+It is a core component of the [Sheffield Tobacco and Alcohol Policy Modelling (STAPM) platform](https://stapm-platform.github.io/), specifically designed to generate transition parameters for the Sheffield Tobacco Policy Model (STPM).
 
-2.  **Workflow:** It contains the specific analytical workflow used to produce the official estimates for the Sheffield Tobacco Policy Model (STPM).  
+### Key Methodological Capabilities
 
-This package is part of the [Sheffield Tobacco and Alcohol Policy Modelling (STAPM) platform](https://stapm-platform.github.io/).
+* **Cohort Reconstruction:** Methods to derive longitudinal-style life histories from cross-sectional survey data.  
 
----
+* **The "Quit Solver":** A mathematical approach to estimating age-specific quit rates by reconciling changes in smoking prevalence with known initiation, relapse and mortality rates.  
 
-## Why use this package?
-smktrans solves the "missing data" problem in dynamic tobacco modelling:
+* **Long-term Forecasting:** Tools to project transition probabilities over extended time horizons (e.g., to 2040) to support policy impact assessments.  
 
-Cohort Reconstruction: Converts snapshot survey data into longitudinal histories to estimate initiation rates.
-
-The "Quit Solver": Calculates quit rates (which are notoriously hard to measure directly from survey prevalence alone) by solving the flow equation: Change in Prevalence = Initiation + Relapse - Quitting - Mortality.
-
-Forecasting: Projects these rates into the future (e.g., to 2100) to support long-term policy impact assessments.
+* **Data Stratification:** Estimation by age, sex, and Index of Multiple Deprivation (IMD) quintiles.  
 
 ---
 
-## Package Structure
+## Documentation and Vignettes
 
-While `smktrans` can be installed and used like a standard R package, it is designed to encompass both the tools *and* the analysis. 
+For comprehensive guides on package usage and detailed methodology, please refer to the **[Articles](https://stapm-platform.github.io/smktrans/articles/index.html)** section of the package website.
 
-The estimates produced by this workflow are probabilities of **smoking initiation**, **quitting**, and **relapse**, stratified by:
-* Age
-* Period
-* Sex
-* Index of Multiple Deprivation (IMD) quintiles
+Key documentation includes:  
 
-### Open Science & Estimates
-We have made this code open source to ensure transparency, share methodology, and allow others to utilize our pre-calculated estimates for England, Scotland and Wales [Download via OSF](https://osf.io/zy9q8)
+* **Package Workflow:** A step-by-step guide to the estimation process.  
+
+* **Methodological Documentation:** Technical details on the "Quit Solver" and cohort reconstruction.  
+
+* **Accessing Estimates:** Presentation of the pre-calculated estimates for England, Scotland, and Wales.  
+
 
 ---
 
-## 🛠 Installation
+## Installation
 
-`smktrans` relies on several internal STAPM packages (e.g. `hseclean`, `tobalcepi`, `mort.tools`). You can install the package directly from GitHub. (to be honest, we've never had anyone other than the internal STAPM team use the package, so it has not been tested outside of our team environment)
+The package can be installed from GitHub. Please note that `smktrans` depends on several internal STAPM packages for data processing and mortality adjustment.
 
-``` r
-# install.packages("devtools")
+```{r install, eval = F}
+# install.packages("remotes")
 
-# 1. Install dependencies
-devtools::install_git("[https://github.com/stapm/hseclean.git](https://github.com/stapm-platform/hseclean.git)", build_vignettes = FALSE, quiet = TRUE)
-devtools::install_git("[https://github.com/stapm/tobalcepi.git](https://github.com/stapm-platform/tobalcepi.git)", build_vignettes = FALSE, quiet = TRUE)
-devtools::install_git("[https://github.com/stapm/mort.tools.git](https://github.com/stapm-platform/mort.tools.git)", build_vignettes = FALSE, quiet = TRUE)
+# 1. Install STAPM dependencies
+remotes::install_github("stapm-platform/hseclean")
+remotes::install_github("stapm-platform/tobalcepi")
+remotes::install_github("stapm-platform/mort.tools")
 
 # 2. Install smktrans
-devtools::install_git("[https://github.com/stapm-platform/smktrans.git](https://github.com/stapm-platform/smktrans.git)", build_vignettes = FALSE, quiet = TRUE)
-
+remotes::install_github("stapm-platform/smktrans")
 ```
+
+## Citation
+
+If you use the **smktrans** software, methodology, or the resulting estimates in your research or policy analysis, please cite the package as follows:
+
+> Gillespie, D., and Brennan, A. (2026). **smktrans: An R Package for estimating smoking state transition probabilities (v2.0.0).** University of Sheffield. [https://doi.org/10.17605/OSF.IO/YGXQ9](https://doi.org/10.17605/OSF.IO/YGXQ9)
+
+You can also generate the BibTeX entry directly in R:
+```{r citation, eval = F}
+citation("smktrans")
+```
+
+You could also cite the technical report for the Sheffield Tobacco Policy Model:  
+
+> Gillespie, D. & Brennan, A. ([YEAR]). The Sheffield Tobacco Policy Model (STPM): full technical documentation. Documentation version number [x.x.x]. University of Sheffield. DOI: https://doi.org/10.17605/OSF.IO/FR7WN
+This is a living document that we update on a rolling basis. Please cite the year and version of the report you use information from.  
+
+or one of our modelling papers that use the estimates:  
+
+> Kai Le Chen R, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026) Reducing the exceptional affordability of hand-rolling tobacco using tax escalators: a health and economic impact modelling study for England. Tobacco Control DOI: https://doi.org/10.1136/tc-2025-059670  
+
+> Gillespie D, Morris D, Angus C, Wilson L, Kai Le Chen R, Leeming G, Holmes J, Brennan A (2025) Model-based appraisal of the potential effects of minimum pricing for tobacco in Scotland. Tobacco Control DOI: https://doi.org/10.1136/tc-2024-059252  
+
+
+## Acknowledgements
+
+The development of **smktrans** has been supported by the contributions of:
+
+* **Laura Webster** and **Grace Leeming** for their foundational work on the original codebase and methodological extensions.
+* **Magdalena Opazo-Breton** for her review of early documentation and methodological feedback.
+* **Robin Purshouse**, **Hazel Squires**, and **Shangshang Gu** for their input on the development of mechanisms and integration with wider STAPM modelling efforts.
+
+---
+
+## Contact
+
+For methodological queries or to report technical issues, please use the [GitHub Issue Tracker](https://github.com/stapm-platform/smktrans/issues) or contact **Dr Duncan Gillespie** (duncan.gillespie@sheffield.ac.uk).

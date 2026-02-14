@@ -9,21 +9,24 @@ write_excel_report(
   init_res,
   quit_res,
   relapse_res,
-  net_init_dt,
-  quit_no_init
+  net_init_dt = NULL,
+  quit_no_init = NULL
 )
 }
 \arguments{
-\item{config}{Configuration list.}
+\item{config}{Configuration list containing metadata and model parameters.}
 
-\item{init_res}{Initiation results list.}
+\item{init_res}{Initiation results list/dataframe.}
 
-\item{quit_res}{Quitting results list.}
+\item{quit_res}{Quitting results list/dataframe.}
 
-\item{relapse_res}{Relapse results list.}
+\item{relapse_res}{Relapse results list/dataframe.}
 
-\item{net_init_dt}{Net initiation data table.}
+\item{net_init_dt}{Optional net initiation table (can be NULL).}
+
+\item{quit_no_init}{Optional quitting without initiation table (can be NULL).}
 }
 \description{
-Generates a multi-sheet Excel workbook with formatted data and a cover sheet.
+Generates a multi-sheet Excel workbook with a professional cover sheet 
+including detailed methodological metadata for reproducibility.
 }
