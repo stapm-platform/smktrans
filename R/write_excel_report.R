@@ -57,8 +57,6 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res, net_init
   add_formatted_sheet(wb, "Initiation", init_res)
   add_formatted_sheet(wb, "Quitting", quit_res)
   add_formatted_sheet(wb, "Relapse", relapse_res)
-  add_formatted_sheet(wb, "Net Initiation", net_init_dt)
-  add_formatted_sheet(wb, "Quitting - no init adj", quit_no_init)
   
   # 4. Save
   current_date <- Sys.Date()
