@@ -1,234 +1,325 @@
-```{r setup_child, include=FALSE}
+
+<style>
+/* 1. AGGRESSIVE TOC REMOVAL */
+/* Hides standard RMarkdown TOC, Pkgdown Sidebars, and "On this page" elements */
+.pkgdown-toc, #TOC, .tocify, .list-group-item, .bs-docs-sidebar, aside { 
+  display: none !important; 
+}
+
+/* 2. LAYOUT FIXES */
+/* Force the main content to use the full width since the sidebar is gone */
+.col-md-9, .col-lg-9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 100%;
+}
+.main-container {
+  max-width: 1200px !important;
+  margin: 0 auto;
+}
+
+/* 3. TYPOGRAPHY & SPACING */
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333;
+}
+h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+h3 { margin-top: 40px; color: #2c3e50; }
+.crosstalk-input-checkboxgroup, .selectize-control { margin-bottom: 15px; }
+</style>
+
+```{r setup_body, include=FALSE}
+# 1. GLOBAL OPTIONS
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   echo = FALSE, 
   warning = FALSE, 
   message = FALSE,
-  fig.width = 9, 
-  fig.height = 6
+  fig.align = "center",
+  out.width = "100%"
 )
 
+# 2. LOAD LIBRARIES
 library(data.table)
 library(ggplot2)
 library(plotly)
 library(DT)
 library(viridis)
 library(crosstalk)
+library(htmltools)
 
-# 1. DEFINE DATA PATHS
-# --------------------
-# We try to find the root of the project, then append the specific path you gave.
+# 3. SETTINGS
+# -----------
+# Hard limit for speed optimization as requested
+max_year <- 2026
+
+# 4. ROBUST PATH FINDING
+# ----------------------
+if (!exists("config")) {
+  stop("Config object missing. Please run this via build_web_reports().")
+}
+
 tryCatch({
   proj_root <- rprojroot::find_root(rprojroot::is_rstudio_project)
 }, error = function(e) {
-  # Fallback if not in RStudio project
   proj_root <- getwd()
 })
 
-# Construct the path specifically for England (or make it dynamic if folder names differ)
-# Assuming the folder structure is consistent: transition_probability_estimates/src_{country}/outputs
-# We convert country name to lower case for the folder name (England -> src_england)
-country_slug <- tolower(gsub(" ", "_", cfg$country))
+country_slug <- tolower(gsub(" ", "_", config$country))
 data_dir <- file.path(proj_root, "transition_probability_estimates", paste0("src_", country_slug), "outputs")
 
-# Fallback: If that folder doesn't exist, try the absolute path from the config
 if (!dir.exists(data_dir)) {
-  message(paste("Could not find relative path:", data_dir))
-  message("Falling back to cfg$path...")
-  data_dir <- file.path(cfg$path, "outputs")
+  if (!is.null(config$path)) {
+    data_dir <- file.path(config$path, "outputs")
+  } else {
+    warning("Could not find data directory in project or config.")
+  }
 }
 
-# 2. HELPER TO LOAD FILES
+# 5. HELPER TO LOAD FILES
 # -----------------------
 get_res <- function(prefix) {
-  # Construct filename: e.g., "init_forecast_data_England.rds"
-  f_name <- paste0(prefix, "_forecast_data_", cfg$country, ".rds")
+  f_name <- paste0(prefix, "_forecast_data_", config$country, ".rds")
   f_path <- file.path(data_dir, f_name)
   
   if(file.exists(f_path)) {
-    return(readRDS(f_path))
+    dt <- readRDS(f_path)
+    setDT(dt)
+    return(dt)
   } else {
-    warning(paste("Missing file:", f_path))
     return(NULL)
   }
 }
 
-# 3. LOAD THE DATA
+# 6. LOAD THE DATA
 # ----------------
 init_dt        <- get_res("init")
 quit_dt        <- get_res("quit")
 rel_dt         <- get_res("relapse")
 
-# Basic color scale
-imd_pal <- viridis::viridis(5, option = "D", end = 0.9)
-
-# --- GITHUB DOWNLOAD LINK SETUP ---
+# 7. GITHUB LINK SETUP
+# --------------------
 gh_user <- "stapm-platform"
 gh_repo <- "smktrans"
 gh_branch <- "master" 
-
-
-excel_name <- paste0("SmokeStateTransProbs_", cfg$country, "_", Sys.Date(), ".xlsx")
-download_url <- paste0("[https://github.com/](https://github.com/)", gh_user, "/", gh_repo, "/raw/", gh_branch, 
+excel_name <- paste0("SmokeStateTransProbs_", config$country, "_", Sys.Date(), ".xlsx")
+download_url <- paste0("[https://github.com/](https://github.com/)", gh_user, "/", gh_repo, 
+                       "/raw/", gh_branch, 
                        "/transition_probability_estimates/outputs/", excel_name)
 ```
 
 # Summary
 
-**Analysis Region:** `r cfg$country`  
-**Data Source:** `r cfg$survey_name` (`r cfg$first_year` - `r cfg$last_year`)  
-**Year projection becomes stationary:** `r cfg$cont_limit`
+**Analysis Region:** `r config$country`  
+**Data Source:** `r config$survey_name` (`r config$first_year` - `r config$last_year`)  
+**Projection limit (display):** `r max_year`
 
 This report shows the estimated baseline transition probabilities used in the simulation model. 
 
-<a href="`r download_url`" class="btn btn-primary" role="button" style="color: white; text-decoration: none; padding: 10px 20px;">
+<a href="`r download_url`" class="btn btn-primary" role="button" target="_blank" style="color: white; text-decoration: none; padding: 10px 20px;">
   <i class="fa fa-download"></i> Download Full Excel Estimates
 </a>
 
 ---
 
-# 1. Initiation
+# 1. Initiation Trends
+<p style="color: #666; font-size: 0.9em;">
+This chart shows the probability of starting smoking by age, sex and deprivation. Press <b>Play</b> to see how this evolves over time.
+</p>
 
 ```{r init_trend}
-if(!is.null(init_dt)) {
+if(exists("init_dt") && !is.null(init_dt)) {
   
-  # 1. Prepare Data
-  # Ensure IMD is a factor so the legend is discrete, not a continuous bar
-  plot_data <- init_dt[age <= 30]
-  plot_data[, imd_quintile := as.factor(imd_quintile)]
+  # 1. OPTIMIZATION: Select only needed columns & Round Data
+  # Rounding reduces HTML size drastically.
+  plot_data <- as.data.frame(init_dt)[, c("year", "age", "sex", "imd_quintile", "p_start")]
+  plot_data$p_start <- round(plot_data$p_start, 4)
+  
+  plot_data <- plot_data[plot_data$year <= max_year, ]
+  
+  # Filter Data (Performance)
+  plot_data <- plot_data[plot_data$age <= 30, ] # Initiation rare after 30
+  if(!is.null(config$time_horizon)) plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
 
-  # 2. Create Base Plot
+  # 2. Factor Labels for Legend
+  plot_data$imd_quintile <- factor(plot_data$imd_quintile, 
+                                   levels = c("1_least_deprived", "2", "3", "4", "5_most_deprived"), 
+                                   labels = c("1 (least deprived)", "2", "3", "4", "5 (most deprived)"))
+
+  # 3. Base Plot
   g <- ggplot(plot_data, aes(x = age, y = p_start, 
                              color = imd_quintile, 
                              frame = year)) + 
     geom_line(linewidth = 1.2) +
     facet_wrap(~sex) +
-    scale_color_manual(values = imd_pal, name = "IMD Quintile") +
-    labs(title = "Initiation Probability by Age", 
-         y = "Probability", x = "Age") +
-    theme_minimal() 
+    scale_color_viridis_d("IMD Quintile", option = "D", begin = 0.1, end = 0.9) +
+    labs(y = "Probability", x = "Age") +
+    theme_minimal() +
+    scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))
 
-  # 3. Convert to Plotly object
-  gp <- ggplotly(g)
-  
-  # 4. FIX DUPLICATE LEGEND ENTRIES
-  # We loop through the plot data. If we see a name (e.g. "1") that we have 
-  # seen before, we turn off its legend entry.
-  unique_names <- c()
-  for (i in seq_along(gp$x$data)) {
-    # Get the name of this trace (e.g., "1", "2", "3")
-    trace_name <- gp$x$data[[i]]$name
-    
-    if (trace_name %in% unique_names) {
-      # If we've seen it, hide the legend for this specific trace
-      gp$x$data[[i]]$showlegend <- FALSE
-    } else {
-      # If it's new, add to our list and keep the legend
-      unique_names <- c(unique_names, trace_name)
-    }
-  }
-
-  # 5. Final Layout & Animation Settings
-  gp %>%
-    layout(shapes = list(
-      list(type = "line", 
-           x0 = 18, x1 = 18, 
-           y0 = 0, y1 = 1, 
-           yref = "paper",
-           line = list(color = "grey", width = 1, dash = "dash"))
-    )) %>%
+  # 4. Convert to Plotly
+  gp <- ggplotly(g) %>%
+    layout(
+      legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
+      margin = list(b = 80), # Space for legend
+      shapes = list(
+        list(type = "line", x0 = 18, x1 = 18, y0 = 0, y1 = 1, yref = "paper",
+             line = list(color = "grey", width = 1, dash = "dash"))
+      )
+    ) %>%
     animation_opts(frame = 100, transition = 0, redraw = FALSE) %>%
     animation_slider(currentvalue = list(prefix = "Year: "))
 
+  # 5. Fix Duplicate Legends
+  unique_names <- c()
+  for (i in seq_along(gp$x$data)) {
+    tr_name <- gp$x$data[[i]]$name
+    if (tr_name %in% unique_names) gp$x$data[[i]]$showlegend <- FALSE
+    else unique_names <- c(unique_names, tr_name)
+  }
+  
+  gp
+
 } else {
-  cat("No Initiation Data Found.")
+  cat("<i>No Initiation Data Found.</i>")
 }
 ```
 
 ---
 
-# 2. Relapse
-```{r rel_trend}
-# 1. Load Libraries
-library(ggplot2)
-library(plotly)
-library(crosstalk)
-library(htmltools)
-library(viridis)
+# 2. Quitting Trends
 
-# Check data availability
-if(exists("rel_dt") && !is.null(rel_dt)) {
+<p style="color: #666; font-size: 0.9em;">
+Probability of quitting smoking by age, sex and deprivation.
+</p>
 
-  # 2. Performance & Data Prep
-  # Take ONLY the columns we need (speeds up loading significantly)
-  plot_data <- as.data.frame(rel_dt)[, c("age", "p_relapse", "imd_quintile", "sex", "year", "time_since_quit")]
+```{r quit_trend}
+if(exists("quit_dt") && !is.null(quit_dt)) {
   
-  # Filter by time horizon if config exists
-  if(exists("config") && is.list(config) && !is.null(config[["time_horizon"]])) {
-    plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
+  # 1. OPTIMIZATION
+  plot_data <- as.data.frame(quit_dt)[, c("year", "age", "sex", "imd_quintile", "p_quit")]
+  
+  plot_data <- plot_data[plot_data$year <= max_year, ]
+  
+  plot_data$p_quit <- round(plot_data$p_quit, 4)
+
+  if(!is.null(config$time_horizon)) plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
+
+  # 2. Factor Labels
+  plot_data$imd_quintile <- factor(plot_data$imd_quintile, 
+                                   levels = c("1_least_deprived", "2", "3", "4", "5_most_deprived"), 
+                                   labels = c("1 (least deprived)", "2", "3", "4", "5 (most deprived)"))
+
+  # 3. Base Plot
+  g <- ggplot(plot_data, aes(x = age, y = p_quit, 
+                             color = imd_quintile, 
+                             frame = year)) + 
+    geom_line(linewidth = 1.2) +
+    facet_wrap(~sex) +
+    scale_color_viridis_d("IMD Quintile", option = "D", begin = 0.1, end = 0.9) +
+    labs(y = "Probability", x = "Age") +
+    theme_minimal() +
+    scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+
+  # 4. Convert to Plotly
+  gp <- ggplotly(g) %>%
+    layout(
+      legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
+      margin = list(b = 80),
+      shapes = list(
+        list(type = "line", x0 = 18, x1 = 18, y0 = 0, y1 = 1, yref = "paper",
+             line = list(color = "grey", width = 1, dash = "dash"))
+      )
+    ) %>%
+    animation_opts(frame = 100, transition = 0, redraw = FALSE) %>%
+    animation_slider(currentvalue = list(prefix = "Year: "))
+
+  # 5. Fix Duplicate Legends
+  unique_names <- c()
+  for (i in seq_along(gp$x$data)) {
+    tr_name <- gp$x$data[[i]]$name
+    if (tr_name %in% unique_names) gp$x$data[[i]]$showlegend <- FALSE
+    else unique_names <- c(unique_names, tr_name)
   }
 
-  # Ensure factors for cleaner dropdowns
-  plot_data$imd_quintile <- as.factor(plot_data$imd_quintile)
-  
-  # CRITICAL FIX: Create a unique Row ID. 
-  # This acts as the 'address' for every data point, ensuring lines don't break when filtering.
-  plot_data$row_id <- seq_len(nrow(plot_data))
+  gp
 
-  # 3. Create SharedData with Explicit Key
-  # 'key = ~row_id' fixes the "invisible lines" bug
+} else {
+  cat("<i>No Quitting Data Found.</i>")
+}
+```
+
+
+
+---
+
+# 3. Relapse Trends
+
+<p style="color: #666; font-size: 0.9em;">
+Probability of relapsing after quitting. Use the filters below to explore specific calendar years and the effect of time since quitting in years.
+</p>
+
+```{r rel_trend}
+if(exists("rel_dt") && !is.null(rel_dt)) {
+
+  # 1. PERFORMANCE & PREP
+  # Select minimal columns & round data
+  plot_data <- as.data.frame(rel_dt)[, c("age", "p_relapse", "imd_quintile", "sex", "year", "time_since_quit")]
+  
+  plot_data <- plot_data[plot_data$year <= max_year, ]
+  
+  plot_data$p_relapse <- round(plot_data$p_relapse, 4)
+  
+  if(!is.null(config$time_horizon)) plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
+
+  plot_data$imd_quintile <- factor(plot_data$imd_quintile, 
+                                   levels = c("1_least_deprived", "2", "3", "4", "5_most_deprived"), 
+                                   labels = c("1 (least deprived)", "2", "3", "4", "5 (most deprived)"))
+  
+  # CRITICAL: Unique Row ID for Crosstalk stability
+  plot_data$row_id <- seq_len(nrow(plot_data))
+  
+  # 2. Shared Data
   shared_relapse <- SharedData$new(plot_data, key = ~row_id)
 
-  # 4. Create the Filters
+  # 3. Filter UI (Side-by-Side)
   filters_ui <- htmltools::div(
     id = "filter_row",
     style = "display: flex; gap: 20px; margin-bottom: 20px; align-items: center;", 
     
-    # Filter 1: TSQ
     htmltools::div(style = "flex: 1;",
       filter_select("tsq_sel", "Years Since Quitting", shared_relapse, ~time_since_quit, multiple = FALSE)
     ),
-    
-    # Filter 2: Year
     htmltools::div(style = "flex: 1;",
       filter_select("year_sel", "Calendar Year", shared_relapse, ~year, multiple = FALSE)
     )
   )
 
-  # 5. Create GGPlot
+  # 4. Base Plot (Static)
   g4 <- ggplot(shared_relapse, aes(x = age, y = p_relapse, color = imd_quintile, group = imd_quintile)) +   
     geom_line(linewidth = 1) +
-    # Use grid instead of wrap for better alignment
-    facet_grid(. ~ sex) +
-    scale_color_viridis_d("IMD Quintile", option = "D", end = 0.9) +
+    facet_grid(. ~ sex) + # Grid for even spacing
+    scale_color_viridis_d("IMD Quintile", option = "D", begin = 0.1, end = 0.9) +
     labs(x = "Age", y = "Probability") +
     theme_minimal() +
     theme(
-      # Moving legend to bottom fixes the "uneven panel width" issue
       legend.position = "bottom",
       panel.spacing = unit(2, "lines")
     ) +
     scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))
 
-  # 6. Convert to Plotly
+  # 5. Convert to Plotly
   gp4 <- ggplotly(g4, tooltip = c("x", "y", "colour")) %>%
     layout(
-      legend = list(
-        orientation = "h",   # Horizontal legend
-        xanchor = "center",  # Center it
-        x = 0.5,             # Middle of plot
-        y = -0.2             # Below the plot
-      ),
-      margin = list(t = 30, b = 80) # Add bottom margin for legend
+      legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2),
+      margin = list(t = 30, b = 80)
     )
 
-  # 7. Render Layout with Auto-Select Script
+  # 6. Render with Auto-Select Script
   htmltools::tagList(
-    # CSS to hide "Clear" buttons
     tags$style(HTML("#filter_row .selectize-control.single .selectize-input.allow-single-deselect .item .remove { display: none !important; }")),
     
-    # JS to auto-select first options and fix empty plot on load
     tags$script(HTML("
       function initFilters() {
         var container = document.getElementById('filter_row');
@@ -239,7 +330,7 @@ if(exists("rel_dt") && !is.null(rel_dt)) {
         selects.forEach(function(sel) {
           if (sel.selectize) {
              var s = sel.selectize;
-             s.removeOption(''); // Remove 'All'
+             s.removeOption(''); 
              if (s.getValue() === '') {
                 var first = Object.keys(s.options)[0];
                 if (first === '') first = Object.keys(s.options)[1];
@@ -256,38 +347,9 @@ if(exists("rel_dt") && !is.null(rel_dt)) {
   )
 
 } else {
-  cat("No Data.")
+  cat("<i>No Relapse Data Found.</i>")
 }
 ```
----
-
-# 2. Quitting
-
-```{r quit_trend}
-if(!is.null(quit_dt)) {
-  trend_quit <- quit_dt[, .(p = mean(p_quit)), by = .(year, sex, imd_quintile)]
-  g3 <- ggplot(trend_quit, aes(x = year, y = p, color = imd_quintile)) +
-    geom_line() +
-    facet_wrap(~sex) +
-    scale_color_manual(values = imd_pal) +
-    labs(title = "Mean Quit Probability (All Ages)", 
-         y = "Probability", x = "Year") +
-    theme_minimal()
-  ggplotly(g3)
-}
-```
-
-### Quit Rates Table (2024)
-
-```{r quit_table}
-if(!is.null(quit_dt)) {
-  t_dt <- quit_dt[year == 2024, .(sex, age, imd_quintile, p_quit)]
-  datatable(t_dt, filter = 'top', rownames = FALSE,
-            options = list(pageLength = 10, autoWidth = TRUE)) %>%
-    formatRound(columns = "p_quit", digits = 4)
-}
-```
-
 
 ---
 *Report generated on `r Sys.Date()` using `smktrans`.*
