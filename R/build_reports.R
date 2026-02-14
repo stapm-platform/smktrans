@@ -9,7 +9,7 @@ build_web_reports <- function() {
   article_dir <- "vignettes/articles"
   if (!dir.exists(article_dir)) dir.create(article_dir, recursive = TRUE)
   
-  # Check for the configs file (we will save this in Step 3)
+  # Check for the configs file
   config_path <- system.file("extdata", "report_configs.rds", package = "smktrans")
   if (config_path == "") {
     # Fallback for dev mode
@@ -32,21 +32,29 @@ build_web_reports <- function() {
     fname <- paste0("report_", tolower(gsub(" ", "_", country)), ".Rmd")
     fpath <- file.path(article_dir, fname)
     
-    # The content of the wrapper Rmd
-    # It loads the config list, extracts the right country, and includes the body template
+    # --- UPDATED YAML HEADER ---
+    # Matches the optimized settings: Lumen theme, No TOC, Self-contained
     yaml_header <- paste0(
       "---\n",
       "title: \"Smoking Transition Estimates: ", country, "\"\n",
+      "output:\n",
+      "  html_document:\n",
+      "    theme: lumen\n",
+      "    toc: false\n",
+      "    self_contained: true\n",
+      "    css: styles.css\n",
       "resource_files:\n",
       "  - ../../inst/extdata/report_configs.rds\n",
       "---\n\n"
     )
     
+    # --- UPDATED R CHUNK ---
+    # Renamed 'cfg' to 'config' so it matches the template code
     r_chunk <- paste0(
       "```{r setup_wrapper, include=FALSE}\n",
       "# Load the config for this specific country\n",
       "configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))\n",
-      "cfg <- configs[['", country, "']]\n",
+      "config <- configs[['", country, "']]\n",
       "```\n\n",
       "```{r child, child='../../inst/templates/web_report_body.Rmd'}\n",
       "```\n"

@@ -1,5 +1,11 @@
 ---
 title: "Smoking Transition Estimates: England"
+output:
+  html_document:
+    theme: lumen
+    toc: false
+    self_contained: true
+    css: styles.css
 resource_files:
   - ../../inst/extdata/report_configs.rds
 ---
@@ -7,7 +13,7 @@ resource_files:
 ```{r setup_wrapper, include=FALSE}
 # Load the config for this specific country
 configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))
-cfg <- configs[['England']]
+config <- configs[['England']]
 ```
 
 ```{r child, child='../../inst/templates/web_report_body.Rmd'}
