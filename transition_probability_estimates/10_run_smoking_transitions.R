@@ -13,6 +13,7 @@ source("03_load_packages.R")
 # --- LOAD FUNCTIONS ---
 func_path <- "R/"
 
+source(paste0(func_path, "build_reports.R"))
 source(paste0(func_path, "bin_var.R"))
 source(paste0(func_path, "calculate_net_initiation.R"))
 source(paste0(func_path, "estimate_initiation.R"))
@@ -59,7 +60,7 @@ config_eng <- list(
   smooth_rate_dim_relapse = c(15, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 50, kR = 0.9, kn_samp = 100,
+  kn = 50, kR = 0.9, kn_samp = 3,
   smokefree_target_year = 2030
 )
 
@@ -119,3 +120,11 @@ process_country(config_scot)
 # Run Wales
 process_country(config_wales)
 
+# -------------------------------------------------------------------------
+# 4. Generate Web Reports
+# -------------------------------------------------------------------------
+# Put your configs into a list
+all_configs <- list(config_eng)#, config_scot, config_wales)
+
+# Run the builder
+build_web_reports(all_configs)

@@ -1,7 +1,11 @@
 url: https://stapm-platform.github.io/smktrans
+
 template:
   bootstrap: 5
   bootswatch: flatly
+  includes:
+    in_header: |
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&display=swap">
   params:
     ganalytics: UA-167990045-1
 
@@ -13,7 +17,7 @@ authors:
 
 navbar:
   structure:
-    left:  [home, intro, reference, articles]
+    left:  [home, intro, reference, articles, news]
     right: [github]
   components:
     home: ~
@@ -24,12 +28,21 @@ navbar:
       text: Functions
       href: reference/index.html
     articles:
-      text: Technical documentation
+      text: Articles
       menu:
-      - text: Estimation workflow
-        href: articles/smk_trans_prob_estimation.html
-      - text: "Methods notes: Smoking state transition probability estimation"
-        href: articles/smoking_transition_probabilities_modelling_report.pdf
+        - text: Regional Estimates
+        - text: England Report
+          href: articles/report_england.html
+        - text: Scotland Report
+          href: articles/report_scotland.html
+        - text: Wales Report
+          href: articles/report_wales.html
+        - text: "---"
+        - text: Technical documentation
+        - text: Estimation workflow
+          href: articles/smk_trans_prob_estimation.html
+        - text: "Methods notes: Smoking state transition probability estimation"
+          href: articles/smoking_transition_probabilities_modelling_report.pdf
     github:
       icon: fab fa-github fa-lg
       href: https://github.com/stapm-platform/smktrans
@@ -43,6 +56,7 @@ reference:
   - generate_uncertainty
   - summarise_smoking_transitions
   - write_excel_report
+  - build_web_reports
 
 - title: Smoking trends
   contents:

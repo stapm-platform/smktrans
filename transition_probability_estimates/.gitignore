@@ -3,3 +3,8 @@
 *.png
 *.xlsx
 
+# Ignore everything in the outputs folder...
+outputs/*
+
+# ...BUT allow (do not ignore) Excel files
+!outputs/*.xlsx
