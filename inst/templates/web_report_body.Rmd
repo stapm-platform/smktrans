@@ -103,11 +103,8 @@ gh_user <- "stapm-platform"
 gh_repo <- "smktrans"
 gh_branch <- "master" 
 
-# NOTE: This assumes the Excel file was generated on the SAME day this report is rendered.
-# If the Excel files are older, you might need to find the specific file rather than using Sys.Date()
+# Clean URL Construction (No markdown, no counters)
 excel_name <- paste0("SmokeStateTransProbs_", config$country, "_", Sys.Date(), ".xlsx")
-
-# CLEAN URL CONSTRUCTION (No brackets or markdown syntax here)
 download_url <- paste0("https://github.com/", gh_user, "/", gh_repo, 
                        "/raw/", gh_branch, 
                        "/transition_probability_estimates/outputs/", excel_name)
@@ -117,12 +114,12 @@ download_url <- paste0("https://github.com/", gh_user, "/", gh_repo,
 
 **Analysis Region:** `r config$country`  
 **Data Source:** `r config$survey_name` (`r config$first_year` - `r config$last_year`)  
-**Projection limit (display):** `r max_year`
+**Projection Limit (Display):** `r max_year`
 
 This report shows the estimated baseline transition probabilities used in the simulation model. 
 
 <a href="`r download_url`" class="btn btn-primary" role="button" target="_blank" style="color: white; text-decoration: none; padding: 10px 20px;">
-  <i class="fa fa-download"></i> Download Full Excel Estimates
+  Download Full Excel Estimates
 </a>
 
 ---

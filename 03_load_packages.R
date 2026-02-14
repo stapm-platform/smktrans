@@ -26,7 +26,7 @@ library(htmltools)
 library(stapmr)
 library(tobalcepi)
 library(hseclean)
-#library(smktrans)
+library(smktrans)
 library(mort.tools)
 library(toolkitr)
 
