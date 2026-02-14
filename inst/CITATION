@@ -1,0 +1,27 @@
+# Pulling information dynamically from the DESCRIPTION file
+citHeader("To cite the smktrans package and the transition probability estimates, please use:")
+
+bibentry(
+  bibtype = "Manual",
+  title = "{smktrans}: An R Package for estimating smoking state transition probabilities from cross-sectional survey data",
+  author = c(
+    person("Duncan", "Gillespie", role = c("aut", "cre")),
+    person("Alan", "Brennan", role = "aut")
+  ),
+  # Pulls the year from the 'Date' field or uses the current year as a fallback
+  year = if(!is.null(meta$Date)) substr(meta$Date, 1, 4) else format(Sys.Date(), "%Y"),
+  
+  # Pulls the version directly from the Version field in DESCRIPTION
+  version = meta$Version,
+  
+  note = paste("R package version", meta$Version),
+  doi = "10.17605/OSF.IO/YGXQ9",
+  url = "https://stapm-platform.github.io/smktrans/",
+  
+  textVersion = paste0(
+    "Gillespie, D., and Brennan, A. (", 
+    if(!is.null(meta$Date)) substr(meta$Date, 1, 4) else format(Sys.Date(), "%Y"), 
+    "). smktrans: An R Package for estimating smoking state transition probabilities (v", 
+    meta$Version, "). University of Sheffield. https://doi.org/10.17605/OSF.IO/YGXQ9"
+  )
+)

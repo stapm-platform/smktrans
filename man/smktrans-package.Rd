@@ -24,10 +24,16 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Laura Webster (\href{https://orcid.org/0000-0002-4307-9631}{ORCID})
-  \item Grace Leeming \email{g.leeming@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-4836-7840}{ORCID})
-  \item Magdalena Opazo-Breton
   \item Alan Brennan \email{a.brennan@sheffield.ac.uk} (\href{https://orcid.org/0000-0002-1025-312X}{ORCID})
+}
+
+Other contributors:
+\itemize{
+  \item Laura Webster (\href{https://orcid.org/0000-0002-4307-9631}{ORCID}) (Original code and methodology) [contributor]
+  \item Grace Leeming \email{g.leeming@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-4836-7840}{ORCID}) (Code extension to Scotland) [contributor]
+  \item Robin Purshouse (Methodological review and feedback) [contributor]
+  \item Hazel Squires (Methodological review and feedback) [contributor]
+  \item Shangshang Gu (Methodological review and feedback) [contributor]
 }
 
 }
