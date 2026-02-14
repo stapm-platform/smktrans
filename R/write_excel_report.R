@@ -82,7 +82,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, contact_text, startRow = 5, startCol = 1)
   addStyle(wb, sheet_name, style_contact, rows = 5, cols = 1)
   
-  # --- C. HOW TO CITE (New Section with Persistent DOI) ---
+  # --- C. HOW TO CITE (With Persistent DOI) ---
   doi_link <- "https://doi.org/10.17605/OSF.IO/YGXQ9"
   citation_text <- paste0(
     "How to cite these estimates:\n",
@@ -95,7 +95,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, citation_text, startRow = row_idx, startCol = 1)
   mergeCells(wb, sheet_name, cols = 1:4, rows = row_idx)
   addStyle(wb, sheet_name, style_cite_box, rows = row_idx, cols = 1)
-  setRowHeights(wb, sheet_name, rows = row_idx, heights = 50) # Extra height for the citation
+  setRowHeights(wb, sheet_name, rows = row_idx, heights = 50) 
   
   # --- D. About This Dataset ---
   row_idx <- 9
@@ -119,6 +119,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, "2. Worksheet Guide", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
+  # Build Guide DF dynamically
   guide_df <- data.frame(
     Worksheet = c("Initiation", "Quitting", "Relapse"),
     Description = c(
@@ -127,12 +128,20 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
       "Probability of a 'Former Smoker' becoming a 'Current Smoker' (Relapse), dependent on time since quitting."
     )
   )
+  
+  if (!is.null(net_init_dt)) {
+    guide_df <- rbind(guide_df, data.frame(Worksheet = "Net Initiation", Description = "Net initiation probabilities (Initiation - Quitting)."))
+  }
+  if (!is.null(quit_no_init)) {
+    guide_df <- rbind(guide_df, data.frame(Worksheet = "Quit (No Init)", Description = "Quitting probabilities calculated without initiation adjustment."))
+  }
+  
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, guide_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
-  addStyle(wb, sheet_name, style_text, rows = (row_idx+1):(row_idx+3), cols = 2)
+  addStyle(wb, sheet_name, style_text, rows = (row_idx+1):(row_idx+nrow(guide_df)), cols = 2)
   
   # --- F. Variable Definitions ---
-  row_idx <- row_idx + 5
+  row_idx <- row_idx + nrow(guide_df) + 2
   writeData(wb, sheet_name, "3. Variable Definitions", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
@@ -149,16 +158,51 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, var_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
-  # --- G. Methodological Parameters ---
+  # --- G. Methodological Parameters (EXPANDED) ---
   row_idx <- row_idx + nrow(var_df) + 2
   writeData(wb, sheet_name, "4. Methodological Parameters & Configuration", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
+  # Helper to format vector inputs like c(3,15) -> "3, 15"
+  fmt <- function(x) {
+    if (is.null(x)) return("NA")
+    if (length(x) > 1) return(paste(x, collapse = ", "))
+    return(as.character(x))
+  }
+  
   meta_df <- data.frame(
-    Category = c("Software", "Data Source", "Projection", "Uncertainty"),
-    Parameter = c("Package Version", "Region", "Time Horizon", "Eff. Sample Size (kn)"),
-    Value = c(pkg_ver, config$country, config$time_horizon, config$kn),
-    Description = c("smktrans version.", "Target population.", "Final projected year.", "Effective sample size for uncertainty.")
+    Category = c(
+      "Software", "Data Source", "Data Source", "Data Source",
+      "Projection", "Projection",
+      "Initiation Model", "Initiation Model", "Initiation Model", "Initiation Model",
+      "Quitting Model", "Quitting Model", "Quitting Model",
+      "Relapse Model", "Relapse Model", "Relapse Model",
+      "Uncertainty", "Uncertainty", "Uncertainty"
+    ),
+    Parameter = c(
+      "Package Version", "Region", "Survey Source", "Survey Years",
+      "Time Horizon", "Continuity Limit",
+      "Model Choice", "Smooth Dims (Age, Year)", "Age Smoothing (k)", "Max Age Init",
+      "Smooth Dims (Age, Year)", "Age Smoothing (k)", "Age Trend Limit",
+      "Smooth Dims (Age, Year)", "Age Smoothing (k)", "Age Trend Limit",
+      "Eff. Sample Size (kn)", "Uncertainty Samples (kn_samp)", "Correlation (kR)"
+    ),
+    Value = c(
+      pkg_ver, config$country, config$survey_name, paste(config$first_year, "-", config$last_year),
+      config$time_horizon, config$cont_limit,
+      config$init_model_choice, fmt(config$smooth_rate_dim_init), config$k_smooth_age_init, config$max_age_init,
+      fmt(config$smooth_rate_dim_quit), config$k_smooth_age_quit, config$age_trend_limit_quit,
+      fmt(config$smooth_rate_dim_relapse), config$k_smooth_age_relapse, config$age_trend_limit_relapse,
+      config$kn, config$kn_samp, config$kR
+    ),
+    Description = c(
+      "smktrans version.", "Target population.", "Primary dataset.", "Range of data used.",
+      "Final projected year.", "Last year of continuous data.",
+      "Specific model ID.", "Smoothing window dimensions.", "Degree of age smoothing (rotation).", "Maximum age for initiation.",
+      "Smoothing window dimensions.", "Degree of age smoothing.", "Upper age limit for trends.",
+      "Smoothing window dimensions.", "Degree of age smoothing.", "Upper age limit for trends.",
+      "Effective sample size.", "Number of Monte Carlo samples.", "Correlation param."
+    )
   )
   
   row_idx <- row_idx + 1
@@ -175,17 +219,31 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   # =========================================================================
   add_data_sheet <- function(wb, s_name, res_obj) {
     addWorksheet(wb, s_name)
+    # Handle list vs dataframe input
     df <- if (inherits(res_obj, "data.frame")) res_obj else if ("data" %in% names(res_obj)) res_obj$data else data.frame(Warning = "Data not found")
+    
     writeData(wb, s_name, df, headerStyle = style_col_header)
     freezePane(wb, s_name, firstRow = TRUE)
+    
+    # Format probability columns
     p_cols <- grep("^p_", names(df))
     if (length(p_cols) > 0) addStyle(wb, s_name, style_num, rows = 2:(nrow(df) + 1), cols = p_cols, gridExpand = TRUE)
+    
     setColWidths(wb, s_name, cols = 1:ncol(df), widths = "auto")
   }
   
+  # Add Core Sheets
   add_data_sheet(wb, "Initiation", init_res)
   add_data_sheet(wb, "Quitting", quit_res)
   add_data_sheet(wb, "Relapse", relapse_res)
+  
+  # Add Optional Sheets
+  if (!is.null(net_init_dt)) {
+    add_data_sheet(wb, "Net Initiation", net_init_dt)
+  }
+  if (!is.null(quit_no_init)) {
+    add_data_sheet(wb, "Quit (No Init)", quit_no_init)
+  }
   
   # =========================================================================
   # 4. SAVE
