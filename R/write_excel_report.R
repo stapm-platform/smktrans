@@ -62,8 +62,8 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res, net_init
   
   # 4. Save
   current_date <- Sys.Date()
-  file_name <- paste0("Smoking_Transition_Probabilities_", config$country, "_", current_date, ".xlsx")
-  out_file <- file.path(config$path, "outputs", file_name)
+  file_name <- paste0("SmokeStateTransProbs_", config$country, "_", current_date, ".xlsx")
+  out_file <- file.path("transition_probability_estimates/outputs", file_name)
   saveWorkbook(wb, out_file, overwrite = TRUE)
   
   message(paste("Excel saved to:", out_file))

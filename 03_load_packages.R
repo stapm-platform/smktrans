@@ -17,6 +17,8 @@ library(ggplot2)
 library(viridis)
 library(survey)
 library(matrixStats)
+library(plotly)
+library(DT)
 
 # STAPM packages
 library(stapmr)
