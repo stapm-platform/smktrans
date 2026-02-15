@@ -5,6 +5,12 @@
 
 # Ignore everything in the outputs folder...
 outputs/*
+src_england/outputs/*
+src_scotland/outputs/*
+src_wales/outputs/*
+src_england/intermediate_data/*
+src_scotland/intermediate_data/*
+src_wales/intermediate_data/*
 
 # ...BUT allow (do not ignore) Excel files
 !outputs/*.xlsx

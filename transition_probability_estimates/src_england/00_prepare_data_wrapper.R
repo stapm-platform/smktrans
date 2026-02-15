@@ -1,9 +1,8 @@
 
 # The aim of this code is to run the scripts that prepare inputs for the estimates of smoking transition probabilities for England
 
-# Pre-requisites
-  # connection to the University of Sheffield VPN
-  # Access to the X drive folders PR_Consumption_TA and PR_STAPM
+# Requires access to the location where the HSE data is stored
+# defaults relate to the internal University of Sheffield setup
 
 # # Point to the location of the X drive
 root_dir <- "X:/"
