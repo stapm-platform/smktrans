@@ -13,7 +13,7 @@ if (installed_devtools == FALSE) {
 # CRAN packages installation
 
 packages <- c("crosstalk", "rprojroot", "DT", "matrixStats", "DiagrammeR", "data.table", "ggplot2", "devtools",
-              "getPass", "git2r", "cowplot", "readxl",
+              "getPass", "git2r", "cowplot", "readxl", "gt", "gtsummary",
               "knitr", "stringr", "here", "magrittr",
               "RColorBrewer", "testthat",
               "DirichletReg", "fitdistrplus",

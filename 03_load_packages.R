@@ -21,6 +21,8 @@ library(plotly)
 library(DT)
 library(crosstalk)
 library(htmltools)
+library(gt)
+library(gtsummary)
 
 # STAPM packages
 library(stapmr)
