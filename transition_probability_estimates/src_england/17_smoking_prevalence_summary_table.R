@@ -26,7 +26,7 @@ data[, year_cat := c("2003-2012", "2013-2018")[findInterval(year, c(-1, 2013, 10
 data[, age_cat_rept := c("11-17", "18-24", "25-49", "50+")[findInterval(age, c(-1, 18, 25, 50, 1000))]]
 
 # Ensure factors are ordered correctly for the table
-data[, imd_quintile := factor(imd_quintile, levels = 1:5, labels = c("1 (Least Deprived)", "2", "3", "4", "5 (Most Deprived)"))]
+data[, imd_quintile := factor(imd_quintile, levels = c("1_least_deprived", "2", "3", "4", "5_most_deprived"), labels = c("1 (Least Deprived)", "2", "3", "4", "5 (Most Deprived)"))]
 data[, smk.state := factor(smk.state, levels = c("current", "former", "never"), labels = c("Current Smoker", "Former Smoker", "Never Smoker"))]
 
 # 3. HELPER FUNCTION -----------------------------------------------------------
