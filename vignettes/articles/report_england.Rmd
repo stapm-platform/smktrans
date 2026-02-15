@@ -11,8 +11,21 @@ resource_files:
 ---
 
 ```{r setup_wrapper, include=FALSE}
-# Load the config for this specific country
-configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))
+# --- ROBUST CONFIG LOADER ---
+# 1. Find Project Root
+tryCatch({
+  root <- rprojroot::find_root(rprojroot::is_rstudio_project)
+}, error = function(e) root <- getwd())
+
+# 2. Prefer Local Config (Updates immediately without reinstall)
+local_config <- file.path(root, 'inst', 'extdata', 'report_configs.rds')
+if (file.exists(local_config)) {
+  configs <- readRDS(local_config)
+} else {
+  configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))
+}
+
+# 3. Load Country Specifics
 config <- configs[['England']]
 ```
 

@@ -1,0 +1,34 @@
+---
+title: "Smoking Transition Estimates: Scotland"
+output:
+  html_document:
+    theme: lumen
+    toc: false
+    self_contained: true
+    css: styles.css
+resource_files:
+  - ../../inst/extdata/report_configs.rds
+---
+
+```{r setup_wrapper, include=FALSE}
+# --- ROBUST CONFIG LOADER ---
+# 1. Find Project Root
+tryCatch({
+  root <- rprojroot::find_root(rprojroot::is_rstudio_project)
+}, error = function(e) root <- getwd())
+
+# 2. Prefer Local Config (Updates immediately without reinstall)
+local_config <- file.path(root, 'inst', 'extdata', 'report_configs.rds')
+if (file.exists(local_config)) {
+  configs <- readRDS(local_config)
+} else {
+  configs <- readRDS(system.file('extdata', 'report_configs.rds', package = 'smktrans'))
+}
+
+# 3. Load Country Specifics
+config <- configs[['Scotland']]
+```
+
+```{r child, child='../../inst/templates/web_report_body.Rmd'}
+```
+

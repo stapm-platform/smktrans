@@ -1,78 +1,80 @@
+# ==============================================================================
+# SCRIPT: Process Mortality Data for Smoking Model (Scotland)
+# PURPOSE: Prepare mortality rates (mx or mix if cause specific) for:
+#          1. Transition probability estimation (All-cause mortality)
+#          2. STAPM Simulation Model (Cause-specific mortality)
+#
+# INPUT:   Aggregated mortality CSV (Age/Sex/IMD/Year/Cause)
+# OUTPUT:  Two RDS files in 'intermediate_data/'
+# ==============================================================================
 
-# The aim of this code is to prepare the mortality data
-# for use in estimating smoking transition probabilities for Scotland
+# 1. SETUP ---------------------------------------------------------------------
+source("03_load_packages.R") 
+# library(data.table)
 
+# Define file paths
+root_dir <- "X:/"
+path <- "transition_probability_estimates/src_scotland/"
+input_file <- "05_input/tob_death_rates_scot_national_2008-2021_v1_2022-12-16_mort.tools_1.5.0.csv"
 
-# The mortality data is stored on the university's X drive
-# after having been processed into an aggregated form on the secure heta_study virtual machine
+# Define Scope
+# Adjusted for Scotland SHeS availability (16+) and data years
+analysis_years <- 2008:2019
+age_range      <- 16:89
 
-library(data.table)
-#suppressPackageStartupMessages(library(mort.tools))
-library(readxl)
-library(ggplot2)
-library(magrittr)
+# 2. LOAD AND CLEAN DATA -------------------------------------------------------
 
-# Load the mortality data
+tob_mort_data <- fread(input_file)
 
+# Filter dimensions and select columns
+# We filter for valid years, ages, and ensure 'cause' is not missing
+tob_mort_data <- tob_mort_data[
+  year %in% analysis_years & 
+    age %in% age_range & 
+    !is.na(cause), 
+  
+  # Select and rename columns on the fly
+  .(age, sex, imd_quintile, year, condition = cause, n_deaths, pops)
+]
 
-# Load the processed mortality data
-# comment-out once read-in once
-tob_mort_data <- fread(paste0(path, "inputs/tob_death_rates_scot_national_2008-2021_v1_2022-12-16_mort.tools_1.5.0.csv"))
+# 3. PREPARE DATA FOR TRANSITION ESTIMATION (ALL-CAUSE) ------------------------
+# The transition model needs the TOTAL risk of death (all causes combined)
+# to calculate the probability of surviving to the next year.
 
-# Filter data
-tob_mort_data <- tob_mort_data[year %in% 2008:2019 & age %in% 16:89 & !is.na(cause) , c("age",
-                                                                                        "sex",
-                                                                                        "imd_quintile",
-                                                                                        "year",
-                                                                                        "cause",
-                                                                                        "n_deaths",
-                                                                                        "pops"), with = F]
+# Collapse data: Sum deaths across all causes, keep population constant
+# We use first(pops) because the population count is identical for every cause 
+# within the same age/sex/year stratum.
+tob_mort_data_trans <- tob_mort_data[, .(
+  n_deaths = sum(n_deaths, na.rm = TRUE),
+  pops     = first(pops) 
+), by = .(age, sex, imd_quintile, year)]
 
-setnames(tob_mort_data, "cause", "condition")
+# Calculate Central Death Rate (mx)
+tob_mort_data_trans[, mx := n_deaths / pops]
 
+# Drop raw counts as we only need the rate 'mx'
+tob_mort_data_trans[, `:=`(n_deaths = NULL, pops = NULL)]
 
-# For the estimation of smoking transition probabilities -----------------
+# Sort for consistent time-series processing
+setorderv(tob_mort_data_trans, c("age", "year", "sex", "imd_quintile"))
 
-# Collapse data to remove stratification by cause
-tob_mort_data_trans <- tob_mort_data[, list(n_deaths = sum(n_deaths, na.rm = T),
-                                            pops = unique(pops)), by = c("age", "sex", "imd_quintile", "year")]
+# Save Output 1
+output_trans <- paste0(path, "intermediate_data/tob_mort_data_trans.rds")
+saveRDS(tob_mort_data_trans, output_trans)
 
-# Recalculate the central death rates
-tob_mort_data_trans[ , mx := n_deaths / pops]
+# Clean up memory
+rm(tob_mort_data_trans); gc()
 
-# Remove variables not needed
-tob_mort_data_trans[ , `:=`(n_deaths = NULL, pops = NULL)]
+# 4. PREPARE DATA FOR SIMULATION MODEL (CAUSE-SPECIFIC) ------------------------
+# The simulation model needs specific disease risks (e.g., Lung Cancer rates)
+# so we keep the 'condition' column.
 
-# Sort data
-setorderv(tob_mort_data_trans, c("age", "year", "sex", "imd_quintile"), c(1, 1, 1, 1))
+# Calculate cause-specific death rates
+tob_mort_data[, mix := n_deaths / pops]
 
-# Save the data for use in estimating smoking transition probabilities
-saveRDS(tob_mort_data_trans, paste0(path, "intermediate_data/tob_mort_data_trans.rds"))
+# Save Output 2
+output_cause <- paste0(path, "intermediate_data/tob_mort_data_cause.rds")
+saveRDS(tob_mort_data, output_cause)
 
-rm(tob_mort_data_trans)
-gc()
-
-# For the simulation model -----------------
-
-# For this project, mortality is not forecast -
-# it is just assumed to stay constant into the future at 2018 levels
-
-# Create mx column
-tob_mort_data[ , mix := n_deaths / pops]
-
-# Save the data for use in the simulation model
-saveRDS(tob_mort_data, paste0(path, "intermediate_data/tob_mort_data_cause.rds"))
-
-rm(tob_mort_data)
-gc()
-
-
-
-
-
-
-
-
-
-
+rm(tob_mort_data); gc()
 
