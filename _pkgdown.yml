@@ -54,7 +54,6 @@ reference:
   - process_country
   - calculate_net_initiation
   - generate_uncertainty
-  - summarise_smoking_transitions
   - write_excel_report
   - build_web_reports
 

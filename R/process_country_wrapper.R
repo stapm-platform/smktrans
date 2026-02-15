@@ -63,8 +63,7 @@ process_country <- function(config) {
   
   # 4. Generate uncertainty intervals
   # ------------------------------------
-  message(">> Calculating uncertainty... if kn_samp = 100 -> time to go grab a coffee (and maybe some biscuits).")
-  message("    if kn_samp = 1000 -> time to go to bed.")
+  message(">> Calculating uncertainty...")
   
   # main files
   init_data_uncertainty <- generate_uncertainty(init_data, "p_start", config$kn, config$kn_samp, config$kR)

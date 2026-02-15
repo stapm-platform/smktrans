@@ -209,7 +209,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, meta_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
   # Ensure columns are wide enough for the content
-  setColWidths(wb, sheet_name, cols = 1, widths = 30)
+  setColWidths(wb, sheet_name, cols = 1, widths = 40)
   setColWidths(wb, sheet_name, cols = 2, widths = 50)
   setColWidths(wb, sheet_name, cols = 3, widths = 35)
   setColWidths(wb, sheet_name, cols = 4, widths = 100)
@@ -229,7 +229,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
     p_cols <- grep("^p_", names(df))
     if (length(p_cols) > 0) addStyle(wb, s_name, style_num, rows = 2:(nrow(df) + 1), cols = p_cols, gridExpand = TRUE)
     
-    setColWidths(wb, s_name, cols = 1:ncol(df), widths = "auto")
+    setColWidths(wb, s_name, cols = 1:ncol(df), widths = 25)
   }
   
   # Add Core Sheets

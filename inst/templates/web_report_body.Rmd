@@ -140,7 +140,7 @@ if(exists("init_dt") && !is.null(init_dt)) {
   plot_data <- plot_data[plot_data$year <= max_year, ]
   
   # Filter Data (Performance)
-  plot_data <- plot_data[plot_data$age <= 30, ] # Initiation rare after 30
+  plot_data <- plot_data[plot_data$age <= 30, ] # Initiation assumed to be zero after 30
   if(!is.null(config$time_horizon)) plot_data <- plot_data[plot_data$year <= config$time_horizon, ]
 
   # 2. Factor Labels for Legend

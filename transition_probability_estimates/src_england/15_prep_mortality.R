@@ -70,7 +70,7 @@ rm(tob_mort_data_trans); gc()
 # so we keep the 'condition' column.
 
 # Calculate cause-specific death rates
-tob_mort_data[, mx := n_deaths / pops]
+tob_mort_data[, mix := n_deaths / pops]
 
 # Save Output 2
 output_cause <- paste0(path, "intermediate_data/tob_mort_data_cause.rds")

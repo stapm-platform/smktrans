@@ -1,5 +1,5 @@
 ---
-title: "Smoking Transition Estimates: England"
+title: "Smoking Transition Estimates: Scotland"
 output:
   html_document:
     theme: lumen
@@ -26,7 +26,7 @@ if (file.exists(local_config)) {
 }
 
 # 3. Load Country Specifics
-config <- configs[['England']]
+config <- configs[['Scotland']]
 ```
 
 ```{r child, child='../../inst/templates/web_report_body.Rmd'}

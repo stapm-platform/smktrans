@@ -4,7 +4,8 @@
 
 source("03_load_packages.R")
 
-config <- config_eng
+#config <- config_eng
+config <- config_scot
 
 ###############
 # Initiation
@@ -25,7 +26,7 @@ ggplot() +
 
 init_data <- readRDS(file.path(config$path, "outputs", paste0("init_forecast_data_", config$country, ".rds")))
 
-ggplot(init_data[year == 2020 & age <= config$age_trend_limit_init]) +
+ggplot(init_data[year == 2014 & age <= 30]) +
    geom_line(aes(x = age, y = p_start, color = imd_quintile), linewidth = 1.2) +
    facet_wrap(~ sex) +
    labs(x = "Age", y = "Probability of Initiation") +
@@ -40,7 +41,7 @@ ggplot(init_data[year == 2020 & age <= config$age_trend_limit_init]) +
 
 relapse_data <- readRDS(file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
 
-ggplot(relapse_data[year == 2020 & time_since_quit == 0]) +
+ggplot(relapse_data[year == 2014 & time_since_quit == 0]) +
   geom_line(aes(x = age, y = p_relapse, color = imd_quintile), linewidth = 1.2) +
   facet_wrap(~ sex) +
   labs(x = "Age", y = "Probability of Relapse") +
@@ -55,7 +56,7 @@ ggplot(relapse_data[year == 2020 & time_since_quit == 0]) +
 
 quit_data <- readRDS(file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".rds")))
 
-ggplot(quit_data[year == 2020]) +
+ggplot(quit_data[year == 2011]) +
   geom_line(aes(x = age, y = p_quit, color = imd_quintile), linewidth = 1.2) +
   facet_wrap(~ sex) +
   labs(x = "Age", y = "Probability of Quitting") +

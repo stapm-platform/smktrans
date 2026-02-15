@@ -1,212 +1,157 @@
+# ==============================================================================
+# SCRIPT: Process Scottish Health Survey (SHeS) Data
+# PURPOSE: Clean raw survey data and prepare it for smoking transition estimation.
+# SCOPE:   Ages 16+ (SHeS only asks smoking questions to ages 16+)
+#          Years 2008 - 2019
+# ==============================================================================
 
-# The aim of this code is to process the Scottish Health Survey data
-# into the form required to estimate smoking transition probabilities
+source("03_load_packages.R")
+# library(data.table)
+# library(magrittr)
+# library(hseclean)
+# library(mice)
 
-# SHeS only asks smoking questions to ages 16+
-# ages 16 & 17 do a self completion questionnaire
+# 1. SETUP & PATHS -------------------------------------------------------------
 
-# years 2008 - 2019
-
-# Load the required packages
-library(hseclean)
-library(magrittr)
-library(data.table)
-
-
-# https://stapm.gitlab.io/r-packages/hseclean/articles/scottish_data.html
-
-# Location of Scottish data
+# Define paths
 root_dir <- "X:/HAR_PR/PR/Consumption_TA/HSE/Scottish Health Survey (SHeS)/"
+path     <- "transition_probability_estimates/src_scotland/"
 
-# Apply functions to create the variables for analysis and to retain only the required variables
+# Define Scope
+analysis_years <- 2008:2019
+age_range      <- 16:89
 
-# The variables to retain
-keep_vars = c(
-  # Survey design variables
-  "wt_int",
-  "psu",
-  "cluster",
-  "year",
+# 2. DEFINE VARIABLES ----------------------------------------------------------
 
-  # Social / economic / demographic variables
-  "age",
-  "age_cat",
-  "sex",
-  "imd_quintile",
-  "degree",
-  "relationship_status",
-  "kids",
-  "employ2cat",
-  "income5cat",
-
-  # Long term health conditions
+# Variables to retain for analysis
+keep_vars <- c(
+  # Survey design
+  "wt_int", "psu", "cluster", "year",
+  # Demographics
+  "age", "age_cat", "sex", "imd_quintile", "degree",
+  "relationship_status", "kids", "employ2cat", "income5cat",
+  # Health
   "hse_mental",
-
   # Smoking
-  "cig_smoker_status",
-  "years_since_quit", "years_reg_smoker", "cig_ever",
+  "cig_smoker_status", "years_since_quit", "years_reg_smoker", "cig_ever",
   "smk_start_age", "smk_stop_age", "censor_age"
-  #"cigs_per_day", "smoker_cat", "hand_rolled_per_day", "machine_rolled_per_day", "prop_handrolled", "cig_type"
-
 )
 
-# The variables that must have complete cases
-complete_vars <- c("age", "sex", "imd_quintile", "year", "psu", "cluster", "cig_smoker_status", "censor_age")
+# Variables that must have complete cases
+complete_vars <- c("age", "sex", "imd_quintile", "year", "psu", "cluster", 
+                   "cig_smoker_status", "censor_age")
 
+# 3. DATA CLEANING FUNCTIONS ---------------------------------------------------
 
-#-----------------------------------------------------
-# Read and clean the data
-
-cleandata <- function(data) {
-
-  data %<>%
-    clean_age %>%
-    clean_demographic %>%
-    clean_education %>%
-    clean_economic_status %>%
-    clean_family %>%
-    clean_income %>%
-    clean_health_and_bio %>%
-    smk_status %>%
-    smk_former %>%
-    smk_quit %>%
-    smk_life_history %>%
-    #smk_amount %>%
-
+# Wrapper function to clean a single year of data
+process_year_data <- function(data) {
+  data %>%
+    clean_age() %>%
+    clean_demographic() %>%
+    clean_education() %>%
+    clean_economic_status() %>%
+    clean_family() %>%
+    clean_income() %>%
+    clean_health_and_bio() %>%
+    smk_status() %>%
+    smk_former() %>%
+    smk_quit() %>%
+    smk_life_history() %>%
     select_data(
-      ages = 16:89,
-      years = 2008:2019,
-
-      # variables to retain
+      ages = age_range,
+      years = analysis_years,
       keep_vars = keep_vars,
-
-      # The variables that must have complete cases
       complete_vars = complete_vars
     )
-
-  return(data)
 }
 
-# Read and clean each year of data and bind them together in one big dataset
-data <- combine_years(list(
-  cleandata(read_SHeS_2008(root = root_dir)),
-  cleandata(read_SHeS_2009(root = root_dir)),
-  cleandata(read_SHeS_2010(root = root_dir)),
-  cleandata(read_SHeS_2011(root = root_dir)),
-  cleandata(read_SHeS_2012(root = root_dir)),
-  cleandata(read_SHeS_2013(root = root_dir)),
-  cleandata(read_SHeS_2014(root = root_dir)),
-  cleandata(read_SHeS_2015(root = root_dir)),
-  cleandata(read_SHeS_2016(root = root_dir)),
-  cleandata(read_SHeS_2017(root = root_dir)),
-  cleandata(read_SHeS_2018(root = root_dir)),
-  cleandata(read_SHeS_2019(root = root_dir))
-))
+# 4. LOAD AND COMBINE DATA -----------------------------------------------------
 
+# Efficiently load and clean each year using lapply
+data_list <- lapply(analysis_years, function(yr) {
+  # Dynamically construct function name (e.g., read_SHeS_2008)
+  # The hseclean package usually follows this naming convention for SHeS
+  read_fn_name <- paste0("read_SHeS_", yr)
+  
+  if (exists(read_fn_name)) {
+    read_fn <- get(read_fn_name)
+    raw_dt  <- read_fn(root = root_dir)
+    process_year_data(raw_dt)
+  } else {
+    warning(paste("Function", read_fn_name, "not found. Skipping year", yr))
+    return(NULL)
+  }
+})
+
+# Combine into one data.table
+data <- combine_years(data_list)
+rm(data_list)
+
+# 5. WEIGHTING & RECODING ------------------------------------------------------
 
 # Load population data for Scotland
-# from here - X:\ScHARR\PR_Mortality_data_TA\data\Processed pop sizes and death rates from VM
-# copied to the inputs folder in this repo
-scot_pops <- fread(paste0(path, "inputs/pop_sizes_scotland_national_v1_2022-12-13_mort.tools_1.5.0.csv"))
-setnames(scot_pops, c("pops"), c("N"))
+pop_file <-"05_input/pop_sizes_scotland_national_v1_2022-12-13_mort.tools_1.5.0.csv"
+scot_pops <- fread(pop_file)
+setnames(scot_pops, "pops", "N")
 
-# adjust the survey weights according to the ratio of the real population to the sampled population
+# Adjust survey weights
 data <- clean_surveyweights(data, pop_data = scot_pops)
 
-# remake age categories
-data[, age_cat := c("11-15",
-                    "16-17",
-                    "18-24",
-                    "25-34",
-                    "35-44",
-                    "45-54",
-                    "55-64",
-                    "65-74",
-                    "75-89")[findInterval(age, c(-1, 16, 18, 25, 35, 45, 55, 65, 75, 1000))]]
+# Recode Age Categories
+# SHeS analysis starts at 16, so "11-15" category will be empty but kept for alignment
+age_breaks <- c(-1, 16, 18, 25, 35, 45, 55, 65, 75, 1000)
+age_labels <- c("11-15", "16-17", "18-24", "25-34", "35-44", 
+                "45-54", "55-64", "65-74", "75-89")
 
+data[, age_cat := age_labels[findInterval(age, age_breaks)]]
+
+# Rename columns for internal consistency
 setnames(data,
-         c("smk_start_age", "cig_smoker_status", "years_since_quit"),
-         c("start_age", "smk.state", "time_since_quit"))
+         old = c("smk_start_age", "cig_smoker_status", "years_since_quit"),
+         new = c("start_age", "smk.state", "time_since_quit"))
 
-# remove invalid smoking start and stop ages
+# Sanity Check: Remove invalid start/stop ages
+# Note: SHeS data is 16+, so the <11 check is just a safeguard
 data[start_age < 11, start_age := NA]
 data[smk_stop_age < 11, smk_stop_age := NA]
 
-# Save data
-saveRDS(data, paste0(path, "intermediate_data/SHeS_2008_to_2019_tobacco.rds"))
+# Checkpoint: Save clean (but unimputed) data
+out_dir_inter <- file.path(path, "intermediate_data")
+if(!dir.exists(out_dir_inter)) dir.create(out_dir_inter, recursive = TRUE)
 
+saveRDS(data, file.path(out_dir_inter, "SHeS_2008_to_2019_tobacco.rds"))
 
-################
-# Impute missing values
+# 6. IMPUTATION ----------------------------------------------------------------
 
-# Load the data
-data <- readRDS(paste0(path, "intermediate_data/SHeS_2008_to_2019_tobacco.rds"))
+# Check missingness
+missing_counts <- colSums(is.na(data))
+missing_vars   <- missing_counts[missing_counts > 0]
 
-# view variables with missingness
-misscheck <- function(var) {
-  x <- table(var, useNA = "ifany")
-  na <- x[which(is.na(names(x)))]
-  if(length(na) == 0) na <- 0
-  perc <- round(100 * na / sum(x), 2)
-  #return(c(paste0(na, " missing obs, ", perc, "%")))
-  return(na)
+if(length(missing_vars) > 0) {
+  cat("Variables with missing data:\n")
+  print(missing_vars)
 }
 
-n_missing <- sapply(data, misscheck)
-missing_vars <- n_missing[which(n_missing > 0)]
-missing_vars
+# Note: The <16 mental health fix is removed because SHeS data is strictly 16+
 
-# quick fixes to missing data
-# assume that if missing data on mental health issues below age 16,
-# then no mental health issues
-#data[is.na(hse_mental) & age < 16, hse_mental := "no_mental"]
+# Prepare factors for imputation
+# Defining levels ensures ordinal regression (polr) works correctly
+data[, kids := factor(kids, levels = c("0", "1", "2", "3+"))]
+data[, income5cat := factor(income5cat, levels = c("1_lowest_income", "2", "3", "4", "5_highest_income"))]
 
-# household equivalised income has the most missingness
-# - this is a key variable to impute
-# as we will use it to understand policy inequalities
-
-# Set order of factors where needed for imputing as ordered.
-data[ , kids := factor(kids, levels = c("0", "1", "2", "3+"))]
-data[ , income5cat := factor(income5cat, levels = c("1_lowest_income", "2", "3", "4", "5_highest_income"))]
-
-# Impute missing values
-
-# Run the imputation
+# Run Imputation
 imp <- impute_data_mice(
   data = data,
-  var_names = c(
-    "sex",
-    "age_cat",
-    "kids",
-    "relationship_status",
-    "imd_quintile",
-    "degree",
-    "employ2cat",
-    "income5cat",
-    "hse_mental",
-    "smk.state"
-  ),
-  var_methods = c(
-    "",
-    "",
-    "polr",
-    "polyreg",
-    "",
-    "logreg",
-    "",
-    "polr",
-    "logreg",
-    ""
-  ),
+  var_names = c("sex", "age_cat", "kids", "relationship_status", 
+                "imd_quintile", "degree", "employ2cat", "income5cat", 
+                "hse_mental", "smk.state"),
+  var_methods = c("", "", "polr", "polyreg", "", "logreg", "", "polr", "logreg", ""),
   n_imputations = 5
-  # for testing just do 1 imputation
-  # but test with more later
-  # for point estimates, apparently 2-10 imputations are enough
 )
 
 data_imp <- copy(imp$data)
 
-# Save data
-saveRDS(data_imp, paste0(path, "intermediate_data/SHeS_2008_to_2019_tobacco_imputed.rds"))
+# 7. SAVE FINAL OUTPUT ---------------------------------------------------------
 
+saveRDS(data_imp, file.path(out_dir_inter, "SHeS_2008_to_2019_tobacco_imputed.rds"))
 
