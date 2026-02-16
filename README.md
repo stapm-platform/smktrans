@@ -107,16 +107,16 @@ Policy Model:
 
 or one of our modelling papers that use the estimates:
 
-> Kai Le Chen R, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J,
-> Langley TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026) Reducing
-> the exceptional affordability of hand-rolling tobacco using tax
+> Chen RKL, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley
+> TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026) Reducing the
+> exceptional affordability of hand-rolling tobacco using tax
 > escalators: a health and economic impact modelling study for England.
 > Tobacco Control DOI: <https://doi.org/10.1136/tc-2025-059670>
 
-> Gillespie D, Morris D, Angus C, Wilson L, Kai Le Chen R, Leeming G,
-> Holmes J, Brennan A (2025) Model-based appraisal of the potential
-> effects of minimum pricing for tobacco in Scotland. Tobacco Control
-> DOI: <https://doi.org/10.1136/tc-2024-059252>
+> Gillespie D, Morris D, Angus C, Wilson L, Chen RKL, Leeming G, Holmes
+> J, Brennan A (2025) Model-based appraisal of the potential effects of
+> minimum pricing for tobacco in Scotland. Tobacco Control DOI:
+> <https://doi.org/10.1136/tc-2024-059252>
 
 ## Acknowledgements
 

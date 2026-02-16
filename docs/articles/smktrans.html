@@ -81,30 +81,200 @@
 
     
     
-<p>See the <a href="https://stapm.gitlab.io/projects/smoking-model-development/stpm_tech_report/stpm-technical-report.pdf" class="external-link">methodology
-report</a>.</p>
-<p>To illustrate the use of the <code>smktrans</code> functions to
-estimate smoking state transition probabilities, we have created example
-workflows. You can use these examples to help understand how the code
-works, run them to generate model inputs, or use them as a starting
-point for the development of a new project.</p>
-<p>At the moment, these workflows are accessible only to the project
-team. To access them, you will need to be added to the STAPM Gitlab
-organisation.</p>
-<p>The workflows are listed below:</p>
+<p>The <code>smktrans</code> package is the engine room for estimating
+the probabilities that individuals will move between different smoking
+states—specifically initiation, cessation, relapse, and death—within the
+Sheffield Tobacco Policy Model (STPM).</p>
+<p>This article outlines the philosophy behind these estimates, the
+methodology used to generate them, and their history of use in informing
+UK government policy.</p>
+<div class="section level2">
+<h2 id="living-estimates-a-versioned-approach">Living Estimates: A Versioned Approach<a class="anchor" aria-label="anchor" href="#living-estimates-a-versioned-approach"></a>
+</h2>
+<p>It is important to understand that the transition probabilities
+provided by <code>smktrans</code> are <strong>not static</strong>.</p>
+<p>Smoking behaviour is dynamic, and our understanding of it evolves as
+new survey data becomes available and methodological refinements are
+made. Therefore, this package operates on a versioned basis:</p>
 <ul>
-<li><p><a href="https://gitlab.com/stapm/projects/smoking-model-development/smoking_transitions_paper" class="external-link">English
-national smoking transition probabilities</a>: main development repo for
-testing and validating the method to estimate the smoking transition
-probabilities.</p></li>
-<li><p><a href="https://gitlab.com/stapm/projects/RCP_smoking_trends" class="external-link">Forecast of
-future smoking trends - Royal College of Physican’s report 2021</a>:
-‘src/20_estimate_smoking_transition_probabilities.R’.</p></li>
-<li><p><a href="https://gitlab.com/stapm/example-workflows/tax_policy_modelling" class="external-link">Smoking
-transition probability inputs to tax policy modelling</a>: the entire
-workflow is implemented in the ‘build inputs’ folder, with an associated
-presentation that illustrates the outputs.</p></li>
-</ul></main>
+<li>
+<strong>Updates:</strong> When new health survey data is released or
+when we refine our algorithms, the package version is incremented.</li>
+<li>
+<strong>Snapshots:</strong> Each version of the package produces a
+specific set of estimates.</li>
+<li>
+<strong>Access:</strong> You can download the specific probability
+estimates for England, Scotland, and Wales from the
+<strong>Articles</strong> tab on this website.</li>
+</ul>
+<p>We recommend always checking the package version to ensure you are
+using the most current estimates for your modelling work.</p>
+</div>
+<div class="section level2">
+<h2 id="methodology">Methodology<a class="anchor" aria-label="anchor" href="#methodology"></a>
+</h2>
+<p>The estimates produced by <code>smktrans</code> are not the direct
+result of calibration or fitting a standard statistical model (e.g. a
+logistic regression for prediction). Instead, they result from applying
+a mathematical algorithm that is based on a <strong>rearrangement of the
+formula for the dynamics of smoking prevalence</strong>. See the <a href="https://doi.org/10.17605/OSF.IO/FR7WN" class="external-link">Sheffield Tobacco Policy
+Model Technical Documentation</a>.</p>
+<div class="section level3">
+<h3 id="the-framework">The Framework<a class="anchor" aria-label="anchor" href="#the-framework"></a>
+</h3>
+<p>The foundation of this methodology is the work by <strong>Holford et
+al. (2014)</strong> for the United States. They established a workflow
+for estimating smoking state transition probabilities from repeat
+cross-sectional survey data.</p>
+<p>We have adapted this approach for the UK context. The core logic
+involves taking observed cross-sectional prevalence (the “stocks” of
+smokers and non-smokers at a specific time) and calculating the
+necessary flows (transitions) required to maintain or change those
+stocks, accounting for:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Mortality:</strong> We integrate external information on
+disease-specific mortality rates to account for the differential
+survival of smokers, former smokers, and never smokers.</li>
+<li>
+<strong>Relapse:</strong> We explicitly model the probability of
+returning to smoking after quitting.
+<ul>
+<li>
+<strong>Long-term (&gt;1 year):</strong> Based on <em>Hawkins et
+al. (2010)</em> using the British Household Panel Survey.</li>
+<li>
+<strong>Short-term (&lt;1 year):</strong> Derived from the placebo
+condition in <em>Jackson et al. (2019)</em>.</li>
+</ul>
+</li>
+</ol>
+<p>Full technical details can be found in the <a href="https://doi.org/10.17605/OSF.IO/FR7WN" class="external-link">STPM Technical
+Documentation</a> and in the methodological vignette found in the
+articles tab of the smktrans website.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="impact-and-policy-application">Impact and Policy Application<a class="anchor" aria-label="anchor" href="#impact-and-policy-application"></a>
+</h2>
+<p>The estimates generated by <code>smktrans</code> have formed the
+evidence base for major tobacco control policy decisions in the UK.</p>
+<div class="section level3">
+<h3 id="england-the-royal-college-of-physicians-the-smokefree-generation">1. England: The Royal College of Physicians &amp; The SmokeFree
+Generation<a class="anchor" aria-label="anchor" href="#england-the-royal-college-of-physicians-the-smokefree-generation"></a>
+</h3>
+<p>The transition probabilities were originally developed for England.
+Their first major application was informing the projections for
+<strong>Section 2.6 of the Royal College of Physicians’ 2021
+report</strong>, <em>“Smoking and health 2021: A coming of age for
+tobacco control?”</em></p>
+<p>As the President of the RCP noted in the introduction: &gt; “Instead,
+modelling of current tobacco control policies shows a failure to achieve
+a smoking prevalence of &lt;5% until after 2050.”</p>
+<p>Following this, the methodology was utilized in a knowledge exchange
+project with the <strong>Office for Health Improvement and Disparities
+(OHID)</strong>. The understanding produced by this collaboration later
+supported the government’s internal modelling for the <strong>SmokeFree
+Generation</strong> policy.</p>
+<p>When the <strong>Tobacco and Vapes Bill</strong> was introduced to
+Parliament, <code>smktrans</code> estimates were used by the government
+modelling team for the final Impact Assessment. * <em>See page 34 of the
+<a href="https://assets.publishing.service.gov.uk/media/6985eeb7cfe7ccf77efbc74e/tobacco-and-vapes-bill-impact-assessment.pdf" class="external-link">Tobacco
+and Vapes Bill Impact Assessment</a>.</em></p>
+</div>
+<div class="section level3">
+<h3 id="scotland-minimum-pricing-for-tobacco">2. Scotland: Minimum Pricing for Tobacco<a class="anchor" aria-label="anchor" href="#scotland-minimum-pricing-for-tobacco"></a>
+</h3>
+<p>Funded by the <strong><a href="https://sarg-sheffield.ac.uk/projects/spectrum/" class="external-link">SPECTRUM
+Consortium</a></strong>, we extended the methodology to Scotland. These
+estimates informed a report commissioned by <strong>Public Health
+Scotland</strong> on the potential effects of minimum pricing for
+tobacco. * <em>Read the report: <a href="https://publichealthscotland.scot/publications/model-based-appraisal-of-the-potential-effects-of-minimum-pricing-for-tobacco-in-scotland/" class="external-link">Model-based
+appraisal of the potential effects of minimum pricing for tobacco in
+Scotland</a>.</em> * <em>Read the peer-reviewed publication: Gillespie
+et al. (2025) in <a href="https://doi.org/10.1136/tc-2024-059252" class="external-link">Tobacco
+Control</a>.</em></p>
+</div>
+<div class="section level3">
+<h3 id="wales-knowledge-exchange">3. Wales: Knowledge Exchange<a class="anchor" aria-label="anchor" href="#wales-knowledge-exchange"></a>
+</h3>
+<p>Work is currently ongoing to use these estimates for Wales, supported
+by a commissioned knowledge exchange project with <strong>Public Health
+Wales</strong>. We have begun to work with their data science team to
+integrate <code>smktrans</code> methodology into their internal analytic
+workflows.</p>
+</div>
+<div class="section level3">
+<h3 id="academic-credibility-external-validation">4. Academic Credibility &amp; External Validation<a class="anchor" aria-label="anchor" href="#academic-credibility-external-validation"></a>
+</h3>
+<p>The credibility of <code>smktrans</code> estimates extends beyond the
+University of Sheffield research team. They have been independently
+adopted by other academic groups to inform peer-reviewed simulation
+studies.</p>
+<p>Most notably, <strong>Davies et al. (2026)</strong> utilized our
+estimates to model the potential inequality impacts of the SmokeFree
+Generation policy in England. * <em>Read the publication: Davies N,
+Murray R, Morling JR, et al. (2026). Impact of the UK’s smokefree
+generation policy on tobacco-related equity in England: a simulation
+study. <a href="https://doi.org/10.1136/tc-2025-059669" class="external-link">Tobacco
+Control</a>.</em></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="future-directions">Future Directions<a class="anchor" aria-label="anchor" href="#future-directions"></a>
+</h2>
+<p>The <code>smktrans</code> estimates continue to evolve. They
+currently form the backbone of our tobacco pricing modelling using
+<strong>TAX-sim</strong> (developed under the <a href="https://sarg-sheffield.ac.uk/projects/syntax/" class="external-link">NIHR SYNTAX
+project</a>). They have recently informed modelling of the effects of
+changes to tobacco tax in England: <em>Read the peer-reviewed
+publication: Chen et al. (2026) in <a href="https://doi.org/10.1136/tc-2025-059670" class="external-link">Tobacco
+Control</a>.</em></p>
+<p>Furthermore, we are now using these quitting probability estimates as
+calibration targets for a new <strong>Agent-Based Models (ABM)</strong>
+designed to understand the behavioural mechanisms underlying quit
+attempts and maintenance. <em>Read the peer-reviewed publication: Tian
+et al. (2026) in <a href="https://doi.org/10.1109/WSC63780.2024.10838986" class="external-link">Winter Simulation
+Conference</a>.</em></p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>
+<strong>Davies, N., et al.</strong> (2026). Impact of the UK’s
+smokefree generation policy on tobacco-related equity in England: a
+simulation study. <em>Tobacco Control</em>. <a href="https://doi.org/10.1136/tc-2025-059669" class="external-link">DOI:
+10.1136/tc-2025-059669</a>
+</li>
+<li>
+<strong>Gillespie, D. &amp; Brennan, A.</strong> (Year). The
+Sheffield Tobacco Policy Model (STPM): full technical documentation.
+University of Sheffield. <a href="https://doi.org/10.17605/OSF.IO/FR7WN" class="external-link">DOI:
+10.17605/OSF.IO/FR7WN</a>
+</li>
+<li>
+<strong>Hawkins, J., Hollingworth, W., &amp; Campbell, R.</strong>
+(2010). Long-Term Smoking Relapse: A Study Using the British Household
+Panel Survey. <em>Nicotine &amp; Tobacco Research</em>. <a href="https://doi.org/10.1093/ntr/ntq175" class="external-link">DOI:
+10.1093/ntr/ntq175</a>
+</li>
+<li>
+<strong>Holford, T. R., et al.</strong> (2014). Patterns of Birth
+Cohort–Specific Smoking Histories, 1965–2009. <em>American Journal of
+Preventive Medicine</em>. <a href="https://doi.org/10.1016/j.amepre.2013.10.022" class="external-link">DOI:
+10.1016/j.amepre.2013.10.022</a>
+</li>
+<li>
+<strong>Jackson, S. E., et al.</strong> (2019). Modelling continuous
+abstinence rates over time from clinical trials of pharmacological
+interventions for smoking cessation. <em>Addiction</em>. <a href="https://doi.org/10.1111/add.14549" class="external-link">DOI: 10.1111/add.14549</a>
+</li>
+</ul>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
