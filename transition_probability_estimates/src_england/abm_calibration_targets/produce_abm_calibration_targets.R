@@ -6,22 +6,20 @@
 # ==============================================================================
 
 # 1. CONFIGURATION -------------------------------------------------------------
-source("03_load_packages.R") # Ensure data.table is loaded
+source("03_load_packages.R")
 
 # Define Paths
-# Using a base path ensures portability between users
 base_path   <- "transition_probability_estimates/src_england/outputs/"
-output_date <- format(Sys.Date(), "%Y%m%d") # Automatically uses today's date (e.g., 20251222)
+output_date <- format(Sys.Date(), "%Y%m%d")
 version     <- "v1"
 
 # Define Output Filenames
-file_quit_probs    <- paste0(base_path, "quit_probabilities_", output_date, "_", version, ".csv")
-file_init_probs    <- paste0(base_path, "init_probabilities_", output_date, "_", version, ".csv")
-file_relapse_probs <- paste0(base_path, "relapse_probabilities_", output_date, "_", version, ".csv")
-file_calib_targets <- paste0(base_path, "quit_probability_calibration_targets_", output_date, "_", version, ".csv")
+file_quit_probs    <- paste0("transition_probability_estimates/src_england/abm_calibration_targets/quit_probabilities_", output_date, "_", version, ".csv")
+file_init_probs    <- paste0("transition_probability_estimates/src_england/abm_calibration_targets/init_probabilities_", output_date, "_", version, ".csv")
+file_relapse_probs <- paste0("transition_probability_estimates/src_england/abm_calibration_targets/relapse_probabilities_", output_date, "_", version, ".csv")
+file_calib_targets <- paste0("transition_probability_estimates/src_england/abm_calibration_targets/quit_probability_calibration_targets_", output_date, "_", version, ".csv")
 
 # ABM Standard Column Names
-# Defining these here ensures consistency across all files
 abm_cols <- c("arrivalYear", "pAge", "pGender", "pIMDquintile")
 
 # 2. HELPER FUNCTIONS ----------------------------------------------------------
@@ -38,7 +36,7 @@ export_abm_table <- function(data,
   # Filter
   dt <- data[age >= age_range[1] & age <= age_range[2] & 
                year >= year_range[1] & year <= year_range[2], 
-             ..cols_to_keep] # .. syntax looks for variables in parent scope
+             ..cols_to_keep]
   
   # Sort (Year -> Age -> Sex -> IMD)
   # Assuming first 4 columns are the sorting keys
@@ -53,11 +51,10 @@ export_abm_table <- function(data,
 }
 
 # 3. LOAD DATA -----------------------------------------------------------------
-# We load these once and keep them in memory to avoid redundant disk reads
 
-raw_quit    <- readRDS(paste0(base_path, "quit_data_england_uncertainty.rds"))
-raw_init    <- readRDS(paste0(base_path, "init_data_england_uncertainty.rds"))
-raw_relapse <- readRDS(paste0(base_path, "relapse_data_england_uncertainty.rds"))
+raw_quit    <- readRDS(paste0(base_path, "quit_data_england_uncertainty.rds"))$data
+raw_init    <- readRDS(paste0(base_path, "init_data_england_uncertainty.rds"))$data
+raw_relapse <- readRDS(paste0(base_path, "relapse_data_england_uncertainty.rds"))$data
 
 
 # 4. PART A: GENERATE ABM INPUT FILES (PROBABILITIES) --------------------------
@@ -101,35 +98,49 @@ export_abm_table(
 
 # 5. PART B: GENERATE CALIBRATION TARGETS (AGGREGATED) -------------------------
 
-# Work with a copy of the loaded quit data to avoid affecting the original
+# Work with a copy of the loaded quit data
 calib_dt <- copy(raw_quit)
 
 # 5.1 Filters & Categorization
-calib_dt <- calib_dt[age >= 25 & age <= 74]
+
+# Filter Years globally (Standard for all targets)
 calib_dt <- calib_dt[year >= 2011 & year <= 2019]
 
-# Create Age Categories
-# Cuts: [-1..45) -> "25-44", [45..65) -> "45-64", [65..100) -> "65-74"
-calib_dt[, age_cat := c("25-44", "45-64", "65-74")[findInterval(age, c(-1, 45, 65, 100))]]
+# Create Detailed Age Categories (For Age/Sex Verification)
+# Cuts: 16-24, 25-44, 45-64, 65-74, 75-89
+age_breaks_detailed <- c(-1, 25, 45, 65, 75, 1000)
+age_labels_detailed <- c("16-24", "25-44", "45-64", "65-74", "75-89")
+calib_dt[, age_cat_detailed := age_labels_detailed[findInterval(age, age_breaks_detailed)]]
+
+# Create Broad Age Categories (For IMD Calibration vs Verification)
+# Cuts: 16-24, 25-74, 75-89
+age_breaks_broad <- c(-1, 25, 75, 1000)
+age_labels_broad <- c("16-24", "25-74", "75-89")
+calib_dt[, age_cat_broad := age_labels_broad[findInterval(age, age_breaks_broad)]]
 
 # Create Year Categories
 # Cuts: [-1..2014) -> "2011-2013", [2014..2017) -> "2014-2016", [2017..) -> "2017-2019"
 calib_dt[, year_cat := c("2011-2013", "2014-2016", "2017-2019")[findInterval(year, c(-1, 2014, 2017, 10000))]]
+
 
 # 5.2 Aggregation Tables
 
 # --- Period 1: 2011 - 2016 ---
 
 # Table 3: By Age/Sex (Collapsed across years 2011-2016)
+# Uses Detailed Age Categories (16-24, 25-44, 45-64, 65-74, 75-89)
 t3 <- calib_dt[year <= 2016, 
                .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
-               by = .(age_cat, sex)]
-t3[, year_cat := "2011-2016"] # Explicit label for the whole period
+               by = .(age_cat = age_cat_detailed, sex)]
+t3[, year_cat := "2011-2016"] 
+t3[, imd_quintile := "All"] # Explicitly mark IMD as All
 
-# Table 4: By YearCat/IMD (2011-2013 and 2014-2016)
+# Table 4: By YearCat/IMD/Broad Age (2011-2013 and 2014-2016)
+# Uses Broad Age Categories (16-24, 25-74, 75-89) so we can distinguish the calibration target (25-74)
 t4 <- calib_dt[year <= 2016, 
                .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
-               by = .(year_cat, imd_quintile)]
+               by = .(year_cat, imd_quintile, age_cat = age_cat_broad)]
+t4[, sex := "All"] # Explicitly mark Sex as All
 
 
 # --- Period 2: 2017 - 2019 ---
@@ -137,26 +148,20 @@ t4 <- calib_dt[year <= 2016,
 # Table 5: By Age/Sex (Collapsed across years 2017-2019)
 t5 <- calib_dt[year >= 2017, 
                .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
-               by = .(age_cat, sex)]
-# FIX: Corrected typo (was ":")
+               by = .(age_cat = age_cat_detailed, sex)]
 t5[, year_cat := "2017-2019"] 
+t5[, imd_quintile := "All"]
 
-# Table 6: By YearCat/IMD (2017-2019)
+# Table 6: By YearCat/IMD/Broad Age (2017-2019)
 t6 <- calib_dt[year >= 2017, 
                .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
-               by = .(year_cat, imd_quintile)]
+               by = .(year_cat, imd_quintile, age_cat = age_cat_broad)]
+t6[, sex := "All"]
 
 
 # 5.3 Combine & Clean
-# Bind all tables; 'fill=TRUE' handles the mismatched columns (e.g. t3 lacks IMD)
+# Bind all tables
 data_t <- rbindlist(list(t3, t4, t5, t6), use.names = TRUE, fill = TRUE)
-
-# Fill Missing Values with "All" 
-# This makes it explicit that these rows apply to All Ages or All IMDs
-data_t[is.na(age_cat), age_cat := "All"]
-data_t[is.na(sex), sex := "All"]
-data_t[is.na(imd_quintile), imd_quintile := "All"]
-# year_cat is never NA based on the logic above, but good to check if debugging.
 
 # Rename to ABM format
 setnames(data_t, 
@@ -167,7 +172,11 @@ setnames(data_t,
 final_cols <- c("arrivalYearCategorical", "pIMDquintile", "pGender", "pAgeCategorical", "p_quit", "p_quit_var")
 setcolorder(data_t, final_cols)
 
+# Sort for readability (Year -> IMD -> Sex -> Age)
+setorder(data_t, arrivalYearCategorical, pIMDquintile, pGender, pAgeCategorical)
+
 # 5.4 Save
 write.csv(data_t, file_calib_targets, row.names = FALSE)
+
 
 
