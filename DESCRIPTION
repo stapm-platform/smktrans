@@ -79,6 +79,10 @@ Imports:
     rprojroot
 RdMacros: Rdpack, lifecycle
 Suggests: 
+    knitr,
+    rmarkdown,
+    testthat,
+    DiagrammeR,
     distill,
     hseclean (>= 1.11.2),
     mort.tools (>= 1.6.0),

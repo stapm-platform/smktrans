@@ -52,7 +52,7 @@ versions <- c("1.11.2", # stapmr
               "1.7.4",  # tobalcepi
               "1.14.5", # hseclean 
               "1.6.0", # mort.tools
-              "1.5.2", # smktrans
+              "2.0.0", # smktrans
               "0.5.0") # toolkitr
 
 
@@ -83,7 +83,7 @@ devtools::install_git(
 
 devtools::install_git(
   "https://github.com/stapm-platform/smktrans.git", 
-  #ref = versions[5],
+  ref = versions[5],
   build_vignettes = FALSE, quiet = FALSE)
 
 devtools::install_github(
