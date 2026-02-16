@@ -126,6 +126,12 @@ calib_dt[, year_cat := c("2011-2013", "2014-2016", "2017-2019")[findInterval(yea
 # Load Survey Data
 survey_data <- readRDS("transition_probability_estimates/src_england/intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds")
 
+# Note that the input data currently only runs to 2018, but up to 2019 is needed
+# until the HSE2019 is integrated into this code, as a fix duplicate 2018 and name it 2019
+sd19 <- copy(survey_data[year == 2018])[ , year := 2019]
+survey_data <- rbindlist(list(survey_data, sd19), use.names = TRUE)
+
+
 # Calculate weights by SINGLE YEAR and SINGLE AGE
 # This ensures that:
 # 1. A 25-year-old counts more than a 75-year-old (Age structure)
