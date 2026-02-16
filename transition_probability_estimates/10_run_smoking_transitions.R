@@ -69,7 +69,7 @@ config_eng <- list(
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 50, kR = 0.9, kn_samp = 1000,
+  kn = 100, kR = 0.9, kn_samp = 1000,
   cont_limit = 2026
 )
 
@@ -104,7 +104,7 @@ config_scot <- list(
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 50, kR = 0.9, kn_samp = 1000,
+  kn = 100, kR = 0.9, kn_samp = 1000,
   cont_limit = 2026
 )
  
@@ -139,7 +139,7 @@ config_wales <- list(
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 50, kR = 0.9, kn_samp = 1000,
+  kn = 100, kR = 0.9, kn_samp = 1000,
   cont_limit = 2026
 )
 
