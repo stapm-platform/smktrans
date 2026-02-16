@@ -11,7 +11,7 @@ source("03_load_packages.R")
 # Define Paths
 base_path   <- "transition_probability_estimates/src_england/outputs/"
 output_date <- format(Sys.Date(), "%Y%m%d")
-version     <- "v1"
+version     <- "v2"
 
 # Define Output Filenames
 file_quit_probs    <- paste0("transition_probability_estimates/src_england/abm_calibration_targets/quit_probabilities_", output_date, "_", version, ".csv")
@@ -122,6 +122,26 @@ calib_dt[, age_cat_broad := age_labels_broad[findInterval(age, age_breaks_broad)
 # Cuts: [-1..2014) -> "2011-2013", [2014..2017) -> "2014-2016", [2017..) -> "2017-2019"
 calib_dt[, year_cat := c("2011-2013", "2014-2016", "2017-2019")[findInterval(year, c(-1, 2014, 2017, 10000))]]
 
+# --- WEIGHTING PREPARATION ---
+# Load Survey Data
+survey_data <- readRDS("transition_probability_estimates/src_england/intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds")
+
+# Calculate weights by SINGLE YEAR and SINGLE AGE
+# This ensures that:
+# 1. A 25-year-old counts more than a 75-year-old (Age structure)
+# 2. The year 2011 counts more than 2016 (because there were more smokers back then)
+data_w <- survey_data[smk.state == "current", 
+                      .(wgt = sum(wt_int, na.rm = TRUE)), 
+                      by = .(year, age, sex, imd_quintile)]
+
+# Merge weights into the calibration table
+# Match strictly on Year + Age + Sex + IMD
+calib_dt <- merge(calib_dt, data_w, 
+                  all.x = TRUE, 
+                  by = c("year", "age", "sex", "imd_quintile"))
+
+# Fill NA weights with 0 (for strata with no survey representation)
+calib_dt[is.na(wgt), wgt := 0]
 
 # 5.2 Aggregation Tables
 
@@ -130,7 +150,7 @@ calib_dt[, year_cat := c("2011-2013", "2014-2016", "2017-2019")[findInterval(yea
 # Table 3: By Age/Sex (Collapsed across years 2011-2016)
 # Uses Detailed Age Categories (16-24, 25-44, 45-64, 65-74, 75-89)
 t3 <- calib_dt[year <= 2016, 
-               .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
+               .(p_quit = weighted.mean(p_quit, wgt), p_quit_var = weighted.mean(p_quit_var, wgt)), 
                by = .(age_cat = age_cat_detailed, sex)]
 t3[, year_cat := "2011-2016"] 
 t3[, imd_quintile := "All"] # Explicitly mark IMD as All
@@ -138,7 +158,7 @@ t3[, imd_quintile := "All"] # Explicitly mark IMD as All
 # Table 4: By YearCat/IMD/Broad Age (2011-2013 and 2014-2016)
 # Uses Broad Age Categories (16-24, 25-74, 75-89) so we can distinguish the calibration target (25-74)
 t4 <- calib_dt[year <= 2016, 
-               .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
+               .(p_quit = weighted.mean(p_quit, wgt), p_quit_var = weighted.mean(p_quit_var, wgt)), 
                by = .(year_cat, imd_quintile, age_cat = age_cat_broad)]
 t4[, sex := "All"] # Explicitly mark Sex as All
 
@@ -147,14 +167,14 @@ t4[, sex := "All"] # Explicitly mark Sex as All
 
 # Table 5: By Age/Sex (Collapsed across years 2017-2019)
 t5 <- calib_dt[year >= 2017, 
-               .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
+               .(p_quit = weighted.mean(p_quit, wgt), p_quit_var = weighted.mean(p_quit_var, wgt)), 
                by = .(age_cat = age_cat_detailed, sex)]
 t5[, year_cat := "2017-2019"] 
 t5[, imd_quintile := "All"]
 
 # Table 6: By YearCat/IMD/Broad Age (2017-2019)
 t6 <- calib_dt[year >= 2017, 
-               .(p_quit = mean(p_quit), p_quit_var = mean(p_quit_var)), 
+               .(p_quit = weighted.mean(p_quit, wgt), p_quit_var = weighted.mean(p_quit_var, wgt)), 
                by = .(year_cat, imd_quintile, age_cat = age_cat_broad)]
 t6[, sex := "All"]
 
