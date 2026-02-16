@@ -81,55 +81,66 @@ remotes::install_github("stapm-platform/smktrans")
 
 ## Citation
 
-If you use the **smktrans** software, methodology, or the resulting
-estimates in your research or policy analysis, please cite the package
-as follows:
+If you use the **smktrans** estimates in your research, **please cite
+our peer-reviewed modelling papers**. These publications validate the
+use of these estimates in policy appraisal contexts:
+
+> Chen RKL, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley
+> TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026). Reducing the
+> exceptional affordability of hand-rolling tobacco using tax
+> escalators: a health and economic impact modelling study for England.
+> *Tobacco Control*. [DOI:
+> 10.1136/tc-2025-059670](https://doi.org/10.1136/tc-2025-059670)
+
+> Gillespie D, Morris D, Angus C, Wilson L, Chen RKL, Leeming G, Holmes
+> J, Brennan A (2025). Model-based appraisal of the potential effects of
+> minimum pricing for tobacco in Scotland. *Tobacco Control*. [DOI:
+> 10.1136/tc-2024-059252](https://doi.org/10.1136/tc-2024-059252)
+
+To cite the **smktrans** software package specifically:
 
 > Gillespie, D., and Brennan, A. (2026). **smktrans: An R Package for
 > estimating smoking state transition probabilities (v2.0.0).**
 > University of Sheffield. <https://doi.org/10.17605/OSF.IO/YGXQ9>
 
-You can also generate the BibTeX entry directly in R:
+To cite the full technical documentation for the underlying model:
 
-``` r
-citation("smktrans")
-```
+> Gillespie, D. & Brennan, A. (Year). The Sheffield Tobacco Policy Model
+> (STPM): full technical documentation. Documentation version number
+> \[x.x.x\]. University of Sheffield. [DOI:
+> 10.17605/OSF.IO/FR7WN](https://doi.org/10.17605/OSF.IO/FR7WN)
 
-You could also cite the technical report for the Sheffield Tobacco
-Policy Model:
+*(Note: The technical documentation is a living document. Please cite
+the year and version of the report you used.)*
 
-> Gillespie, D. & Brennan, A. (\[YEAR\]). The Sheffield Tobacco Policy
-> Model (STPM): full technical documentation. Documentation version
-> number \[x.x.x\]. University of Sheffield. DOI:
-> <https://doi.org/10.17605/OSF.IO/FR7WN> This is a living document that
-> we update on a rolling basis. Please cite the year and version of the
-> report you use information from.
+## Authors & Acknowledgements
 
-or one of our modelling papers that use the estimates:
+### Authors
 
-> Chen RKL, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley
-> TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026) Reducing the
-> exceptional affordability of hand-rolling tobacco using tax
-> escalators: a health and economic impact modelling study for England.
-> Tobacco Control DOI: <https://doi.org/10.1136/tc-2025-059670>
+- **Duncan Gillespie** - *Author, Maintainer*  
+- **Alan Brennan** - *Author*
 
-> Gillespie D, Morris D, Angus C, Wilson L, Chen RKL, Leeming G, Holmes
-> J, Brennan A (2025) Model-based appraisal of the potential effects of
-> minimum pricing for tobacco in Scotland. Tobacco Control DOI:
-> <https://doi.org/10.1136/tc-2024-059252>
+### Contributors
 
-## Acknowledgements
+- **Laura Webster** - *Original code and methodology*  
+- **Grace Leeming** - *Code extension to Scotland*  
+- **Robin Purshouse** - *Methodological review and feedback*  
+- **Hazel Squires** - *Methodological review and feedback*  
+- **Shangshang Gu** - *Methodological review and feedback*
 
-The development of **smktrans** has been supported by the contributions
-of:
+### Acknowledgements
 
-- **Laura Webster** and **Grace Leeming** for their foundational work on
-  the original codebase and methodological extensions.
-- **Magdalena Opazo-Breton** for her review of early documentation and
-  methodological feedback.
-- **Robin Purshouse**, **Hazel Squires**, and **Shangshang Gu** for
-  their input on the development of mechanisms and integration with
-  wider STAPM modelling efforts.
+We would also like to thank **Magdalena Opazo-Breton** for her review of
+early documentation and methodological feedback.
+
+------------------------------------------------------------------------
+
+## Contact
+
+For methodological queries or to report technical issues, please use the
+[GitHub Issue
+Tracker](https://github.com/stapm-platform/smktrans/issues) or contact
+**Dr Duncan Gillespie** (<duncan.gillespie@sheffield.ac.uk>).
 
 ------------------------------------------------------------------------
 
