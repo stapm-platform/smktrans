@@ -5,7 +5,8 @@
 source("03_load_packages.R")
 
 #config <- config_eng
-config <- config_scot
+#config <- config_scot
+config <- config_wales
 
 ###############
 # Initiation
