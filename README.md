@@ -141,12 +141,3 @@ For methodological queries or to report technical issues, please use the
 [GitHub Issue
 Tracker](https://github.com/stapm-platform/smktrans/issues) or contact
 **Dr Duncan Gillespie** (<duncan.gillespie@sheffield.ac.uk>).
-
-------------------------------------------------------------------------
-
-## Contact
-
-For methodological queries or to report technical issues, please use the
-[GitHub Issue
-Tracker](https://github.com/stapm-platform/smktrans/issues) or contact
-**Dr Duncan Gillespie** (<duncan.gillespie@sheffield.ac.uk>).
