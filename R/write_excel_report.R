@@ -10,6 +10,7 @@
 #' @param quit_no_init Optional quitting without initiation table (can be NULL).
 #' 
 #' @import openxlsx
+#' @importFrom utils packageVersion
 #' @export
 write_excel_report <- function(config, init_res, quit_res, relapse_res, 
                                net_init_dt = NULL, quit_no_init = NULL) {
@@ -36,6 +37,9 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
                                 fgFill = "#F2F2F2", border = "LeftRightTopBottom", 
                                 borderColour = "#CCCCCC", wrapText = TRUE, valign = "top")
   
+  style_cite_header <- createStyle(fontName = "Arial", fontSize = 10, fontColour = "#000000",
+                                   textDecoration = "bold", fgFill = "#F2F2F2", wrapText = TRUE)
+  
   style_header <- createStyle(fontName = "Arial", textDecoration = "bold", fontColour = "white", 
                               fgFill = brand_blue, halign = "left", valign = "center",
                               border = "TopBottom", borderColour = brand_blue)
@@ -55,8 +59,10 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   showGridLines(wb, sheet_name, showGridLines = FALSE)
   
   # --- A. Title, Date & Package Version ---
-  pkg_ver <- tryCatch(as.character(packageVersion("smktrans")), error = function(e) "2.0.0")
+  # Dynamic Package Version
+  pkg_ver <- tryCatch(as.character(utils::packageVersion("smktrans")), error = function(e) "2.0.0")
   run_date <- format(Sys.Date(), "%d %B %Y")
+  current_year <- format(Sys.Date(), "%Y")
   
   title_text <- paste0("Smoking Transition Probability Estimates (v", pkg_ver, ")")
   writeData(wb, sheet_name, title_text, startRow = 1, startCol = 1)
@@ -82,24 +88,62 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, contact_text, startRow = 5, startCol = 1)
   addStyle(wb, sheet_name, style_contact, rows = 5, cols = 1)
   
-  # --- C. HOW TO CITE (With Persistent DOI) ---
-  doi_link <- "https://doi.org/10.17605/OSF.IO/YGXQ9"
-  citation_text <- paste0(
-    "How to cite these estimates:\n",
-    "Gillespie, D., and Brennan, A. (", format(Sys.Date(), "%Y"), "). ",
-    "smktrans: An R Package for estimating smoking state transition probabilities (v", pkg_ver, "). ",
-    "University of Sheffield. DOI: ", doi_link
-  )
-  
+  # --- C. HOW TO CITE (Expanded) ---
   row_idx <- 7
-  writeData(wb, sheet_name, citation_text, startRow = row_idx, startCol = 1)
-  mergeCells(wb, sheet_name, cols = 1:4, rows = row_idx)
-  addStyle(wb, sheet_name, style_cite_box, rows = row_idx, cols = 1)
-  setRowHeights(wb, sheet_name, rows = row_idx, heights = 50) 
+  writeData(wb, sheet_name, "1. How to Cite", startRow = row_idx, startCol = 1)
+  addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
+  
+  row_idx <- row_idx + 1
+  
+  # Helper to write citation rows cleanly
+  write_cite_row <- function(wb, sheet, row, text, height = 30, style = style_cite_box) {
+    writeData(wb, sheet, text, startRow = row, startCol = 1)
+    mergeCells(wb, sheet, cols = 1:4, rows = row)
+    addStyle(wb, sheet, style, rows = row, cols = 1)
+    setRowHeights(wb, sheet, rows = row, heights = height)
+  }
+  
+  # Intro Text
+  intro_text <- "If you use the smktrans estimates in your research, please cite our peer-reviewed modelling papers. These publications validate the use of these estimates in policy appraisal contexts:"
+  write_cite_row(wb, sheet_name, row_idx, intro_text, height = 30, style = style_cite_header)
+  
+  # Paper 1
+  row_idx <- row_idx + 1
+  paper1 <- "Chen RKL, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026). Reducing the exceptional affordability of hand-rolling tobacco using tax escalators: a health and economic impact modelling study for England. Tobacco Control. DOI: 10.1136/tc-2025-059670"
+  write_cite_row(wb, sheet_name, row_idx, paper1, height = 45)
+  
+  # Paper 2
+  row_idx <- row_idx + 1
+  paper2 <- "Gillespie D, Morris D, Angus C, Wilson L, Chen RKL, Leeming G, Holmes J, Brennan A (2025). Model-based appraisal of the potential effects of minimum pricing for tobacco in Scotland. Tobacco Control. DOI: 10.1136/tc-2024-059252"
+  write_cite_row(wb, sheet_name, row_idx, paper2, height = 30)
+  
+  # Software Citation (Dynamic)
+  row_idx <- row_idx + 1
+  soft_intro <- "To cite the smktrans software package specifically:"
+  write_cite_row(wb, sheet_name, row_idx, soft_intro, height = 15, style = style_cite_header)
+  
+  row_idx <- row_idx + 1
+  soft_cite <- paste0("Gillespie, D., and Brennan, A. (", current_year, "). smktrans: An R Package for estimating smoking state transition probabilities (v", pkg_ver, "). University of Sheffield. https://doi.org/10.17605/OSF.IO/YGXQ9")
+  write_cite_row(wb, sheet_name, row_idx, soft_cite, height = 30)
+  
+  # Tech Doc Citation
+  row_idx <- row_idx + 1
+  tech_intro <- "To cite the full technical documentation for the underlying model:"
+  write_cite_row(wb, sheet_name, row_idx, tech_intro, height = 15, style = style_cite_header)
+  
+  row_idx <- row_idx + 1
+  tech_cite <- "Gillespie, D. & Brennan, A. (Year). The Sheffield Tobacco Policy Model (STPM): full technical documentation. Documentation version number [x.x.x]. University of Sheffield. DOI: 10.17605/OSF.IO/FR7WN"
+  write_cite_row(wb, sheet_name, row_idx, tech_cite, height = 30)
+  
+  # Note
+  row_idx <- row_idx + 1
+  note_cite <- "(Note: The technical documentation is a living document. Please cite the year and version of the report you used.)"
+  write_cite_row(wb, sheet_name, row_idx, note_cite, height = 15)
+  
   
   # --- D. About This Dataset ---
-  row_idx <- 9
-  writeData(wb, sheet_name, "1. About this Dataset", startRow = row_idx, startCol = 1)
+  row_idx <- row_idx + 2
+  writeData(wb, sheet_name, "2. About this Dataset", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   desc_text <- paste(
@@ -116,7 +160,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   
   # --- E. Sheet Guide ---
   row_idx <- row_idx + 2
-  writeData(wb, sheet_name, "2. Worksheet Guide", startRow = row_idx, startCol = 1)
+  writeData(wb, sheet_name, "3. Worksheet Guide", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   # Build Guide DF dynamically
@@ -142,7 +186,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   
   # --- F. Variable Definitions ---
   row_idx <- row_idx + nrow(guide_df) + 2
-  writeData(wb, sheet_name, "3. Variable Definitions", startRow = row_idx, startCol = 1)
+  writeData(wb, sheet_name, "4. Variable Definitions", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   var_df <- data.frame(
@@ -158,9 +202,9 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, var_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
-  # --- G. Methodological Parameters (EXPANDED) ---
+  # --- G. Methodological Parameters ---
   row_idx <- row_idx + nrow(var_df) + 2
-  writeData(wb, sheet_name, "4. Methodological Parameters & Configuration", startRow = row_idx, startCol = 1)
+  writeData(wb, sheet_name, "5. Methodological Parameters & Configuration", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   # Helper to format vector inputs like c(3,15) -> "3, 15"
@@ -208,8 +252,9 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, meta_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
-  # Ensure columns are wide enough for the content
-  setColWidths(wb, sheet_name, cols = 1, widths = 40)
+  # --- H. Column Width Adjustment (UPDATED) ---
+  # Significantly increased the width of Column 1 to prevent text bunching
+  setColWidths(wb, sheet_name, cols = 1, widths = 85) 
   setColWidths(wb, sheet_name, cols = 2, widths = 50)
   setColWidths(wb, sheet_name, cols = 3, widths = 35)
   setColWidths(wb, sheet_name, cols = 4, widths = 100)

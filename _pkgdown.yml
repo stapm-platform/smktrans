@@ -41,8 +41,6 @@ navbar:
         - text: Technical documentation
         - text: Estimation workflow
           href: articles/smk_trans_prob_estimation.html
-        - text: "Methods notes: Smoking state transition probability estimation"
-          href: articles/smoking_transition_probabilities_modelling_report.pdf
     github:
       icon: fab fa-github fa-lg
       href: https://github.com/stapm-platform/smktrans
