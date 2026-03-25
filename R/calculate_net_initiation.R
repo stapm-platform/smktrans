@@ -14,6 +14,7 @@
 #' @param relapse_data Data.table. Relapse probabilities (must contain 'time_since_quit').
 #' @param pops Data.table. Population weights.
 #' @param config List. Must contain 'country' and uncertainty params ('kn', 'kn_samp', 'kR').
+#' @param boot_mode Logical. If TRUE, skips writing to disk and returns the data.table directly.
 #'
 #' @details
 #' \strong{Assumptions:}
@@ -26,9 +27,9 @@
 #'
 #' @import data.table
 #' @export
-calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, config) {
+calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, config, boot_mode = FALSE) {
   
-  message(">> Calculating Net Initiation (Synthetic Cohort)...")
+  if (!boot_mode) message(">> Calculating Net Initiation (Synthetic Cohort)...")
   
   # 1. Prepare Data & Assumptions
   # -------------------------------------------------------------------------
@@ -127,9 +128,18 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
   # Combine all ages
   net_data <- rbindlist(results_list)
   
-  # Save Outputs
-  out_path <- file.path(config$path, "outputs")
-  saveRDS(net_data, file.path(out_path, paste0("net_init_data_", config$country, ".rds")))
+  # 3. Save Outputs (Skipped in Boot Mode)
+  # -------------------------------------------------------------------------
+  if (!boot_mode) {
+    out_path <- file.path(config$path, "outputs")
+    saveRDS(net_data, file.path(out_path, paste0("net_init_data_", config$country, ".rds")))
+  }
   
-  return(invisible(net_data))
+  if (boot_mode) {
+    return(net_data)
+  } else {
+    return(invisible(net_data))
+  }
 }
+
+

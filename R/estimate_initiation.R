@@ -9,7 +9,7 @@
 #' smokefree_target_year, age_trend_limit_init, smooth_rate_dim_init, k_smooth_age_init.
 #'
 #' @export
-estimate_initiation <- function(config, survey_data) {
+estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
   
   message(">> [Step 1] Estimating & Forecasting Initiation...")
   
@@ -19,7 +19,6 @@ estimate_initiation <- function(config, survey_data) {
     data = survey_data,
     strat_vars = c("sex", "imd_quintile")
   )
-  saveRDS(init_data_raw, file.path(config$path, "outputs", paste0("init_data_raw_", config$country, ".rds")))
   
   # B. Estimate 'Ever Smoker' Trends (for adjustment)
   # -------------------------------------------------------------------------
@@ -33,7 +32,6 @@ estimate_initiation <- function(config, survey_data) {
     min_year = config$first_year,
     age_cats = c("25-34")
   )
-  saveRDS(ever_smoke_data, file.path(config$path, "outputs", paste0("ever_smoke_data_", config$country, ".rds")))
   
   # C. Adjust for Recall Bias
   # -------------------------------------------------------------------------
@@ -47,7 +45,6 @@ estimate_initiation <- function(config, survey_data) {
     period_start = config$first_year, 
     period_end = config$last_year
   )
-  saveRDS(init_data_adj, file.path(config$path, "outputs", paste0("init_data_adj_", config$country, ".rds")))
   
   # D. Convert to Density (Annual Probability)
   # -------------------------------------------------------------------------
@@ -58,7 +55,6 @@ estimate_initiation <- function(config, survey_data) {
     lowest_year = config$first_year, 
     max_year = config$last_year
   )
-  saveRDS(smk_init_data, file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds")))
   
   # E. Forecast
   # -------------------------------------------------------------------------
@@ -85,8 +81,18 @@ estimate_initiation <- function(config, survey_data) {
   
   # F. Save Final Outputs
   # -------------------------------------------------------------------------
-  saveRDS(init_forecast_data, file.path(config$path, "outputs", paste0("init_forecast_data_", config$country, ".rds")))
-  write.csv(init_forecast_data, file.path(config$path, "outputs", paste0("init_forecast_data_", config$country, ".csv")), row.names = FALSE)
+  if (!boot_mode) {
+    saveRDS(init_data_raw, file.path(config$path, "outputs", paste0("init_data_raw_", config$country, ".rds")))
+    saveRDS(ever_smoke_data, file.path(config$path, "outputs", paste0("ever_smoke_data_", config$country, ".rds")))
+    saveRDS(init_data_adj, file.path(config$path, "outputs", paste0("init_data_adj_", config$country, ".rds")))
+    saveRDS(smk_init_data, file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds")))
+    saveRDS(init_forecast_data, file.path(config$path, "outputs", paste0("init_forecast_data_", config$country, ".rds")))
+    write.csv(init_forecast_data, file.path(config$path, "outputs", paste0("init_forecast_data_", config$country, ".csv")), row.names = FALSE)
+  }
   
-  return(invisible(init_forecast_data))
+  if (boot_mode) {
+    return(list(final = init_forecast_data, smk_init_data = smk_init_data))
+  } else {
+    return(invisible(init_forecast_data))
+  }
 }

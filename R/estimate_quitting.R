@@ -7,18 +7,24 @@
 #' 4. Forecasts 'No Initiation' Quit rates (counterfactual).
 #'
 #' @export
-estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause) {
+estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE) {
   
   message(">> [Step 3] Estimating & Forecasting Quitting...")
   
-  # Dependencies
-  init_file <- file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds"))
-  rel_file  <- file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds"))
-  
-  if(!file.exists(init_file) || !file.exists(rel_file)) stop("Missing init/relapse intermediate files.")
-  
-  smk_init_data <- readRDS(init_file)
-  relapse_data  <- readRDS(rel_file)
+  if (!boot_mode) {
+    init_file <- file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds"))
+    rel_file  <- file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds"))
+    
+    if(!file.exists(init_file) || !file.exists(rel_file)) stop("Missing init/relapse intermediate files.")
+    
+    smk_init_data <- readRDS(init_file)
+    relapse_data  <- readRDS(rel_file)
+  } else {
+    # In boot mode, use the newly calculated data passed directly from memory
+    if (is.null(smk_init_data_boot) || is.null(relapse_data_boot)) stop("Must provide boot data.")
+    smk_init_data <- smk_init_data_boot
+    relapse_data  <- relapse_data_boot
+  }
   
   relapse_by_age_imd <- relapse_data$relapse_by_age_imd
   
@@ -44,8 +50,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     age_var = "age", year_var = "year", sex_var = "sex",
     smoker_state_var = "smk.state", imd_var = "imd_quintile", weight_var = "wt_int"
   )
-  saveRDS(trend_data, file.path(config$path, "outputs", paste0("smoking_trends_", config$country, ".rds")))
-  
+
   ###############################################################
   # Load HMD Data (Conditional on Package vs. Local File)
   # 1. Determine which dataset is needed based on country
@@ -104,8 +109,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  saveRDS(survivorship_data, file.path(config$path, "outputs", paste0("survivorship_data_", config$country, ".rds")))
-  
+
   mortality_data <- smoke_surv(
     data = survey_data,
     diseases = tobalcepi::tob_disease_names,
@@ -113,8 +117,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  saveRDS(mortality_data, file.path(config$path, "outputs", paste0("mortality_data_", config$country, ".rds")))
-  
+
   # B. Historical Quit Solver
   # -------------------------------------------------------------------------
   quit_data <- quit_est(
@@ -126,8 +129,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  saveRDS(quit_data, file.path(config$path, "outputs", paste0("quit_data_", config$country, ".rds")))
-  
+
   # C. Forecast Quitting
   # -------------------------------------------------------------------------
   message("   > Forecasting Quit Rates...")
@@ -149,10 +151,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   )
   
   forecast_data <- forecast_data[age >= config$min_age & age <= config$max_age]
-  
-  saveRDS(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".rds")))
-  write.csv(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".csv")), row.names = FALSE)
-  
+
   # D. Forecast Quitting (No Initiation Adjustment)
   # -------------------------------------------------------------------------
   message("   > Forecasting Quit Rates (No Initiation)...")
@@ -175,8 +174,21 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   
   forecast_data_no_init <- forecast_data_no_init[age >= config$min_age & age <= config$max_age]
   
-  saveRDS(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".rds")))
-  write.csv(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".csv")), row.names = FALSE)
+  if (!boot_mode) {
+    saveRDS(trend_data, file.path(config$path, "outputs", paste0("smoking_trends_", config$country, ".rds")))
+    saveRDS(survivorship_data, file.path(config$path, "outputs", paste0("survivorship_data_", config$country, ".rds")))
+    saveRDS(mortality_data, file.path(config$path, "outputs", paste0("mortality_data_", config$country, ".rds")))
+    saveRDS(quit_data, file.path(config$path, "outputs", paste0("quit_data_", config$country, ".rds")))
+    saveRDS(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".rds")))
+    write.csv(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".csv")), row.names = FALSE)
+    saveRDS(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".rds")))
+    write.csv(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".csv")), row.names = FALSE)
+  }
   
-  return(invisible(forecast_data))
+  if (boot_mode) {
+    return(list(final = forecast_data, final_no_init = forecast_data_no_init))
+  } else {
+    return(invisible(forecast_data))
+  }
 }
+

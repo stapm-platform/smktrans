@@ -13,14 +13,15 @@ source("03_load_packages.R")
 # --- LOAD FUNCTIONS ---
 func_path <- "R/"
 
-source(paste0(func_path, "build_reports.R"))
+source(paste0(func_path, "aggregate_uncertainty.R")) # Added for bootstrap aggregation
 source(paste0(func_path, "bin_var.R"))
+source(paste0(func_path, "build_reports.R"))
 source(paste0(func_path, "calculate_net_initiation.R"))
 source(paste0(func_path, "estimate_initiation.R"))
 source(paste0(func_path, "estimate_quitting.R"))
 source(paste0(func_path, "estimate_relapse.R"))
 source(paste0(func_path, "ever_smoke.R"))
-source(paste0(func_path, "generate_uncertainty.R"))
+source(paste0(func_path, "generate_bootstrap_sample.R")) # Added for survey resampling
 source(paste0(func_path, "init_adj.R"))
 source(paste0(func_path, "init_est.R"))
 source(paste0(func_path, "p_dense.R"))
@@ -31,6 +32,7 @@ source(paste0(func_path, "process_country_wrapper.R"))
 source(paste0(func_path, "quit_est.R"))
 source(paste0(func_path, "quit_forecast.R"))
 source(paste0(func_path, "relapse_forecast.R"))
+source(paste0(func_path, "run_bootstrap_pipeline.R"))
 source(paste0(func_path, "smoke_surv.R"))
 source(paste0(func_path, "trend_fit.R"))
 source(paste0(func_path, "write_excel_report.R"))
@@ -68,8 +70,9 @@ config_eng <- list(
   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 79,
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
-  # Uncertainty Params
-  kn = 100, kR = 0.9, kn_samp = 1000,
+  # Uncertainty Params (Note: kn_samp determines bootstrap iterations)
+  #kn = 100, kR = 0.9, # use only with the old generate_uncertainty function
+  kn_samp = 1000,
   cont_limit = 2026
 )
 
@@ -104,10 +107,11 @@ config_scot <- list(
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 100, kR = 0.9, kn_samp = 1000,
+  #kn = 100, kR = 0.9, # use only with the old generate_uncertainty function
+  kn_samp = 1000,
   cont_limit = 2026
 )
- 
+
 # --- Wales Config ---
 
 config_wales <- list(
@@ -139,7 +143,8 @@ config_wales <- list(
   smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
   
   # Uncertainty Params
-  kn = 100, kR = 0.9, kn_samp = 1000,
+  #kn = 100, kR = 0.9, # use only with the old generate_uncertainty function
+  kn_samp = 1000,
   cont_limit = 2026
 )
 
@@ -178,3 +183,5 @@ build_web_reports()
 
 # Build the site
 pkgdown::build_site()
+
+
