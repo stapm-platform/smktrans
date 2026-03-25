@@ -7,7 +7,7 @@
 #' 4. Imputes data for ages < 18.
 #'
 #' @export
-estimate_relapse <- function(config, survey_data) {
+estimate_relapse <- function(config, survey_data, boot_mode = FALSE) {
   
   message(">> [Step 2] Estimating & Forecasting Relapse...")
   
@@ -50,9 +50,7 @@ estimate_relapse <- function(config, survey_data) {
   )
   
   relapse_data$relapse_by_age_imd_timesincequit <- relapse_data$relapse_by_age_imd_timesincequit[year <= config$time_horizon]
-  
-  saveRDS(relapse_data, file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds")))
-  
+
   # B. Forecast Age/Sex/IMD Trend
   # -------------------------------------------------------------------------
   message("   > Forecasting Relapse Trends...")
@@ -72,9 +70,7 @@ estimate_relapse <- function(config, survey_data) {
     smooth_rate_dim = config$smooth_rate_dim_relapse,
     k_smooth_age = config$k_smooth_age_relapse
   )
-  
-  saveRDS(relapse_forecast_data, file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
-  
+
   # C. Apply Trend to Time-Since-Quit Data
   # -------------------------------------------------------------------------
   relapse_by_age_imd_timesincequit <- relapse_forecast(
@@ -103,11 +99,17 @@ estimate_relapse <- function(config, survey_data) {
   
   # E. Save Final Outputs
   # -------------------------------------------------------------------------
-  out_path_rds <- file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds"))
-  out_path_csv <- file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".csv"))
+  if (!boot_mode) {
+    saveRDS(relapse_data, file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds")))
+    saveRDS(relapse_forecast_data, file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
+    saveRDS(relapse_by_age_imd_timesincequit, out_path_rds)
+    write.csv(relapse_by_age_imd_timesincequit, out_path_csv, row.names = FALSE)
+  }
   
-  saveRDS(relapse_by_age_imd_timesincequit, out_path_rds)
-  write.csv(relapse_by_age_imd_timesincequit, out_path_csv, row.names = FALSE)
-  
-  return(invisible(relapse_by_age_imd_timesincequit))
+  if (boot_mode) {
+    return(list(final = relapse_by_age_imd_timesincequit, relapse_data = relapse_data))
+  } else {
+    return(invisible(relapse_by_age_imd_timesincequit))
+  }
 }
+  

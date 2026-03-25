@@ -1,4 +1,4 @@
-#' Generate Uncertainty Intervals for Transition Probabilities
+#' Generate Uncertainty Intervals for Transition Probabilities (deprecated)
 #'
 #' @description
 #' Estimates uncertainty around transition probabilities using a Beta distribution 

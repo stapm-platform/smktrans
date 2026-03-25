@@ -51,9 +51,15 @@ reference:
   contents:
   - process_country
   - calculate_net_initiation
-  - generate_uncertainty
   - write_excel_report
   - build_web_reports
+
+- title: Uncertainty & Bootstrapping
+  contents:
+  - run_bootstrap_pipeline
+  - aggregate_uncertainty
+  - generate_bootstrap_sample
+  - generate_uncertainty
 
 - title: Smoking trends
   contents:

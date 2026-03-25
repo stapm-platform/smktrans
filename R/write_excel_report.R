@@ -190,22 +190,27 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   var_df <- data.frame(
-    Variable = c("age", "sex", "imd_quintile", "time_since_quit", "p_start / p_quit / p_relapse"),
+    Variable = c(
+      "age", 
+      "sex", 
+      "imd_quintile", 
+      "time_since_quit", 
+      "p_[metric]", 
+      "p_[metric]_lower / _upper", 
+      "p_[metric]_se"
+    ),
     Definition = c(
       "Age of the individual in years (single year of age).",
       "Biological sex (Men / Women).",
       "Index of Multiple Deprivation Quintile. 1 = Least Deprived, 5 = Most Deprived.",
       "Number of years since the individual last quit smoking (Relapse only). 0 = quit for <1 year.",
-      "The estimated annual probability (0.0 to 1.0)."
+      "The estimated baseline annual probability (0.0 to 1.0).",
+      "The 95% empirical confidence intervals, derived from bootstrapping.",
+      "The standard error of the estimate, designed for use in Probabilistic Sensitivity Analysis (PSA)."
     )
   )
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, var_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
-  
-  # --- G. Methodological Parameters ---
-  row_idx <- row_idx + nrow(var_df) + 2
-  writeData(wb, sheet_name, "5. Methodological Parameters & Configuration", startRow = row_idx, startCol = 1)
-  addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   # Helper to format vector inputs like c(3,15) -> "3, 15"
   fmt <- function(x) {
