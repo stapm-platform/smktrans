@@ -1,24 +1,45 @@
-.DS_Store
-inst/doc
-.Rproj.user
-*.zip
-Archive/
-*.Rproj*
-dev/
-.DS_Store
-*/.DS_Store
-*.png
+# =========================================
+# R Environment & renv
+# =========================================
+# Let Git track renv.lock and renv/activate.R, but ignore the heavy package libraries
+renv/library/
+renv/local/
+renv/staging/
+renv/python/
+.Rproj.user/
+
+# =========================================
+# Data & Outputs
+# =========================================
+# Ignore input data folder
+05_input/
+
+# Ignore the ROOT outputs folder (preventing massive commits from other scripts)
+/outputs/
+
+# Ignore heavy model outputs everywhere by default
+*.rds
+*.csv
+*.xlsx
+
+# EXCEPTION: Explicitly track Excel files in this specific folder
+!transition_probability_estimates/outputs/*.xlsx
+
+# Ignore database and SPSS files anywhere in the project
 *.db
-*/*.db
-*/*/*.db
-*/*/*/*.db
 *.sav
-*/*.sav
-*/*/*.sav
-*/*/*/*.sav
-*/*/*/*/*.sav
 
-00_R_env/_R_packages*
-05_input*
+# =========================================
+# OS & System Files
+# =========================================
+.DS_Store
+*.zip
 
+# =========================================
+# Project Specific
+# =========================================
+inst/doc/
+Archive/
+dev/
 public/
+*.png
