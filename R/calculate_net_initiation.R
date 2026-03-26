@@ -50,14 +50,18 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
     r_dt <- relapse_data[time_since_quit == 2]
   }
   
-  # Select columns and merge
+  # Safe column definitions for data.table
   cols <- c("year", "age", "sex", "imd_quintile")
   
-  # Merge all inputs into one 'domain' table
-  dt <- merge(init_data[age %in% ages & year %in% years, ..cols], 
-              init_data[, c(..cols, "p_start")], by = cols)
-  dt <- merge(dt, quit_data[, c(..cols, "p_quit")], by = cols, all.x = TRUE)
-  dt <- merge(dt, r_dt[, c(..cols, "p_relapse")], by = cols, all.x = TRUE)
+  # Subset and Merge safely using 'with = FALSE'
+  # 1. Base table from Initiation
+  dt <- init_data[age %in% ages & year %in% years, c(cols, "p_start"), with = FALSE]
+  
+  # 2. Merge Quit
+  dt <- merge(dt, quit_data[, c(cols, "p_quit"), with = FALSE], by = cols, all.x = TRUE)
+  
+  # 3. Merge Relapse
+  dt <- merge(dt, r_dt[, c(cols, "p_relapse"), with = FALSE], by = cols, all.x = TRUE)
   
   # Fill NAs
   dt[is.na(p_quit), p_quit := 0]
@@ -141,5 +145,3 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
     return(invisible(net_data))
   }
 }
-
-

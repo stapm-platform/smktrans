@@ -40,25 +40,28 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
       relapse_data_boot = relapse_res$relapse_data
     )
     
-    # Calculate net initiation using the final objects
-    net_res <- calculate_net_initiation(init_res$final, quit_res$final, relapse_res$final, pops, config)
-    
-    # Extract the final tables to attach the boot_id
+    # Extract the final tables BEFORE calculating net initiation
     init_dt <- init_res$final
     quit_dt <- quit_res$final
     relapse_dt <- relapse_res$final
-    quit_no_init_dt <- quit_res$final_no_init # If you need this
+    quit_no_init_dt <- quit_res$final_no_init 
     
+    # Calculate net initiation using the final objects (ADDED boot_mode = TRUE!)
+    net_dt <- calculate_net_initiation(init_dt, quit_dt, relapse_dt, pops, config, boot_mode = TRUE)
+    
+    # Attach the boot_id
     init_dt[, boot_id := i]
     quit_dt[, boot_id := i]
+    quit_no_init_dt[, boot_id := i]
     relapse_dt[, boot_id := i]
-    net_res[, boot_id := i]
+    net_dt[, boot_id := i]
     
-    # 5. Save directly to disk to free up RAM
-    saveRDS(init_res, file.path(temp_dir, sprintf("boot_init_%04d.rds", i)))
-    saveRDS(quit_res, file.path(temp_dir, sprintf("boot_quit_%04d.rds", i)))
-    saveRDS(relapse_res, file.path(temp_dir, sprintf("boot_relapse_%04d.rds", i)))
-    saveRDS(net_res, file.path(temp_dir, sprintf("boot_net_%04d.rds", i)))
+    # 5. Save the DATATABLES directly to disk to free up RAM (NOT the result lists)
+    saveRDS(init_dt, file.path(temp_dir, sprintf("boot_init_%04d.rds", i)))
+    saveRDS(quit_dt, file.path(temp_dir, sprintf("boot_quit_%04d.rds", i)))
+    saveRDS(quit_no_init_dt, file.path(temp_dir, sprintf("boot_quit_no_init_%04d.rds", i)))
+    saveRDS(relapse_dt, file.path(temp_dir, sprintf("boot_relapse_%04d.rds", i)))
+    saveRDS(net_dt, file.path(temp_dir, sprintf("boot_net_%04d.rds", i)))
     
     # Force R's garbage collector to free up memory from the iteration
     gc(verbose = FALSE)
@@ -78,15 +81,12 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
     rbindlist(lapply(files, readRDS), use.names = TRUE, fill = TRUE)
   }
   
-  # Return the combined data
+  # Return the combined data (ADDED quit_no_init!)
   return(list(
     init = read_and_combine("boot_init_"),
     quit = read_and_combine("boot_quit_"),
+    quit_no_init = read_and_combine("boot_quit_no_init_"),
     relapse = read_and_combine("boot_relapse_"),
     net = read_and_combine("boot_net_")
   ))
 }
-
-
-
-

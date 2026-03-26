@@ -61,20 +61,16 @@ if (!exists("config")) {
 }
 
 tryCatch({
-  proj_root <- rprojroot::find_root(rprojroot::is_rstudio_project)
+  proj_root <- rprojroot::find_root(rprojroot::is_r_package)
 }, error = function(e) {
   proj_root <- getwd()
 })
 
-country_slug <- tolower(gsub(" ", "_", config$country))
-data_dir <- file.path(proj_root, "transition_probability_estimates", paste0("src_", country_slug), "outputs")
+# Point directly to the centralized outputs folder
+data_dir <- file.path(proj_root, "transition_probability_estimates", "outputs")
 
 if (!dir.exists(data_dir)) {
-  if (!is.null(config$path)) {
-    data_dir <- file.path(config$path, "outputs")
-  } else {
-    warning("Could not find data directory in project or config.")
-  }
+  warning("Could not find the centralized data directory: ", data_dir)
 }
 
 # 5. HELPER TO LOAD FILES
@@ -84,7 +80,15 @@ get_res <- function(prefix) {
   f_path <- file.path(data_dir, f_name)
   
   if(file.exists(f_path)) {
-    dt <- readRDS(f_path)
+    obj <- readRDS(f_path)
+    
+    # Unpack the $data dataframe if it's a list
+    if (!inherits(obj, "data.frame") && "data" %in% names(obj)) {
+      dt <- obj$data
+    } else {
+      dt <- obj
+    }
+    
     setDT(dt)
     return(dt)
   } else {
@@ -103,8 +107,17 @@ gh_user <- "stapm-platform"
 gh_repo <- "smktrans"
 gh_branch <- "master" 
 
-# Clean URL Construction (No markdown, no counters)
-excel_name <- paste0("SmokeStateTransProbs_", config$country, "_", Sys.Date(), ".xlsx")
+# Dynamically find the actual Excel file generated for this country
+excel_files <- list.files(data_dir, pattern = paste0("SmokeStateTransProbs_", config$country, "_.*\\.xlsx$"))
+
+if (length(excel_files) > 0) {
+  # Grab the most recent one if multiple exist
+  excel_name <- sort(excel_files, decreasing = TRUE)[1]
+} else {
+  # Fallback
+  excel_name <- paste0("SmokeStateTransProbs_", config$country, "_", Sys.Date(), ".xlsx")
+}
+
 download_url <- paste0("https://github.com/", gh_user, "/", gh_repo, 
                        "/raw/", gh_branch, 
                        "/transition_probability_estimates/outputs/", excel_name)

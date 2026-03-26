@@ -11,7 +11,7 @@
 #' @export
 estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
   
-  message(">> [Step 1] Estimating & Forecasting Initiation...")
+  if (!boot_mode) message(">> [Step 1] Estimating & Forecasting Initiation...")
   
   # A. Estimate Raw Initiation (Cohort Cumulative)
   # -------------------------------------------------------------------------
@@ -58,7 +58,7 @@ estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
   
   # E. Forecast
   # -------------------------------------------------------------------------
-  message("   > Forecasting Initiation Trends...")
+  if (!boot_mode) message("   > Forecasting Initiation Trends...")
   
   init_forecast_data <- quit_forecast(
     data = copy(smk_init_data),
@@ -69,8 +69,8 @@ estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
     youngest_age = config$min_age,
     oldest_age = config$ref_age,
     age_cont_limit = config$age_trend_limit_init,
-    first_year = config$first_year,       # Assuming forecast base is full data range
-    jump_off_year = config$last_year - 1, # As per your script
+    first_year = config$first_year,    
+    jump_off_year = config$last_year - 1, 
     time_horizon = config$time_horizon,
     smooth_rate_dim = config$smooth_rate_dim_init,
     k_smooth_age = config$k_smooth_age_init
