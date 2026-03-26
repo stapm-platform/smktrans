@@ -80,8 +80,17 @@ process_country <- function(config) {
   
   # Helper to safely merge baseline and CIs
   merge_ci <- function(base, ci, prob_col) {
-    merge_cols <- setdiff(names(ci), paste0(prob_col, c("_lower", "_upper", "_se")))
-    merge(base, ci, by = merge_cols, all.x = TRUE)
+    
+    # 1. Define the "Master List" of possible demographic keys
+    potential_keys <- c("year", "age", "sex", "imd_quintile", "time_since_quit")
+    
+    # 2. Find which of these keys actually exist in BOTH tables
+    common_keys <- intersect(potential_keys, intersect(names(base), names(ci)))
+    
+    # 3. Perform the merge using only the confirmed keys
+    result <- merge(base, ci, by = common_keys, all.x = TRUE)
+    
+    return(result)
   }
   
   init_final         <- merge_ci(base_init, init_ci, "p_start")
