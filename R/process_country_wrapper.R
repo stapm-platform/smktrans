@@ -122,6 +122,9 @@ process_country <- function(config) {
                      net_init_data_uncertainty,
                      quit_no_init_uncertainty)
   
+  rm(list = ls(pattern = "boot_|res_|dt"))
+  gc()
+  
   message(paste(">> Done with", config$country))
   return(invisible(TRUE))
 }
