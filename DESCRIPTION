@@ -1,6 +1,6 @@
 Package: smktrans
 Type: Package
-Title: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data
+Title: Estimate Smoking State Transition Probabilities from Cross-Sectional Survey Data
 Version: 2.0.0
 Authors@R: 
     c(person(given = "Duncan",
@@ -35,7 +35,6 @@ Authors@R:
              role = c("ctb"),
              comment = "Methodological review and feedback")
     )
-Maintainer: Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
 Description: Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
 License: GPL (>= 3)
 URL: https://github.com/stapm-platform/smktrans, https://stapm-platform.github.io/smktrans
@@ -47,7 +46,6 @@ Imports:
     magrittr,
     ggplot2,
     mgcv,
-    testthat,
     MASS,
     boot,
     VGAM,
@@ -58,12 +56,10 @@ Imports:
     lifecycle,
     forecast,
     readxl,
-    knitr,
     stringr,
     here,
     RColorBrewer,
     viridis,
-    rmarkdown,
     TTR,
     readr,
     writexl,

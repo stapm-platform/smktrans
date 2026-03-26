@@ -19,7 +19,10 @@ process_country <- function(config) {
     pops <- readRDS(pop_path)
   } else {
     pops <- fread(pop_path) 
-    if(!"N" %in% names(pops) && "pop" %in% names(pops)) setnames(pops, "pop", "N")
+  }
+  
+  if(!"N" %in% names(pops) && "pop" %in% names(pops)) {
+    setnames(pops, "pop", "N")
   }
   
   # 1B. Load Survey Data
@@ -52,12 +55,12 @@ process_country <- function(config) {
   out_dir <- file.path(config$path, "outputs")
   
   # Load the fresh baseline estimates
-  base_init    <- readRDS(file.path(out_dir, paste0("init_forecast_data_", config$country, ".rds")))
-  base_quit    <- readRDS(file.path(out_dir, paste0("quit_forecast_data_", config$country, ".rds")))
+  base_init         <- readRDS(file.path(out_dir, paste0("init_forecast_data_", config$country, ".rds")))
+  base_quit         <- readRDS(file.path(out_dir, paste0("quit_forecast_data_", config$country, ".rds")))
   base_quit_no_init <- readRDS(file.path(out_dir, paste0("quit_forecast_data_no_init_", config$country, ".rds")))
-  base_relapse <- readRDS(file.path(out_dir, paste0("relapse_forecast_data_", config$country, ".rds")))
+  base_relapse      <- readRDS(file.path(out_dir, paste0("relapse_by_age_imd_timesincequit_", config$country, ".rds")))
   
-  # Assuming calculate_net_initiation needs boot_mode = FALSE if it writes to disk
+  # Calculate Baseline Net Initiation
   base_net <- calculate_net_initiation(base_init, base_quit, base_relapse, pops, config, boot_mode = FALSE)
   
   # 4. Generate Empirical Uncertainty Intervals
@@ -94,12 +97,12 @@ process_country <- function(config) {
   relapse_data_uncertainty      <- list(data = relapse_final)
   net_init_data_uncertainty     <- list(data = net_final)
   
-  # Save main files (Fixed hardcoded 'england' bug from original script)
-  saveRDS(init_data_uncertainty,    file.path(out_dir, paste0("init_data_", config$country, "_uncertainty.rds")))
-  saveRDS(quit_data_uncertainty,    file.path(out_dir, paste0("quit_data_", config$country, "_uncertainty.rds")))
-  saveRDS(relapse_data_uncertainty, file.path(out_dir, paste0("relapse_data_", config$country, "_uncertainty.rds")))
+  # Save main files
+  saveRDS(init_data_uncertainty,     file.path(out_dir, paste0("init_data_", config$country, "_uncertainty.rds")))
+  saveRDS(quit_data_uncertainty,     file.path(out_dir, paste0("quit_data_", config$country, "_uncertainty.rds")))
+  saveRDS(relapse_data_uncertainty,  file.path(out_dir, paste0("relapse_data_", config$country, "_uncertainty.rds")))
   saveRDS(net_init_data_uncertainty, file.path(out_dir, paste0("net_init_data_", config$country, "_uncertainty.rds")))
-  saveRDS(quit_no_init_uncertainty, file.path(out_dir, paste0("quit_no_init_data_", config$country, "_uncertainty.rds")))
+  saveRDS(quit_no_init_uncertainty,  file.path(out_dir, paste0("quit_no_init_data_", config$country, "_uncertainty.rds")))
   
   # 5. Export Report
   # ----------------
@@ -113,6 +116,3 @@ process_country <- function(config) {
   message(paste(">> Done with", config$country))
   return(invisible(TRUE))
 }
-
-
-

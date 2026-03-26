@@ -32,7 +32,8 @@ build_web_reports <- function() {
     fname <- paste0("report_", tolower(gsub(" ", "_", country)), ".Rmd")
     fpath <- file.path(article_dir, fname)
     
-    # --- YAML HEADER (Unchanged) ---
+    # --- YAML HEADER ---
+    
     yaml_header <- paste0(
       "---\n",
       "title: \"Smoking Transition Estimates: ", country, "\"\n",
@@ -41,20 +42,18 @@ build_web_reports <- function() {
       "    theme: lumen\n",
       "    toc: false\n",
       "    self_contained: true\n",
-      "    css: styles.css\n",
       "resource_files:\n",
       "  - ../../inst/extdata/report_configs.rds\n",
       "---\n\n"
     )
     
-    # --- CRITICAL FIX: SMART CONFIG LOADER ---
-    # We inject code that checks the local project folder FIRST.
+    
     r_chunk <- paste0(
       "```{r setup_wrapper, include=FALSE}\n",
       "# --- ROBUST CONFIG LOADER ---\n",
-      "# 1. Find Project Root\n",
+      "# 1. Find Project Root (Guaranteed to work in packages)\n",
       "tryCatch({\n",
-      "  root <- rprojroot::find_root(rprojroot::is_rstudio_project)\n",
+      "  root <- rprojroot::find_root(rprojroot::is_r_package)\n",
       "}, error = function(e) root <- getwd())\n\n",
       
       "# 2. Prefer Local Config (Updates immediately without reinstall)\n",
