@@ -72,7 +72,7 @@ config_eng <- list(
   
   # Uncertainty Params (Note: kn_samp determines bootstrap iterations)
   #kn = 100, kR = 0.9, # use only with the old generate_uncertainty function
-  kn_samp = 5,
+  kn_samp = 2,
   cont_limit = 2026
 )
 
