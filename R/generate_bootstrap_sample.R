@@ -10,10 +10,34 @@ generate_bootstrap_sample <- function(survey_data) {
   has_cluster <- "cluster" %in% names(dt)
   has_year <- "year" %in% names(dt)
   
-  # Determine stratification variables (usually year and cluster/strata)
   strat_vars <- character(0)
   if (has_year) strat_vars <- c(strat_vars, "year")
-  if (has_cluster) strat_vars <- c(strat_vars, "cluster")
+  
+  # ============================================================================
+  # VIABILITY CHECK: Is 'cluster' safe to use as a stratum?
+  # ============================================================================
+  if (has_cluster) {
+    if (has_psu) {
+      # Calculate the maximum number of unique PSUs inside any cluster
+      max_psus_per_cluster <- max(dt[, .(n_psu = uniqueN(psu)), by = c(strat_vars, "cluster")]$n_psu)
+      
+      # If at least one cluster has > 1 PSU, it is a viable grouping variable.
+      # If max == 1, cluster and psu are 1-to-1, and stratifying by cluster will break the bootstrap.
+      if (max_psus_per_cluster > 1) {
+        strat_vars <- c(strat_vars, "cluster")
+      }
+    } else {
+      # If there's no PSU column at all, cluster is safe to use for grouping individuals
+      strat_vars <- c(strat_vars, "cluster")
+    }
+  }
+  
+  # Also check for a formal 'strata' column, just in case other datasets use that name
+  if ("strata" %in% names(dt)) {
+    strat_vars <- unique(c(strat_vars, "strata"))
+  }
+  # ============================================================================
+  
   
   if (has_psu) {
     # COMPLEX DESIGN: Resample PSUs within Strata
@@ -28,8 +52,6 @@ generate_bootstrap_sample <- function(survey_data) {
     }
     
     # 3. Assign a new unique ID to each sampled PSU. 
-    # This is CRITICAL because the same PSU might be drawn multiple times, 
-    # and we need them to be treated as distinct groups in the resampled data.
     sampled_psus[, boot_psu_id := .I]
     
     # 4. Merge back to get the individuals (allow.cartesian because of duplicate PSUs)
