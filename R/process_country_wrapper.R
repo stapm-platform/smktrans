@@ -78,16 +78,20 @@ process_country <- function(config) {
   relapse_ci      <- aggregate_uncertainty(boot_results$relapse, "p_relapse")
   net_ci          <- aggregate_uncertainty(boot_results$net, "p_start_net")
   
-  # Helper to safely merge baseline and CIs
+  # Helper to safely merge baseline and CIs (Overwrites base estimate with bootstrap median)
   merge_ci <- function(base, ci, prob_col) {
     
-    # 1. Define the "Master List" of possible demographic keys
+    # 1. Define the keys that exist in both tables
     potential_keys <- c("year", "age", "sex", "imd_quintile", "time_since_quit")
-    
-    # 2. Find which of these keys actually exist in BOTH tables
     common_keys <- intersect(potential_keys, intersect(names(base), names(ci)))
     
-    # 3. Perform the merge using only the confirmed keys
+    # 2. Drop the original central estimate from the base table 
+    # so it doesn't clash with our new median estimate from the CI table.
+    if (prob_col %in% names(base)) {
+      base[, (prob_col) := NULL]
+    }
+    
+    # 3. Perform the merge. The new median automatically becomes the main estimate!
     result <- merge(base, ci, by = common_keys, all.x = TRUE)
     
     return(result)
