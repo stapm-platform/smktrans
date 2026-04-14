@@ -7,19 +7,19 @@
 #' 4. Imputes data for ages < 18.
 #'
 #' @export
-estimate_relapse <- function(config, survey_data) {
+estimate_relapse <- function(config, survey_data, boot_mode = FALSE) {
   
-  message(">> [Step 2] Estimating & Forecasting Relapse...")
+  if (!boot_mode) message(">> [Step 2] Estimating & Forecasting Relapse...")
   
   # A. Base Relapse Estimates
   # -------------------------------------------------------------------------
   # Logic: Use package data if available, otherwise load from local data/ directory
   
   if (requireNamespace("smktrans", quietly = TRUE)) {
-    message("   > Loading Hawkins relapse data from 'smktrans' package...")
+    if (!boot_mode) message("   > Loading Hawkins relapse data from 'smktrans' package...")
     hawkins_data <- smktrans::hawkins_relapse
   } else {
-    message("   > 'smktrans' not detected. Loading 'data/hawkins_relapse.rda'...")
+    if (!boot_mode) message("   > 'smktrans' not detected. Loading 'data/hawkins_relapse.rda'...")
     
     # Load into a temporary environment to keep the global namespace clean
     temp_env <- new.env()
@@ -51,11 +51,9 @@ estimate_relapse <- function(config, survey_data) {
   
   relapse_data$relapse_by_age_imd_timesincequit <- relapse_data$relapse_by_age_imd_timesincequit[year <= config$time_horizon]
   
-  saveRDS(relapse_data, file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds")))
-  
   # B. Forecast Age/Sex/IMD Trend
   # -------------------------------------------------------------------------
-  message("   > Forecasting Relapse Trends...")
+  if (!boot_mode) message("   > Forecasting Relapse Trends...")
   
   relapse_forecast_data <- quit_forecast(
     data = copy(relapse_data$relapse_by_age_imd),
@@ -73,8 +71,6 @@ estimate_relapse <- function(config, survey_data) {
     k_smooth_age = config$k_smooth_age_relapse
   )
   
-  saveRDS(relapse_forecast_data, file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
-  
   # C. Apply Trend to Time-Since-Quit Data
   # -------------------------------------------------------------------------
   relapse_by_age_imd_timesincequit <- relapse_forecast(
@@ -90,7 +86,7 @@ estimate_relapse <- function(config, survey_data) {
   # manually copy age 18 data to ages min_age..17
   
   if(config$min_age < 18) {
-    message("   > Imputing Relapse for ages < 18...")
+    if (!boot_mode) message("   > Imputing Relapse for ages < 18...")
     temp <- relapse_by_age_imd_timesincequit[age == 18]
     
     for(i in config$min_age:17) {
@@ -103,11 +99,24 @@ estimate_relapse <- function(config, survey_data) {
   
   # E. Save Final Outputs
   # -------------------------------------------------------------------------
-  out_path_rds <- file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds"))
-  out_path_csv <- file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".csv"))
+  if (!boot_mode) {
+    # 1. Define the output directory
+    out_dir <- file.path(config$path, "outputs")
+    
+    # 2. Construct the file paths
+    out_path_rds <- file.path(out_dir, paste0("relapse_by_age_imd_timesincequit_", config$country, ".rds"))
+    out_path_csv <- file.path(out_dir, paste0("relapse_by_age_imd_timesincequit_", config$country, ".csv"))
+    
+    # 3. Save the files
+    saveRDS(relapse_data, file.path(out_dir, paste0("relapse_data_", config$country, ".rds")))
+    saveRDS(relapse_forecast_data, file.path(out_dir, paste0("relapse_forecast_data_", config$country, ".rds")))
+    saveRDS(relapse_by_age_imd_timesincequit, out_path_rds)
+    write.csv(relapse_by_age_imd_timesincequit, out_path_csv, row.names = FALSE)
+  }
   
-  saveRDS(relapse_by_age_imd_timesincequit, out_path_rds)
-  write.csv(relapse_by_age_imd_timesincequit, out_path_csv, row.names = FALSE)
-  
-  return(invisible(relapse_by_age_imd_timesincequit))
+  if (boot_mode) {
+    return(list(final = relapse_by_age_imd_timesincequit, relapse_data = relapse_data))
+  } else {
+    return(invisible(relapse_by_age_imd_timesincequit))
+  }
 }

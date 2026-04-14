@@ -19,35 +19,47 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   wb <- createWorkbook()
   
   # =========================================================================
-  # STYLES DEFINITION
+  # STYLES DEFINITION (University of Sheffield Brand Toolkit)
   # =========================================================================
-  brand_blue <- "#005A8F" 
+  # Core Brand Colours (Approximated to UoS brand guidelines)
+  brand_violet    <- "#440099" # Primary prestige brand colour
+  dark_violet     <- "#22004C" # Deep contrast for text
+  electric_violet <- "#6B00F2" # Vibrant accent colour
+  powder_violet   <- "#E6D9F2" # Soft background for tables
+  gallery_white   <- "#FFFFFF" # Clean background
+  misty_grey      <- "#F2F2F2" # Soft neutral for citation boxes
   
-  style_title <- createStyle(fontName = "Arial", fontSize = 16, textDecoration = "bold", 
-                             fontColour = brand_blue)
+  # Toolkit specifies 'Source Sans' / 'Source Serif'. 
+  # Arial is used here as a bulletproof web-safe fallback for Excel.
+  brand_font <- "Arial" 
   
-  style_affil <- createStyle(fontName = "Arial", fontSize = 10, fontColour = "#555555", 
+  style_title <- createStyle(fontName = brand_font, fontSize = 16, textDecoration = "bold", 
+                             fontColour = brand_violet)
+  
+  style_affil <- createStyle(fontName = brand_font, fontSize = 10, fontColour = dark_violet, 
                              wrapText = TRUE)
   
-  style_contact <- createStyle(fontName = "Arial", fontSize = 10, fontColour = "#000000", 
+  style_contact <- createStyle(fontName = brand_font, fontSize = 10, fontColour = electric_violet, 
                                textDecoration = "bold", wrapText = TRUE)
   
   # Professional citation box style
-  style_cite_box <- createStyle(fontName = "Arial", fontSize = 10, fontColour = "#000000",
-                                fgFill = "#F2F2F2", border = "LeftRightTopBottom", 
+  style_cite_box <- createStyle(fontName = brand_font, fontSize = 10, fontColour = "#000000",
+                                fgFill = misty_grey, border = "LeftRightTopBottom", 
                                 borderColour = "#CCCCCC", wrapText = TRUE, valign = "top")
   
-  style_cite_header <- createStyle(fontName = "Arial", fontSize = 10, fontColour = "#000000",
-                                   textDecoration = "bold", fgFill = "#F2F2F2", wrapText = TRUE)
+  style_cite_header <- createStyle(fontName = brand_font, fontSize = 10, fontColour = dark_violet,
+                                   textDecoration = "bold", fgFill = misty_grey, wrapText = TRUE)
   
-  style_header <- createStyle(fontName = "Arial", textDecoration = "bold", fontColour = "white", 
-                              fgFill = brand_blue, halign = "left", valign = "center",
-                              border = "TopBottom", borderColour = brand_blue)
+  # Heavy bold headers with the primary Brand Violet
+  style_header <- createStyle(fontName = brand_font, textDecoration = "bold", fontColour = gallery_white, 
+                              fgFill = brand_violet, halign = "left", valign = "center",
+                              border = "TopBottom", borderColour = brand_violet)
   
-  style_col_header <- createStyle(fontName = "Arial", textDecoration = "bold", fontColour = "black", 
-                                  fgFill = "#D9E1F2", halign = "center", border = "Bottom")
+  # Softer Powder Violet for data table column headers
+  style_col_header <- createStyle(fontName = brand_font, textDecoration = "bold", fontColour = dark_violet, 
+                                  fgFill = powder_violet, halign = "center", border = "Bottom", borderColour = brand_violet)
   
-  style_text <- createStyle(fontName = "Arial", fontSize = 10, wrapText = TRUE, valign = "top")
+  style_text <- createStyle(fontName = brand_font, fontSize = 10, wrapText = TRUE, valign = "top")
   
   style_num <- createStyle(numFmt = "0.0000")
   
@@ -59,7 +71,6 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   showGridLines(wb, sheet_name, showGridLines = FALSE)
   
   # --- A. Title, Date & Package Version ---
-  # Dynamic Package Version
   pkg_ver <- tryCatch(as.character(utils::packageVersion("smktrans")), error = function(e) "2.0.0")
   run_date <- format(Sys.Date(), "%d %B %Y")
   current_year <- format(Sys.Date(), "%Y")
@@ -88,14 +99,13 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, contact_text, startRow = 5, startCol = 1)
   addStyle(wb, sheet_name, style_contact, rows = 5, cols = 1)
   
-  # --- C. HOW TO CITE (Expanded) ---
+  # --- C. HOW TO CITE ---
   row_idx <- 7
   writeData(wb, sheet_name, "1. How to Cite", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   row_idx <- row_idx + 1
   
-  # Helper to write citation rows cleanly
   write_cite_row <- function(wb, sheet, row, text, height = 30, style = style_cite_box) {
     writeData(wb, sheet, text, startRow = row, startCol = 1)
     mergeCells(wb, sheet, cols = 1:4, rows = row)
@@ -103,21 +113,17 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
     setRowHeights(wb, sheet, rows = row, heights = height)
   }
   
-  # Intro Text
   intro_text <- "If you use the smktrans estimates in your research, please cite our peer-reviewed modelling papers. These publications validate the use of these estimates in policy appraisal contexts:"
   write_cite_row(wb, sheet_name, row_idx, intro_text, height = 30, style = style_cite_header)
   
-  # Paper 1
   row_idx <- row_idx + 1
   paper1 <- "Chen RKL, Morris D, Angus C, Gilmore A, Hiscock R, Holmes J, Langley TE, Pryce R, Wilson LB, Brennan A, Gillespie D (2026). Reducing the exceptional affordability of hand-rolling tobacco using tax escalators: a health and economic impact modelling study for England. Tobacco Control. DOI: 10.1136/tc-2025-059670"
   write_cite_row(wb, sheet_name, row_idx, paper1, height = 45)
   
-  # Paper 2
   row_idx <- row_idx + 1
   paper2 <- "Gillespie D, Morris D, Angus C, Wilson L, Chen RKL, Leeming G, Holmes J, Brennan A (2025). Model-based appraisal of the potential effects of minimum pricing for tobacco in Scotland. Tobacco Control. DOI: 10.1136/tc-2024-059252"
   write_cite_row(wb, sheet_name, row_idx, paper2, height = 30)
   
-  # Software Citation (Dynamic)
   row_idx <- row_idx + 1
   soft_intro <- "To cite the smktrans software package specifically:"
   write_cite_row(wb, sheet_name, row_idx, soft_intro, height = 15, style = style_cite_header)
@@ -126,7 +132,6 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   soft_cite <- paste0("Gillespie, D., and Brennan, A. (", current_year, "). smktrans: An R Package for estimating smoking state transition probabilities (v", pkg_ver, "). University of Sheffield. https://doi.org/10.17605/OSF.IO/YGXQ9")
   write_cite_row(wb, sheet_name, row_idx, soft_cite, height = 30)
   
-  # Tech Doc Citation
   row_idx <- row_idx + 1
   tech_intro <- "To cite the full technical documentation for the underlying model:"
   write_cite_row(wb, sheet_name, row_idx, tech_intro, height = 15, style = style_cite_header)
@@ -135,11 +140,9 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   tech_cite <- "Gillespie, D. & Brennan, A. (Year). The Sheffield Tobacco Policy Model (STPM): full technical documentation. Documentation version number [x.x.x]. University of Sheffield. DOI: 10.17605/OSF.IO/FR7WN"
   write_cite_row(wb, sheet_name, row_idx, tech_cite, height = 30)
   
-  # Note
   row_idx <- row_idx + 1
   note_cite <- "(Note: The technical documentation is a living document. Please cite the year and version of the report you used.)"
   write_cite_row(wb, sheet_name, row_idx, note_cite, height = 15)
-  
   
   # --- D. About This Dataset ---
   row_idx <- row_idx + 2
@@ -163,7 +166,6 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   writeData(wb, sheet_name, "3. Worksheet Guide", startRow = row_idx, startCol = 1)
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
-  # Build Guide DF dynamically
   guide_df <- data.frame(
     Worksheet = c("Initiation", "Quitting", "Relapse"),
     Description = c(
@@ -190,24 +192,28 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
   
   var_df <- data.frame(
-    Variable = c("age", "sex", "imd_quintile", "time_since_quit", "p_start / p_quit / p_relapse"),
+    Variable = c(
+      "age", 
+      "sex", 
+      "imd_quintile", 
+      "time_since_quit", 
+      "p_[metric]", 
+      "p_[metric]_lower / _upper", 
+      "p_[metric]_se"
+    ),
     Definition = c(
       "Age of the individual in years (single year of age).",
       "Biological sex (Men / Women).",
       "Index of Multiple Deprivation Quintile. 1 = Least Deprived, 5 = Most Deprived.",
       "Number of years since the individual last quit smoking (Relapse only). 0 = quit for <1 year.",
-      "The estimated annual probability (0.0 to 1.0)."
+      "The estimated baseline annual probability (0.0 to 1.0).",
+      "The 95% empirical confidence intervals, derived from bootstrapping.",
+      "The standard error of the estimate, designed for use in Probabilistic Sensitivity Analysis (PSA)."
     )
   )
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, var_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
-  # --- G. Methodological Parameters ---
-  row_idx <- row_idx + nrow(var_df) + 2
-  writeData(wb, sheet_name, "5. Methodological Parameters & Configuration", startRow = row_idx, startCol = 1)
-  addStyle(wb, sheet_name, style_header, rows = row_idx, cols = 1:4)
-  
-  # Helper to format vector inputs like c(3,15) -> "3, 15"
   fmt <- function(x) {
     if (is.null(x)) return("NA")
     if (length(x) > 1) return(paste(x, collapse = ", "))
@@ -232,12 +238,12 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
       "Eff. Sample Size (kn)", "Uncertainty Samples (kn_samp)", "Correlation (kR)"
     ),
     Value = c(
-      pkg_ver, config$country, config$survey_name, paste(config$first_year, "-", config$last_year),
-      config$time_horizon, config$cont_limit,
-      config$init_model_choice, fmt(config$smooth_rate_dim_init), config$k_smooth_age_init, config$max_age_init,
-      fmt(config$smooth_rate_dim_quit), config$k_smooth_age_quit, config$age_trend_limit_quit,
-      fmt(config$smooth_rate_dim_relapse), config$k_smooth_age_relapse, config$age_trend_limit_relapse,
-      config$kn, config$kn_samp, config$kR
+      fmt(pkg_ver), fmt(config$country), fmt(config$survey_name), paste(config$first_year, "-", config$last_year),
+      fmt(config$time_horizon), fmt(config$cont_limit),
+      fmt(config$init_model_choice), fmt(config$smooth_rate_dim_init), fmt(config$k_smooth_age_init), fmt(config$max_age_init),
+      fmt(config$smooth_rate_dim_quit), fmt(config$k_smooth_age_quit), fmt(config$age_trend_limit_quit),
+      fmt(config$smooth_rate_dim_relapse), fmt(config$k_smooth_age_relapse), fmt(config$age_trend_limit_relapse),
+      fmt(config$kn), fmt(config$kn_samp), fmt(config$kR)
     ),
     Description = c(
       "smktrans version.", "Target population.", "Primary dataset.", "Range of data used.",
@@ -252,8 +258,7 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   row_idx <- row_idx + 1
   writeData(wb, sheet_name, meta_df, startRow = row_idx, startCol = 1, headerStyle = style_col_header)
   
-  # --- H. Column Width Adjustment (UPDATED) ---
-  # Significantly increased the width of Column 1 to prevent text bunching
+  # --- H. Column Width Adjustment ---
   setColWidths(wb, sheet_name, cols = 1, widths = 85) 
   setColWidths(wb, sheet_name, cols = 2, widths = 50)
   setColWidths(wb, sheet_name, cols = 3, widths = 35)
@@ -264,31 +269,23 @@ write_excel_report <- function(config, init_res, quit_res, relapse_res,
   # =========================================================================
   add_data_sheet <- function(wb, s_name, res_obj) {
     addWorksheet(wb, s_name)
-    # Handle list vs dataframe input
     df <- if (inherits(res_obj, "data.frame")) res_obj else if ("data" %in% names(res_obj)) res_obj$data else data.frame(Warning = "Data not found")
     
     writeData(wb, s_name, df, headerStyle = style_col_header)
     freezePane(wb, s_name, firstRow = TRUE)
     
-    # Format probability columns
     p_cols <- grep("^p_", names(df))
     if (length(p_cols) > 0) addStyle(wb, s_name, style_num, rows = 2:(nrow(df) + 1), cols = p_cols, gridExpand = TRUE)
     
     setColWidths(wb, s_name, cols = 1:ncol(df), widths = 25)
   }
   
-  # Add Core Sheets
   add_data_sheet(wb, "Initiation", init_res)
   add_data_sheet(wb, "Quitting", quit_res)
   add_data_sheet(wb, "Relapse", relapse_res)
   
-  # Add Optional Sheets
-  if (!is.null(net_init_dt)) {
-    add_data_sheet(wb, "Net Initiation", net_init_dt)
-  }
-  if (!is.null(quit_no_init)) {
-    add_data_sheet(wb, "Quit (No Init)", quit_no_init)
-  }
+  if (!is.null(net_init_dt)) add_data_sheet(wb, "Net Initiation", net_init_dt)
+  if (!is.null(quit_no_init)) add_data_sheet(wb, "Quit (No Init)", quit_no_init)
   
   # =========================================================================
   # 4. SAVE

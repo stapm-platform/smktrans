@@ -30,6 +30,6 @@ ever_smoke(
 \item{age_cats}{Character vector - age category for reference (e.g., "25-34").}
 }
 \description{
-Fits a survey-weighted GLM (quasibinomial) to the trend in ever-smoking 
+Fits a weighted GLM (quasibinomial) to the trend in ever-smoking 
 at age 25-34. This provides the "target" level for the Holford adjustment.
 }

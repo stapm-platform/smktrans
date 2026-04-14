@@ -4,7 +4,7 @@
 \name{smktrans-package}
 \alias{smktrans}
 \alias{smktrans-package}
-\title{smktrans: smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data}
+\title{smktrans: Estimate Smoking State Transition Probabilities from Cross-Sectional Survey Data}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 

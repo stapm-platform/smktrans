@@ -7,18 +7,24 @@
 #' 4. Forecasts 'No Initiation' Quit rates (counterfactual).
 #'
 #' @export
-estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause) {
+estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE, smk_init_data_boot = NULL, relapse_data_boot = NULL, precalc_mortality = NULL) {
   
-  message(">> [Step 3] Estimating & Forecasting Quitting...")
+  if (!boot_mode) message(">> [Step 3] Estimating & Forecasting Quitting...")
   
-  # Dependencies
-  init_file <- file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds"))
-  rel_file  <- file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds"))
-  
-  if(!file.exists(init_file) || !file.exists(rel_file)) stop("Missing init/relapse intermediate files.")
-  
-  smk_init_data <- readRDS(init_file)
-  relapse_data  <- readRDS(rel_file)
+  if (!boot_mode) {
+    init_file <- file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds"))
+    rel_file  <- file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds"))
+    
+    if(!file.exists(init_file) || !file.exists(rel_file)) stop("Missing init/relapse intermediate files.")
+    
+    smk_init_data <- readRDS(init_file)
+    relapse_data  <- readRDS(rel_file)
+  } else {
+    # In boot mode, use the newly calculated data passed directly from memory
+    if (is.null(smk_init_data_boot) || is.null(relapse_data_boot)) stop("Must provide boot data.")
+    smk_init_data <- smk_init_data_boot
+    relapse_data  <- relapse_data_boot
+  }
   
   relapse_by_age_imd <- relapse_data$relapse_by_age_imd
   
@@ -44,7 +50,6 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     age_var = "age", year_var = "year", sex_var = "sex",
     smoker_state_var = "smk.state", imd_var = "imd_quintile", weight_var = "wt_int"
   )
-  saveRDS(trend_data, file.path(config$path, "outputs", paste0("smoking_trends_", config$country, ".rds")))
   
   ###############################################################
   # Load HMD Data (Conditional on Package vs. Local File)
@@ -62,14 +67,14 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   # 2. Attempt to load
   if (requireNamespace("smktrans", quietly = TRUE)) {
     
-    message(paste0("   > Loading ", dataset_name, " from 'smktrans' package..."))
+    if (!boot_mode) message(paste0("   > Loading ", dataset_name, " from 'smktrans' package..."))
     
     #Load data directly from the package namespace using the string name
     hmd_data <- get(dataset_name, envir = asNamespace("smktrans"))
     
   } else {
     
-    message(paste0("   > 'smktrans' package not detected. Loading local file '", file_path, "'..."))
+    if (!boot_mode) message(paste0("   > 'smktrans' package not detected. Loading local file '", file_path, "'..."))
     
     # Check if the local file actually exists
     if (!file.exists(file_path)) {
@@ -88,7 +93,7 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
       obj_list <- ls(temp_env)
       if (length(obj_list) > 0) {
         obj_name <- obj_list[1]
-        message(paste0("     Note: Object '", dataset_name, "' not found in .rda. Using '", obj_name, "' instead."))
+        if (!boot_mode) message(paste0("     Note: Object '", dataset_name, "' not found in .rda. Using '", obj_name, "' instead."))
         hmd_data <- temp_env[[obj_name]]
       } else {
         stop(paste0("Error: The file '", file_path, "' appears to be empty."))
@@ -104,16 +109,24 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  saveRDS(survivorship_data, file.path(config$path, "outputs", paste0("survivorship_data_", config$country, ".rds")))
   
-  mortality_data <- smoke_surv(
-    data = survey_data,
-    diseases = tobalcepi::tob_disease_names,
-    mx_data = tob_mort_data_cause,
-    min_age = config$min_age, max_age = config$max_age,
-    min_year = config$first_year, max_year = config$last_year
-  )
-  saveRDS(mortality_data, file.path(config$path, "outputs", paste0("mortality_data_", config$country, ".rds")))
+  # =====================================================================
+  # NEW: MORTALITY BYPASS LOGIC
+  # =====================================================================
+  if (boot_mode && !is.null(precalc_mortality)) {
+    # Skip the heavy lift and use the master mortality object
+    mortality_data <- precalc_mortality
+  } else {
+    # Run normally for the baseline (or if precalc is missing)
+    mortality_data <- smoke_surv(
+      data = survey_data,
+      diseases = tobalcepi::tob_disease_names,
+      mx_data = tob_mort_data_cause,
+      min_age = config$min_age, max_age = config$max_age,
+      min_year = config$first_year, max_year = config$last_year
+    )
+  }
+  # =====================================================================
   
   # B. Historical Quit Solver
   # -------------------------------------------------------------------------
@@ -126,11 +139,10 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  saveRDS(quit_data, file.path(config$path, "outputs", paste0("quit_data_", config$country, ".rds")))
   
   # C. Forecast Quitting
   # -------------------------------------------------------------------------
-  message("   > Forecasting Quit Rates...")
+  if (!boot_mode) message("   > Forecasting Quit Rates...")
   
   forecast_data <- quit_forecast(
     data = copy(quit_data),
@@ -150,12 +162,9 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   
   forecast_data <- forecast_data[age >= config$min_age & age <= config$max_age]
   
-  saveRDS(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".rds")))
-  write.csv(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".csv")), row.names = FALSE)
-  
   # D. Forecast Quitting (No Initiation Adjustment)
   # -------------------------------------------------------------------------
-  message("   > Forecasting Quit Rates (No Initiation)...")
+  if (!boot_mode) message("   > Forecasting Quit Rates (No Initiation)...")
   
   forecast_data_no_init <- quit_forecast(
     data = copy(quit_data),
@@ -175,8 +184,20 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   
   forecast_data_no_init <- forecast_data_no_init[age >= config$min_age & age <= config$max_age]
   
-  saveRDS(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".rds")))
-  write.csv(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".csv")), row.names = FALSE)
+  if (!boot_mode) {
+    saveRDS(trend_data, file.path(config$path, "outputs", paste0("smoking_trends_", config$country, ".rds")))
+    saveRDS(survivorship_data, file.path(config$path, "outputs", paste0("survivorship_data_", config$country, ".rds")))
+    saveRDS(mortality_data, file.path(config$path, "outputs", paste0("mortality_data_", config$country, ".rds")))
+    saveRDS(quit_data, file.path(config$path, "outputs", paste0("quit_data_", config$country, ".rds")))
+    saveRDS(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".rds")))
+    write.csv(forecast_data, file.path(config$path, "outputs", paste0("quit_forecast_data_", config$country, ".csv")), row.names = FALSE)
+    saveRDS(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".rds")))
+    write.csv(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".csv")), row.names = FALSE)
+  }
   
-  return(invisible(forecast_data))
+  if (boot_mode) {
+    return(list(final = forecast_data, final_no_init = forecast_data_no_init))
+  } else {
+    return(invisible(forecast_data))
+  }
 }
