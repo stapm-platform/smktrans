@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_uncertainty.R
 \name{generate_uncertainty}
 \alias{generate_uncertainty}
-\title{Generate Uncertainty Intervals for Transition Probabilities}
+\title{Generate Uncertainty Intervals for Transition Probabilities (deprecated)}
 \usage{
 generate_uncertainty(data, prob_col, n_eff, n_samp, correlation)
 }

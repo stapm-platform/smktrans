@@ -4,7 +4,7 @@
 \alias{estimate_initiation}
 \title{Estimate and Forecast Smoking Initiation}
 \usage{
-estimate_initiation(config, survey_data)
+estimate_initiation(config, survey_data, boot_mode = FALSE)
 }
 \arguments{
 \item{config}{List. Must contain: first_year, last_year, min_age, max_age, ref_age, 

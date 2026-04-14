@@ -14,5 +14,5 @@ A list containing the final datasets and samples.
 }
 \description{
 Orchestrates the estimation of smoking transition probabilities,
-calculates uncertainty, and exports to a professional Excel report.
+calculates empirical bootstrap uncertainty, and exports to a professional Excel report.
 }

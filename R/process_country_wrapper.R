@@ -68,7 +68,7 @@ process_country <- function(config) {
   B_samples <- ifelse(is.null(config$kn_samp), 100, config$kn_samp)
   message(sprintf("\n>> Running empirical bootstrap (%d iterations)...", B_samples))
   
-  # Call our new pipeline
+  # Call the bootstrap pipeline
   boot_results <- run_bootstrap_pipeline(config, survey_data, pops, tob_mort_data, tob_mort_data_cause, B = B_samples)
   
   message(">> Aggregating uncertainty bounds...")
@@ -116,6 +116,7 @@ process_country <- function(config) {
   saveRDS(relapse_data_uncertainty,  file.path(out_dir, paste0("relapse_data_", config$country, "_uncertainty.rds")))
   saveRDS(net_init_data_uncertainty, file.path(out_dir, paste0("net_init_data_", config$country, "_uncertainty.rds")))
   saveRDS(quit_no_init_uncertainty,  file.path(out_dir, paste0("quit_no_init_data_", config$country, "_uncertainty.rds")))
+  saveRDS(boot_results$quit, file.path(out_dir, paste0("raw_boot_quit_data_", config$country, ".rds")))
   
   # 5. Export Report
   # ----------------

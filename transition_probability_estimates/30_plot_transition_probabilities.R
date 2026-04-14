@@ -10,11 +10,31 @@ library(ggplot2)
 library(viridis)
 
 # 2. Define File Path
-# Update this to match the actual location of your Excel file
-#file_path <- "transition_probability_estimates/outputs/SmokeStateTransProbs_England_2026-03-27.xlsx"
-#file_path <- "transition_probability_estimates/outputs/SmokeStateTransProbs_Scotland_2026-03-27.xlsx"
-file_path <- "transition_probability_estimates/outputs/SmokeStateTransProbs_Wales_2026-03-27.xlsx"
 
+# Define your target country here ("England", "Scotland", or "Wales")
+target_country <- "England" 
+
+# Define the folder where the outputs live
+output_dir <- "transition_probability_estimates/outputs"
+
+# Create a search pattern for the specific country's Excel files
+file_pattern <- paste0("^SmokeStateTransProbs_", target_country, "_.*\\.xlsx$")
+
+# List all matching files in the directory
+available_files <- list.files(path = output_dir, pattern = file_pattern, full.names = TRUE)
+
+# Safety check: Did we find any files?
+if (length(available_files) == 0) {
+  stop(paste("No Excel files found for", target_country, "in the outputs folder."))
+}
+
+# Sort files descending (newest date first) and grab the top one
+most_recent_file <- sort(available_files, decreasing = TRUE)[1]
+
+# Assign to your standard variable so the rest of your script works untouched
+file_path <- most_recent_file
+
+#########################################################
 # 3. Helper Function for Plotting
 # This function automatically maps the correct columns based on the metric name
 plot_metric_with_ci <- function(data, metric_name, title, y_label) {

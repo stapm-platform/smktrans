@@ -23,7 +23,7 @@ high quit rates (experimentation vs. established smoking).'><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">smktrans</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,14 @@ high quit rates (experimentation vs. established smoking).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculate_net_initiation</span><span class="op">(</span><span class="va">init_data</span>, <span class="va">quit_data</span>, <span class="va">relapse_data</span>, <span class="va">pops</span>, <span class="va">config</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculate_net_initiation</span><span class="op">(</span></span>
+<span>  <span class="va">init_data</span>,</span>
+<span>  <span class="va">quit_data</span>,</span>
+<span>  <span class="va">relapse_data</span>,</span>
+<span>  <span class="va">pops</span>,</span>
+<span>  <span class="va">config</span>,</span>
+<span>  boot_mode <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -93,6 +100,10 @@ high quit rates (experimentation vs. established smoking).</p>
 <dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
 <dd><p>List. Must contain 'country' and uncertainty params ('kn', 'kn_samp', 'kR').</p></dd>
 
+
+<dt id="arg-boot-mode">boot_mode<a class="anchor" aria-label="anchor" href="#arg-boot-mode"></a></dt>
+<dd><p>Logical. If TRUE, skips writing to disk and returns the data.table directly.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -111,7 +122,7 @@ high quit rates (experimentation vs. established smoking).</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

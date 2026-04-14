@@ -4,7 +4,7 @@
 \alias{estimate_relapse}
 \title{Estimate and Forecast Smoking Relapse}
 \usage{
-estimate_relapse(config, survey_data)
+estimate_relapse(config, survey_data, boot_mode = FALSE)
 }
 \description{
 1. Prepares base relapse rates (Hawkins).

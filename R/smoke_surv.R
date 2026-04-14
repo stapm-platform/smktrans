@@ -23,12 +23,22 @@ smoke_surv <- function(
 ) {
   
   # 1. Attach Relative Risks
-  # Adds RR columns to the individual data based on smoking history
-  dt_rr <- tobalcepi::RRFunc(
-    data = copy(data),
-    substance = "tob",
-    tob_diseases = diseases
-  )
+  # =====================================================================
+  # NEW: RR Bypass Logic
+  # If the data already has the disease risk columns, skip RRFunc entirely
+  if (all(diseases %in% names(data))) {
+    # message("  - Disease RR columns detected. Skipping RRFunc...")
+    dt_rr <- copy(data)
+    setDT(dt_rr)
+  } else {
+    # message("  - Calculating Relative Risks via RRFunc...")
+    dt_rr <- tobalcepi::RRFunc(
+      data = copy(data),
+      substance = "tob",
+      tob_diseases = diseases
+    )
+  }
+  # =====================================================================
   
   # 2. Calculate Individual Survival Probabilities
   # We iterate over years because mortality rates (mx_data) change by year.
@@ -86,27 +96,26 @@ smoke_surv <- function(
   domain[age > 80 & qx < 0.05, qx := NA] # Suspiciously low mortality for elderly
   domain[age > 60 & qx < 0.005, qx := NA]
   
-  # 6. Smooth Mortality Curves (GAM)
-  # We smooth the qx curve over Age for every Year/Sex/IMD/State group.
-  # Using data.table's 'by' to vectorize the model fitting.
+  # 6. Smooth Mortality Curves (FAST SPLINE)
   
-  # Define a wrapper for robust GAM fitting
-  fit_gam <- function(sub_age, sub_qx) {
+  # Define a wrapper for high-speed spline fitting
+  fit_fast_spline <- function(sub_age, sub_qx) {
     # Need enough points to smooth
     valid <- !is.na(sub_qx)
     if(sum(valid) < 5) return(rep(0, length(sub_age)))
     
-    # Fit
     tryCatch({
-      m <- mgcv::gam(qx ~ s(age, k = 10), data = data.frame(age = sub_age[valid], qx = sub_qx[valid]))
-      preds <- predict(m, newdata = data.frame(age = sub_age))
+      # smooth.spline is ~50x faster than mgcv::gam for 1D arrays
+      # df = 5 provides a similar flexibility to s(age, k=10)
+      m <- smooth.spline(x = sub_age[valid], y = sub_qx[valid], df = 5)
+      preds <- predict(m, x = sub_age)$y
       return(preds)
     }, error = function(e) return(rep(0, length(sub_age))))
   }
   
   # Apply smoothing
   message("  - Smoothing mortality curves...")
-  domain[, qx_fits := fit_gam(age, qx), by = .(year, sex, imd_quintile, smk.state)]
+  domain[, qx_fits := fit_fast_spline(age, qx), by = .(year, sex, imd_quintile, smk.state)]
   
   # Clamp and Convert to Survival (px)
   domain[qx_fits < 0, qx_fits := 0]
