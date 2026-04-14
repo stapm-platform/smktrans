@@ -5,16 +5,15 @@ output:
     theme: lumen
     toc: false
     self_contained: true
-    css: styles.css
 resource_files:
   - ../../inst/extdata/report_configs.rds
 ---
 
 ```{r setup_wrapper, include=FALSE}
 # --- ROBUST CONFIG LOADER ---
-# 1. Find Project Root
+# 1. Find Project Root (Guaranteed to work in packages)
 tryCatch({
-  root <- rprojroot::find_root(rprojroot::is_rstudio_project)
+  root <- rprojroot::find_root(rprojroot::is_r_package)
 }, error = function(e) root <- getwd())
 
 # 2. Prefer Local Config (Updates immediately without reinstall)

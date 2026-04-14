@@ -4,7 +4,14 @@
 \alias{calculate_net_initiation}
 \title{Calculate Net Initiation Probabilities (Synthetic Cohort)}
 \usage{
-calculate_net_initiation(init_data, quit_data, relapse_data, pops, config)
+calculate_net_initiation(
+  init_data,
+  quit_data,
+  relapse_data,
+  pops,
+  config,
+  boot_mode = FALSE
+)
 }
 \arguments{
 \item{init_data}{Data.table. Initiation probabilities.}
@@ -16,6 +23,8 @@ calculate_net_initiation(init_data, quit_data, relapse_data, pops, config)
 \item{pops}{Data.table. Population weights.}
 
 \item{config}{List. Must contain 'country' and uncertainty params ('kn', 'kn_samp', 'kR').}
+
+\item{boot_mode}{Logical. If TRUE, skips writing to disk and returns the data.table directly.}
 }
 \description{
 Calculates "Net Initiation" probabilities by simulating a synthetic cohort 

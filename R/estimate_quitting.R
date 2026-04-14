@@ -7,7 +7,7 @@
 #' 4. Forecasts 'No Initiation' Quit rates (counterfactual).
 #'
 #' @export
-estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE, smk_init_data_boot = NULL, relapse_data_boot = NULL) {
+estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE, smk_init_data_boot = NULL, relapse_data_boot = NULL, precalc_mortality = NULL) {
   
   if (!boot_mode) message(">> [Step 3] Estimating & Forecasting Quitting...")
   
@@ -110,13 +110,23 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_year = config$first_year, max_year = config$last_year
   )
   
-  mortality_data <- smoke_surv(
-    data = survey_data,
-    diseases = tobalcepi::tob_disease_names,
-    mx_data = tob_mort_data_cause,
-    min_age = config$min_age, max_age = config$max_age,
-    min_year = config$first_year, max_year = config$last_year
-  )
+  # =====================================================================
+  # NEW: MORTALITY BYPASS LOGIC
+  # =====================================================================
+  if (boot_mode && !is.null(precalc_mortality)) {
+    # Skip the heavy lift and use the master mortality object
+    mortality_data <- precalc_mortality
+  } else {
+    # Run normally for the baseline (or if precalc is missing)
+    mortality_data <- smoke_surv(
+      data = survey_data,
+      diseases = tobalcepi::tob_disease_names,
+      mx_data = tob_mort_data_cause,
+      min_age = config$min_age, max_age = config$max_age,
+      min_year = config$first_year, max_year = config$last_year
+    )
+  }
+  # =====================================================================
   
   # B. Historical Quit Solver
   # -------------------------------------------------------------------------

@@ -17,7 +17,7 @@ source("03_load_packages.R")
 #source("transition_probability_estimates/src_wales/00_prepare_data_wrapper_wales.R")
 
 # Set number of bootstrap resamples (applied to all countries)
-kn_samp_global <- 10
+kn_samp_global <- 1000
 
 # --- LOAD FUNCTIONS ---
 func_path <- "R/"
