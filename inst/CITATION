@@ -3,7 +3,7 @@ citHeader("To cite the smktrans package and the transition probability estimates
 
 bibentry(
   bibtype = "Manual",
-  title = "{smktrans}: An R Package for estimating smoking state transition probabilities from cross-sectional survey data",
+  title = "smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data",
   author = c(
     person("Duncan", "Gillespie", role = c("aut", "cre")),
     person("Alan", "Brennan", role = "aut")
