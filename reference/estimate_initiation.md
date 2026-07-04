@@ -1,0 +1,19 @@
+# Estimate and Forecast Smoking Initiation
+
+1\. Estimates historical initiation (cumulative -\> density). 2.
+Forecasts future initiation using \`quit_forecast\` (continuing trend).
+3. Saves raw, adjusted, and forecasted outputs.
+
+## Usage
+
+``` r
+estimate_initiation(config, survey_data, boot_mode = FALSE)
+```
+
+## Arguments
+
+- config:
+
+  List. Must contain: first_year, last_year, min_age, max_age, ref_age,
+  smokefree_target_year, age_trend_limit_init, smooth_rate_dim_init,
+  k_smooth_age_init.

@@ -1,0 +1,60 @@
+/* pkgdown/extra.css */
+
+/* --- 1. NAVBAR (The top bar) --- */
+.navbar-default {
+  background-color: #440099 !important; /* Sheffield Violet */
+  border-color: #350078;
+}
+
+.navbar-default .navbar-brand {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.navbar-default .navbar-nav > li > a {
+  color: #e0e0e0 !important; /* Off-white text */
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+  color: #ffffff !important;
+  background-color: #5e1cb2 !important; /* Lighter violet for hover */
+}
+
+/* --- 2. HEADINGS & TYPOGRAPHY --- */
+h1, h2, h3, h4, h5, h6 {
+  color: #440099; /* Sheffield Violet headers */
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+}
+
+body {
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333333;
+}
+
+/* --- 3. LINKS --- */
+a {
+  color: #005a8f; /* Sheffield Secondary Blue */
+}
+
+a:hover {
+  color: #440099;
+}
+
+/* --- 4. BUTTONS (Download Button) --- */
+.btn-primary {
+  background-color: #440099;
+  border-color: #440099;
+}
+
+.btn-primary:hover {
+  background-color: #2b0066; /* Darker violet */
+  border-color: #2b0066;
+}
+
+/* --- 5. SIDEBAR (Reference menu) --- */
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #440099;
+  border-color: #440099;
+}
