@@ -75,25 +75,59 @@ if (!dir.exists(data_dir)) {
 
 # 5. HELPER TO LOAD FILES
 # -----------------------
+# Map internal prefixes to the sheet names used in the Excel workbook.
+sheet_lookup <- c(init = "Initiation", quit = "Quitting", relapse = "Relapse")
+
+# Locate the most recent Excel workbook for this country.
+# This is the fallback data source: the *_forecast_data_*.rds intermediates
+# are git-ignored (see .gitignore), so on the pkgdown build server and on any
+# fresh clone only the committed .xlsx outputs are available.
+find_excel <- function() {
+  files <- list.files(
+    data_dir,
+    pattern = paste0("^SmokeStateTransProbs_", config$country, "_.*\\.xlsx$"),
+    full.names = TRUE
+  )
+  if (length(files) == 0) return(NULL)
+  sort(files, decreasing = TRUE)[1]  # most recent by date in filename
+}
+
 get_res <- function(prefix) {
+
+  # --- Fast path: use the pre-computed .rds if it exists locally ---
   f_name <- paste0(prefix, "_forecast_data_", config$country, ".rds")
   f_path <- file.path(data_dir, f_name)
-  
-  if(file.exists(f_path)) {
+
+  if (file.exists(f_path)) {
     obj <- readRDS(f_path)
-    
+
     # Unpack the $data dataframe if it's a list
     if (!inherits(obj, "data.frame") && "data" %in% names(obj)) {
       dt <- obj$data
     } else {
       dt <- obj
     }
-    
+
     setDT(dt)
     return(dt)
-  } else {
-    return(NULL)
   }
+
+  # --- Fallback: read the equivalent sheet from the committed Excel workbook ---
+  sheet <- sheet_lookup[[prefix]]
+  xl    <- find_excel()
+
+  if (!is.null(sheet) && !is.null(xl) && file.exists(xl)) {
+    dt <- tryCatch(
+      readxl::read_excel(xl, sheet = sheet),
+      error = function(e) NULL
+    )
+    if (!is.null(dt) && nrow(dt) > 0) {
+      setDT(dt)
+      return(dt)
+    }
+  }
+
+  return(NULL)
 }
 
 # 6. LOAD THE DATA

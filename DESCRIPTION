@@ -37,7 +37,7 @@ Authors@R:
     )
 Description: Estimates the probabilities that individuals will initiate, quit or relapse to regular cigarette smoking from cross-sectional survey data.
 License: GPL (>= 3)
-URL: https://github.com/stapm-platform/smktrans, https://stapm-platform.github.io/smktrans
+URL: https://github.com/stapm-platform/smktrans, https://stapm-platform.github.io/smktrans, https://stapm-platform.github.io/smktrans/
 BugReports: https://github.com/stapm-platform/smktrans/issues
 Encoding: UTF-8
 LazyData: true
@@ -64,7 +64,6 @@ Imports:
     readr,
     writexl,
     Rfast,
-    dvmisc,
     fastmatch,
     dplyr,
     plyr,
@@ -82,7 +81,10 @@ Suggests:
     distill,
     hseclean (>= 1.11.2),
     mort.tools (>= 1.6.0),
-    tobalcepi (>= 1.6.2)
+    tobalcepi (>= 1.6.2),
+    plotly,
+    crosstalk,
+    DT
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5)

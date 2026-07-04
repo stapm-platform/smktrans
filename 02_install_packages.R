@@ -21,7 +21,7 @@ packages <- c("crosstalk", "rprojroot", "DT", "matrixStats", "DiagrammeR", "data
               "rmarkdown", "TTR", "ids", "boot",
               "VGAM", "praise", "parallel", "readr", "cowsay", "snowfall",
               "bit64", "Rdpack", "lifecycle", "crayon", "writexl",
-              "Rfast", "dvmisc", "fastmatch", "dplyr", "plyr",
+              "Rfast", "fastmatch", "dplyr", "plyr",
               "openxlsx", "demography", "forecast", "raster", "mice",
               "Hmisc", "waldo", "gitcreds", "nnet", "quantmod", "Matrix",
               "survival", "codetools", "nlme", "tibble", "ggthemes",    
@@ -32,8 +32,10 @@ packages <- c("crosstalk", "rprojroot", "DT", "matrixStats", "DiagrammeR", "data
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
-  install.packages(packages[!installed_packages], lib = project_lib)
+  renv::install(packages[!installed_packages])
 }
+
+renv::install("dvmisc@1.1.4") # version removed from CRAN - check all packages that import this
 
 ###########################
 #### STAPM packages #######
@@ -45,51 +47,24 @@ if (any(installed_packages == FALSE)) {
 # Once this is done, you can run the code below to install the STAPM R packages 
 # (defaulting to the most recent version)
 
-# Fetch environment variable "GITHUB_PAT" to local variable
-token <- Sys.getenv("GITHUB_PAT")
+# Define STAPM GitHub packages with exact versions
+# renv will automatically use the GITHUB_PAT from your .Renviron file
+# Ensure you have set this up before running this part of the installation: 
 
-versions <- c("1.11.2", # stapmr
-              "1.7.4",  # tobalcepi
-              "1.14.5", # hseclean 
-              "1.6.0", # mort.tools
-              "2.0.0", # smktrans
-              "0.5.0") # toolkitr
+github_packages <- c(
+  "stapm-platform/stapmr@1.11.11",
+  "stapm-platform/tobalcepi@1.7.4",
+  "stapm-platform/hseclean@1.14.8",
+  #"stapm-platform/mort.tools@1.6.0",
+  "stapm-platform/smktrans@2.0.0"#,
+  #"stapm-platform/toolkitr@0.5.0"
+)
 
+# Install GitHub packages
+renv::install(github_packages)
 
-######################################################################
-####### Install package versions for the chosen version of the model #
+renv::install("stapm-platform/stapmr@1.11.10")
+renv::install("stapm-platform/tobalcepi@1.7.4")
 
-devtools::install_github(
-  "https://github.com/stapm-platform/stapmr.git",
-  ref = versions[1],
-  auth_token = token,
-  build_vignettes = FALSE, quiet = FALSE,
-  force = TRUE)
-
-devtools::install_git(
-  "https://github.com/stapm-platform/tobalcepi.git", 
-  ref = versions[2],
-  build_vignettes = FALSE, quiet = FALSE)
-
-devtools::install_git(
-  "https://github.com/stapm-platform/hseclean.git", 
-  ref = versions[3],
-  build_vignettes = FALSE, quiet = FALSE)
-
-devtools::install_git(
-  "https://github.com/stapm-platform/mort.tools.git", 
-  ref = versions[4],
-  build_vignettes = FALSE, quiet = FALSE)
-
-devtools::install_git(
-  "https://github.com/stapm-platform/smktrans.git", 
-  ref = versions[5],
-  build_vignettes = FALSE, quiet = FALSE)
-
-devtools::install_github(
-  "https://github.com/stapm-platform/toolkitr.git",
-  ref = versions[6],
-  auth_token = token,
-  build_vignettes = FALSE, quiet = FALSE)
-
-
+# 5. Snapshot the environment to create the renv.lock file
+renv::snapshot()
