@@ -18,47 +18,61 @@ generate_bootstrap_sample <- function(survey_data) {
   # ============================================================================
   if (has_cluster) {
     if (has_psu) {
-      # Calculate the maximum number of unique PSUs inside any cluster
       max_psus_per_cluster <- max(dt[, .(n_psu = uniqueN(psu)), by = c(strat_vars, "cluster")]$n_psu)
-      
-      # If at least one cluster has > 1 PSU, it is a viable grouping variable.
-      # If max == 1, cluster and psu are 1-to-1, and stratifying by cluster will break the bootstrap.
       if (max_psus_per_cluster > 1) {
         strat_vars <- c(strat_vars, "cluster")
       }
     } else {
-      # If there's no PSU column at all, cluster is safe to use for grouping individuals
       strat_vars <- c(strat_vars, "cluster")
     }
   }
   
-  # Also check for a formal 'strata' column, just in case other datasets use that name
   if ("strata" %in% names(dt)) {
     strat_vars <- unique(c(strat_vars, "strata"))
   }
+  
   # ============================================================================
-  
-  
+  # VIABILITY CHECK: Is 'psu' actually resamplable?
+  # ----------------------------------------------------------------------------
+  # Resampling PSUs only introduces variation if at least one stratum contains
+  # more than one PSU. If every stratum has a single PSU (as can happen when a
+  # survey's imputed file carries a degenerate/placeholder psu column, e.g.
+  # Wales), then `sample(psu, size = 1, replace = TRUE)` returns that same PSU
+  # every iteration, the bootstrap becomes a no-op, and all downstream
+  # uncertainty collapses to zero width (lower == upper == point, se == 0).
+  # In that case, drop to individual-level resampling so the bootstrap still
+  # captures sampling variation.
+  # ============================================================================
+  psu_is_viable <- FALSE
   if (has_psu) {
+    if (length(strat_vars) > 0) {
+      max_psu_per_stratum <- max(dt[, .(n_psu = uniqueN(psu)), by = strat_vars]$n_psu)
+    } else {
+      max_psu_per_stratum <- dt[, uniqueN(psu)]
+    }
+    psu_is_viable <- max_psu_per_stratum > 1
+    if (!psu_is_viable) {
+      warning("PSU resampling is degenerate (<= 1 PSU per stratum); ",
+              "falling back to individual-level resampling.")
+    }
+  }
+  
+  
+  if (has_psu && psu_is_viable) {
     # COMPLEX DESIGN: Resample PSUs within Strata
-    # 1. Get unique PSUs per stratum
     psu_list <- unique(dt[, c(strat_vars, "psu"), with = FALSE])
     
-    # 2. Sample PSUs with replacement within each stratum
     if (length(strat_vars) > 0) {
       sampled_psus <- psu_list[, .(psu = sample(psu, size = .N, replace = TRUE)), by = strat_vars]
     } else {
       sampled_psus <- psu_list[, .(psu = sample(psu, size = .N, replace = TRUE))]
     }
     
-    # 3. Assign a new unique ID to each sampled PSU. 
     sampled_psus[, boot_psu_id := .I]
-    
-    # 4. Merge back to get the individuals (allow.cartesian because of duplicate PSUs)
     resampled_data <- merge(sampled_psus, dt, by = c(strat_vars, "psu"), allow.cartesian = TRUE)
     
   } else {
-    # SIMPLE DESIGN: Resample individuals within strata
+    # SIMPLE DESIGN (or non-viable PSU design): Resample individuals within strata
     if (length(strat_vars) > 0) {
       resampled_data <- dt[, .SD[sample(.N, .N, replace = TRUE)], by = strat_vars]
     } else {
@@ -68,5 +82,3 @@ generate_bootstrap_sample <- function(survey_data) {
   
   return(resampled_data)
 }
-
-

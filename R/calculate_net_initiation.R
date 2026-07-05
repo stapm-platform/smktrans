@@ -87,13 +87,25 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
   
   results_list <- list()
   
-  for (a in ages) {
+  # Iterate only over ages actually present in the data. Some countries' survey
+  # data begins at age 16 (e.g. Scotland, Wales) rather than 12. Starting the
+  # loop at a missing age produces an empty inner-join `step`, which then
+  # overwrites `sim_state` with an empty table and collapses every subsequent
+  # age to nothing (the symptom: an empty Net Initiation sheet).
+  loop_ages <- sort(unique(dt$age))
+  loop_ages <- loop_ages[loop_ages >= min(ages) & loop_ages <= max(ages)]
+  
+  for (a in loop_ages) {
     # Get probabilities for this age 'a'
     probs <- dt[age == a]
     
     # Merge current state with probabilities
     # We join on Year/Sex/IMD
     step <- merge(sim_state, probs, by = c("year", "sex", "imd_quintile"))
+    
+    # Guard: if this age is missing for every subgroup, skip rather than let an
+    # empty `step` wipe out the running cohort state.
+    if (nrow(step) == 0) next
     
     # Calculate Flows
     # 1. Initiation (from Never)
