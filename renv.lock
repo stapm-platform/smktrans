@@ -6118,6 +6118,48 @@
       "Author": "Adelchi Azzalini [aut, cre], Alan Genz [aut] (most Fortran code), Alan Miller [ctb] (Fortran routine PHI), Michael J. Wichura [ctb] (Fortran routine PHINV), G. W. Hill [ctb] (Fortran routine STDINV), Yihong Ge. [ctb] (Fortran routines BNVU and MVBVU)",
       "Repository": "CRAN"
     },
+    "mort.tools": {
+      "Package": "mort.tools",
+      "Version": "1.6.0",
+      "Source": "GitHub",
+      "Title": "Process Mortality Microdata",
+      "Authors@R": "c( person(given = \"Duncan\", family = \"Gillespie\", role = c(\"aut\", \"cre\"), email = \"duncan.gillespie@sheffield.ac.uk\", comment = c(ORCID = \"0000-0003-3450-5747\")), person(given = \"Laura\", family = \"Webster\", role = c(\"aut\")), person(given = \"Colin\", family = \"Angus\", role = c(\"aut\"), email = \"c.r.angus@sheffield.ac.uk\"), person(given = \"Alan\", family = \"Brennan\", role = c(\"aut\"), email = \"a.brennan@sheffield.ac.uk\") )",
+      "Maintainer": "Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>",
+      "Description": "Read, Clean and Analyse Cause-Specific Mortality Data.",
+      "License": "CC BY 4.0",
+      "URL": "https://stapm.gitlab.io/r-packages/mort.tools",
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "ByteCompile": "true",
+      "Imports": [
+        "testthat",
+        "dplyr",
+        "stringr",
+        "readxl",
+        "plyr",
+        "ggplot2",
+        "TTR",
+        "data.table",
+        "demography",
+        "forecast",
+        "raster",
+        "lifecycle"
+      ],
+      "Suggests": [
+        "knitr",
+        "rmarkdown"
+      ],
+      "VignetteBuilder": "knitr",
+      "RoxygenNote": "7.2.3",
+      "RdMacros": "lifecycle",
+      "Author": "Duncan Gillespie [aut, cre] (ORCID: <https://orcid.org/0000-0003-3450-5747>), Laura Webster [aut], Colin Angus [aut], Alan Brennan [aut]",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "stapm-platform",
+      "RemoteRepo": "mort.tools",
+      "RemoteRef": "master",
+      "RemoteSha": "b29c2ba7baff2baaeb2fa89bb840fe65b8709d2f"
+    },
     "multicool": {
       "Package": "multicool",
       "Version": "1.0.1",
@@ -9257,6 +9299,40 @@
       "RemoteRepo": "tobalcepi",
       "RemoteRef": "1.7.4",
       "RemoteSha": "343b19c37cbbc871a401f531d43227153a02c2b5"
+    },
+    "toolkitr": {
+      "Package": "toolkitr",
+      "Version": "0.5.0",
+      "Source": "GitHub",
+      "Type": "Package",
+      "Title": "Read and Clean Toolkit Data",
+      "Authors@R": "c( person(given = \"Damon\", family = \"Morris\", role = c(\"aut\",\"cre\"), email = \"d.j.morris@sheffield.ac.uk\", comment = c(ORCID = \"0000-0001-6757-5333\")), person(given = \"Duncan\", family = \"Gillespie\", role = c(\"aut\"), email = \"duncan.gillespie@sheffield.ac.uk\", comment = c(ORCID = \"0000-0003-3450-5747\")) )",
+      "Maintainer": "Damon Morris <d.j.morris@sheffield.ac.uk>",
+      "Description": "Reads and performs basic data cleaning functions on the raw data which makes up the Smoking Toolkit Study (STS) and Alcohol Toolkit Study (ATS).",
+      "License": "GPL (>= 3)",
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "Depends": [
+        "data.table",
+        "bit64",
+        "R (>= 2.10)"
+      ],
+      "Imports": [
+        "foreign",
+        "stringr",
+        "dplyr",
+        "tidyselect",
+        "here",
+        "crayon"
+      ],
+      "RoxygenNote": "7.2.3",
+      "Author": "Damon Morris [aut, cre] (ORCID: <https://orcid.org/0000-0001-6757-5333>), Duncan Gillespie [aut] (ORCID: <https://orcid.org/0000-0003-3450-5747>)",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "stapm-platform",
+      "RemoteRepo": "toolkitr",
+      "RemoteRef": "master",
+      "RemoteSha": "8ee3ca8283c3ed8bcad2d58fd91148d22ce17d78"
     },
     "tzdb": {
       "Package": "tzdb",

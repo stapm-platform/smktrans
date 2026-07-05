@@ -65,6 +65,8 @@ renv::install(github_packages)
 
 renv::install("stapm-platform/stapmr@1.11.10")
 renv::install("stapm-platform/tobalcepi@1.7.4")
+renv::install("stapm-platform/mort.tools") # these have not had releases on the new platform yet
+renv::install("stapm-platform/toolkitr")
 
 # 5. Snapshot the environment to create the renv.lock file
 renv::snapshot()

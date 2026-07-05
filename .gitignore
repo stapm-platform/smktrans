@@ -48,7 +48,6 @@ public/
 *.csv
 *.tsv
 *.xls
-*.xlsx
 *.parquet
 *.feather
 *.h5
@@ -124,5 +123,5 @@ Thumbs.db
 docs
 docs/
 
-
+!inst/extdata/report_configs.rds
 
