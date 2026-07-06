@@ -1,7 +1,7 @@
 Package: smktrans
 Type: Package
 Title: Estimate Smoking State Transition Probabilities from Cross-Sectional Survey Data
-Version: 2.1.0
+Version: 2.1.1
 Authors@R: 
     c(person(given = "Duncan",
              family = "Gillespie",
