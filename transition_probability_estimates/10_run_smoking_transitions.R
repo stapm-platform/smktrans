@@ -192,5 +192,7 @@ build_web_reports()
 
 # Build the site
 pkgdown::build_site()
-
+# This only builds the local docs/ preview — it does not publish anything. 
+# The live site serves from the gh-pages branch, 
+# which only updates with pkgdown::deploy_to_branch()
 
