@@ -58,9 +58,24 @@ config_eng <- list(
   survey_file = "intermediate_data/HSE_2003_to_2018_tobacco_imputed.rds",
   pop_file = "05_input/pop_sizes_england_national_2001-2019_v1_2022-03-30_mort.tools_1.4.0.csv",
   
-  first_year = 2003, last_year = 2018,
-  min_age = 11, max_age = 89, ref_age = 30,
+  first_year = 2003, 
+  last_year = 2018,
+  trend_last_year = 2019,
+  trend_allow_extrapolation = TRUE,
+  
+  min_age = 11, 
+  max_age = 89, 
+  ref_age = 30,
+  
   time_horizon = 2040,
+  
+  # What to keep from each bootstrap replicate of the trend surface.
+  # The full grid is 79 ages x 16 years x 2 sexes x 5 quintiles x 3 states,
+  # which at 1000 iterations is about 38 million rows. Tables 7-10 need a tenth
+  # of that. Widen these if a future table needs more.
+  trend_keep_ages   = 25:74,
+  trend_keep_years  = 2011:2019,
+  trend_keep_states = "current",
   
   # Initiation Params
   max_age_init = 30, age_trend_limit_init = 25,
@@ -94,8 +109,17 @@ config_scot <- list(
   survey_file = "intermediate_data/SHeS_2008_to_2019_tobacco_imputed.rds",
   pop_file = "05_input/pop_sizes_scotland_national_v1_2022-12-13_mort.tools_1.5.0.csv",
   
-  first_year = 2008, last_year = 2019,
-  min_age = 16, max_age = 89, ref_age = 30,
+  first_year = 2008, 
+  last_year = 2019,
+  trend_last_year = 2019,
+  trend_allow_extrapolation = FALSE,
+  trend_keep_ages   = 25:74,
+  trend_keep_years  = 2011:2019,
+  trend_keep_states = "current",
+  
+  min_age = 16, 
+  max_age = 89, 
+  ref_age = 30,
   time_horizon = 2040,
   
   # Initiation Params
@@ -130,8 +154,18 @@ config_wales <- list(
   survey_file = "intermediate_data/Wales_2009_to_2022_tobacco_imputed.rds",
   pop_file = "05_input/pop_sizes_wales_national.csv",
   
-  first_year = 2009, last_year = 2022,
-  min_age = 16, max_age = 89, ref_age = 30,
+  first_year = 2009, 
+  last_year = 2022,
+  trend_last_year = 2022, 
+  trend_allow_extrapolation = FALSE,
+  trend_keep_ages   = 25:74,
+  trend_keep_years  = 2011:2019,
+  trend_keep_states = "current",
+  
+  min_age = 16, 
+  max_age = 89, 
+  ref_age = 30,
+  
   time_horizon = 2040,
   
   # Initiation Params

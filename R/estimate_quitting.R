@@ -6,17 +6,21 @@
 #' 3. Forecasts Quit rates (continuing trend).
 #' 4. Forecasts 'No Initiation' Quit rates (counterfactual).
 #'
+#' In boot_mode the fitted trend surface is now returned alongside the quit
+#' forecasts. It was always being computed and then thrown away; returning it
+#' gives us bootstrapped smoking prevalence for free.
+#'
 #' @export
-estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE, smk_init_data_boot = NULL, relapse_data_boot = NULL, precalc_mortality = NULL) {
-  
+estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_cause, boot_mode = FALSE, smk_init_data_boot = NULL, relapse_data_boot = NULL, precalc_mortality = NULL, boot_id = NULL) {
+
   if (!boot_mode) message(">> [Step 3] Estimating & Forecasting Quitting...")
-  
+
   if (!boot_mode) {
     init_file <- file.path(config$path, "outputs", paste0("smk_init_data_", config$country, ".rds"))
     rel_file  <- file.path(config$path, "outputs", paste0("relapse_data_", config$country, ".rds"))
-    
+
     if(!file.exists(init_file) || !file.exists(rel_file)) stop("Missing init/relapse intermediate files.")
-    
+
     smk_init_data <- readRDS(init_file)
     relapse_data  <- readRDS(rel_file)
   } else {
@@ -25,15 +29,15 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     smk_init_data <- smk_init_data_boot
     relapse_data  <- relapse_data_boot
   }
-  
+
   relapse_by_age_imd <- relapse_data$relapse_by_age_imd
-  
-  # If necessary impute relapse for younger ages, 
+
+  # If necessary impute relapse for younger ages,
   # assuming same as age 18 (the source - Hawkins - is 18+ only)
   if(config$min_age < 18) {
-    
+
     temp <- relapse_by_age_imd[age == 18]
-    
+
     for(i in config$min_age:17) {
       relapse_by_age_imd <- rbindlist(list(
         relapse_by_age_imd,
@@ -41,16 +45,42 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
       ), use.names = TRUE)
     }
   }
-  
+
   # A. Trend Fit & Mortality
   # -------------------------------------------------------------------------
+  # The prediction grid is now taken from config rather than from the data in
+  # hand. Under bootstrap resampling the observed age range, year range and set
+  # of IMD quintiles can all move, and a grid that moves with them cannot be
+  # stacked across iterations. See trend_fit() for the checks.
+  trend_grid_ages  <- if (!is.null(config$trend_grid_ages)) config$trend_grid_ages else config$min_age:config$max_age
+  trend_grid_years <- config$first_year:(if (!is.null(config$trend_last_year)) config$trend_last_year else config$last_year)
+  trend_grid_imd   <- if (!is.null(config$trend_grid_imd)) config$trend_grid_imd else sort(unique(as.character(survey_data$imd_quintile)))
+  allow_extrap     <- isTRUE(config$trend_allow_extrapolation)
+
+  # On the baseline run, confirm the config grid is the grid the old code would
+  # have built from the data. If it is not, the saved smoking_trends_*.rds file
+  # is about to change shape, and that should be a deliberate act.
+  if (!boot_mode) {
+    data_ages  <- min(survey_data$age):max(survey_data$age)
+    if (!identical(as.integer(trend_grid_ages), as.integer(data_ages))) {
+      stop("estimate_quitting: config age grid (", min(trend_grid_ages), "-", max(trend_grid_ages),
+           ") differs from the survey age range (", min(data_ages), "-", max(data_ages),
+           "). Set config$trend_grid_ages deliberately if this is intended.")
+    }
+  }
+
   trend_data <- trend_fit(
     data = survey_data,
     max_iterations = 1e3,
     age_var = "age", year_var = "year", sex_var = "sex",
-    smoker_state_var = "smk.state", imd_var = "imd_quintile", weight_var = "wt_int"
+    smoker_state_var = "smk.state", imd_var = "imd_quintile", weight_var = "wt_int",
+    grid_ages = trend_grid_ages,
+    grid_years = trend_grid_years,
+    grid_imd = trend_grid_imd,
+    allow_extrapolation = allow_extrap,
+    boot_id = boot_id
   )
-  
+
   ###############################################################
   # Load HMD Data (Conditional on Package vs. Local File)
   # 1. Determine which dataset is needed based on country
@@ -63,28 +93,28 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
   } else {
     stop("Error: 'country' variable must be 'England', 'Wales', or 'Scotland'.")
   }
-  
+
   # 2. Attempt to load
   if (requireNamespace("smktrans", quietly = TRUE)) {
-    
+
     if (!boot_mode) message(paste0("   > Loading ", dataset_name, " from 'smktrans' package..."))
-    
+
     #Load data directly from the package namespace using the string name
     hmd_data <- get(dataset_name, envir = asNamespace("smktrans"))
-    
+
   } else {
-    
+
     if (!boot_mode) message(paste0("   > 'smktrans' package not detected. Loading local file '", file_path, "'..."))
-    
+
     # Check if the local file actually exists
     if (!file.exists(file_path)) {
       stop(paste0("Error: 'smktrans' package not loaded and local file '", file_path, "' not found."))
     }
-    
+
     # Load into a temporary environment to keep the global namespace clean
     temp_env <- new.env()
     load(file_path, envir = temp_env)
-    
+
     # Flexible loading: check if the expected object name exists in the file
     if (exists(dataset_name, envir = temp_env)) {
       hmd_data <- temp_env[[dataset_name]]
@@ -102,16 +132,16 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     rm(temp_env)
   }
   ###############################################################
-  
+
   survivorship_data <- prep_surv(
     mx_data_hmd = hmd_data,
     mx_data_ons = tob_mort_data,
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  
+
   # =====================================================================
-  # NEW: MORTALITY BYPASS LOGIC
+  # MORTALITY BYPASS LOGIC
   # =====================================================================
   if (boot_mode && !is.null(precalc_mortality)) {
     # Skip the heavy lift and use the master mortality object
@@ -127,11 +157,16 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     )
   }
   # =====================================================================
-  
+
   # B. Historical Quit Solver
   # -------------------------------------------------------------------------
+  # quit_est is given the trend surface over the modelled years only. If the
+  # grid has been extended past last_year (England 2019, see trend_fit) those
+  # extra years are dropped here so the quit solver behaves exactly as before.
+  trend_data_for_quit <- trend_data[year >= config$first_year & year <= config$last_year]
+
   quit_data <- quit_est(
-    trend_data = trend_data,
+    trend_data = trend_data_for_quit,
     survivorship_data = survivorship_data,
     mortality_data = mortality_data$data_for_quit_ests,
     relapse_data = relapse_by_age_imd,
@@ -139,11 +174,11 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     min_age = config$min_age, max_age = config$max_age,
     min_year = config$first_year, max_year = config$last_year
   )
-  
+
   # C. Forecast Quitting
   # -------------------------------------------------------------------------
   if (!boot_mode) message("   > Forecasting Quit Rates...")
-  
+
   forecast_data <- quit_forecast(
     data = copy(quit_data),
     forecast_var = "p_quit",
@@ -159,13 +194,13 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     smooth_rate_dim = config$smooth_rate_dim_quit,
     k_smooth_age = config$k_smooth_age_quit
   )
-  
+
   forecast_data <- forecast_data[age >= config$min_age & age <= config$max_age]
-  
+
   # D. Forecast Quitting (No Initiation Adjustment)
   # -------------------------------------------------------------------------
   if (!boot_mode) message("   > Forecasting Quit Rates (No Initiation)...")
-  
+
   forecast_data_no_init <- quit_forecast(
     data = copy(quit_data),
     forecast_var = "p_quit_no_init",
@@ -181,9 +216,9 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     smooth_rate_dim = config$smooth_rate_dim_quit,
     k_smooth_age = config$k_smooth_age_quit
   )
-  
+
   forecast_data_no_init <- forecast_data_no_init[age >= config$min_age & age <= config$max_age]
-  
+
   if (!boot_mode) {
     saveRDS(trend_data, file.path(config$path, "outputs", paste0("smoking_trends_", config$country, ".rds")))
     saveRDS(survivorship_data, file.path(config$path, "outputs", paste0("survivorship_data_", config$country, ".rds")))
@@ -194,9 +229,10 @@ estimate_quitting <- function(config, survey_data, tob_mort_data, tob_mort_data_
     saveRDS(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".rds")))
     write.csv(forecast_data_no_init, file.path(config$path, "outputs", paste0("quit_forecast_data_no_init_", config$country, ".csv")), row.names = FALSE)
   }
-  
+
   if (boot_mode) {
-    return(list(final = forecast_data, final_no_init = forecast_data_no_init))
+    # trend is the full grid; run_bootstrap_pipeline thins it before saving
+    return(list(final = forecast_data, final_no_init = forecast_data_no_init, trend = trend_data))
   } else {
     return(invisible(forecast_data))
   }
