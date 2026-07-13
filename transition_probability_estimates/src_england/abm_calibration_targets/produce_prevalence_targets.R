@@ -107,7 +107,7 @@ if (anyNA(prev_dt$year_cat)) stop("A year fell outside 2011-2019 after banding."
 # populations, not by the survey design weights. Design weights would reweight a
 # smooth surface by the accidents of who happened to be sampled.
 pops <- fread(pop_file)
-if (!"N" %in% names(pops) && "pop" %in% names(pops)) setnames(pops, "pop", "N")
+if (!"N" %in% names(pops) && "pops" %in% names(pops)) setnames(pops, "pops", "N")
 
 pop_required <- c("year", "age", "sex", "imd_quintile", "N")
 missing_pop <- setdiff(pop_required, names(pops))

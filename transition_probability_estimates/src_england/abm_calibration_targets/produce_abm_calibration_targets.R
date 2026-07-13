@@ -309,22 +309,52 @@ if (diag_gap > 1e-12) {
   }
 }
 
-# A matrix that is used as a precision matrix has to invert. With B in the
-# hundreds and a few dozen targets it should, but two collinear targets, or a
-# pairwise matrix, can break it.
 eig <- eigen(cov_matrix, symmetric = TRUE, only.values = TRUE)$values
 
-if (min(eig) <= 0) {
-  stop(sprintf("Covariance matrix is not positive definite (smallest eigenvalue %.3g). ", min(eig)),
-       if (na_handling == "pairwise") "Try na_handling = 'complete'. " else "",
-       "Two targets may be collinear.")
+# Tolerance scaled to the size of the matrix. Eigenvalues within +/- this of
+# zero are structural zeros (redundant target combinations, see below);
+# anything below its negative is a genuine error.
+eig_tol <- 1e-9 * max(eig)
+
+n_structural_zero <- sum(abs(eig) < eig_tol)
+n_negative        <- sum(eig < -eig_tol)
+
+if (n_negative > 0) {
+  stop(sprintf("Covariance matrix has %d genuinely negative eigenvalue(s) (smallest %.3g). ",
+               n_negative, min(eig)),
+       "That is not rounding - check for corrupted bootstrap draws",
+       if (na_handling == "pairwise") ", or try na_handling = 'complete'." else ".")
 }
 
-cond_num <- max(eig) / min(eig)
-message(sprintf("Covariance matrix is %d x %d, positive definite, condition number %.1f.",
-                ncol(cov_matrix), ncol(cov_matrix), cond_num))
-if (cond_num > 1e6) {
-  warning("Condition number above 1e6. Inverting this matrix will amplify noise substantially.")
+# ==========================================================================
+# RANK DEFICIENCY - DELIBERATE, DO NOT 'FIX' BY DROPPING TARGETS
+# --------------------------------------------------------------------------
+# The four target tables (3-6) are marginal summaries of the same underlying
+# bootstrap array, collapsed along different axes (sex x age, versus year x
+# IMD). Their shared sub-totals are equal in every bootstrap draw, so each
+# shared total is a zero-variance direction and appears as a near-zero
+# eigenvalue. The matrix is therefore rank-deficient BY CONSTRUCTION, not
+# because of a data problem, and not because any two targets are collinear (a
+# pairwise correlation check comes back empty).
+#
+# We keep the full matrix on purpose - the team has chosen to receive all
+# targets in one file and handle the redundancy their end. Anyone INVERTING it
+# (e.g. as a precision matrix in a Gaussian calibration likelihood) must use a
+# pseudoinverse (MASS::ginv) or a rank-aware solver; a plain solve() will fail
+# or return noise along the zero directions. See the note handed to the team.
+# ==========================================================================
+if (n_structural_zero > 0) {
+  message(sprintf("NOTE: covariance matrix is rank %d of %d (%d structural zero eigenvalue(s)).",
+                  ncol(cov_matrix) - n_structural_zero, ncol(cov_matrix), n_structural_zero))
+  message("      Expected: the tables share marginal totals. Matrix kept whole on request.")
+  message("      Downstream inversion MUST use a pseudoinverse. See accompanying note.")
+} else {
+  cond_num <- max(eig) / min(eig)
+  message(sprintf("Covariance matrix is %d x %d, full rank, condition number %.1f.",
+                  ncol(cov_matrix), ncol(cov_matrix), cond_num))
+  if (cond_num > 1e6) {
+    warning("Condition number above 1e6. Inverting this matrix will amplify noise substantially.")
+  }
 }
 
 # Rule of thumb: a d x d covariance wants at least a few times d draws before
