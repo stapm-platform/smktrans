@@ -9,9 +9,27 @@
 #' @param value_var Character - the name of the variable to be smoothed.
 #' @param window_size - Integer - must be an odd number - 
 #' the number of years covered by the moving average window.
+#' @param blank_zeros Logical - if TRUE (the default) values of 0 and 1 are set to
+#' NA before smoothing and then filled by interpolating the age pattern. This treats
+#' a zero as "nothing was observed here" rather than "the probability is zero".
+#' Set to FALSE when the caller has already smoothed the values and a zero means
+#' what it says. See the note below.
 #' @importFrom data.table := setDT setorderv dcast melt
 #' @return Returns a data table the same as data but with smoothed probability values.
-#' 
+#'
+#' @details
+#' On blank_zeros. The default TRUE is the original behaviour and is kept so that
+#' prep_relapse is unaffected. It is not a safe default when the input contains a
+#' lot of exact zeros. Blanking a zero makes this function discontinuous: a cell
+#' holding 0 is dropped from the moving average entirely, while a cell holding
+#' 1e-9 contributes in full. When roughly half the matrix sits on that boundary,
+#' as it does for the initiation density, an arbitrarily small change to the input
+#' flips cells in and out of every window covering them. Testing on the England
+#' data in July 2026, 0.1% of noise on the input to p_dense moved the published
+#' initiation probabilities by 51%. With blanking off it was 3%. That is what was
+#' behind the initiation estimates moving between the April and July 2026 runs
+#' without the estimation code having changed.
+#'
 #' @export
 #'
 #' @examples
@@ -27,7 +45,8 @@
 p_smooth <- function(
   data,
   value_var,
-  window_size = 3
+  window_size = 3,
+  blank_zeros = TRUE
 ) {
   
   setDT(data)
@@ -55,8 +74,18 @@ p_smooth <- function(
   data_mat <- as.matrix(data_wide)
   
   # replace 0s and 1s with NA - then fill with approx trend
+  # (only when asked to - see the note in @details)
 
-  data_mat[data_mat <= 0 | data_mat >= 1] <- NA
+  if(blank_zeros) {
+    data_mat[data_mat <= 0 | data_mat >= 1] <- NA
+  } else {
+    # Keep the zeros, but nudge them off the boundary so that the logit in
+    # quit_forecast has something finite to work with. They stay small enough
+    # that the moving average pulls them towards their neighbours rather than
+    # the other way round.
+    data_mat[data_mat <= 0] <- 1e-6
+    data_mat[data_mat >= 1] <- 1 - 1e-6
+  }
   
   # smooth values in sliding a n x n window
   r <- raster::raster(data_mat) # convert to rasterLayer
@@ -73,6 +102,17 @@ p_smooth <- function(
     x <- data_sm[ ,i]
     tt <- 1:length(x)
     missing <- is.na(x)
+
+    # approx() errors with "zero non-NA points" if a whole year is blank, which
+    # can happen when blank_zeros has wiped out every age in that column. Say so
+    # rather than falling over, and leave the column alone.
+    if(all(missing)) {
+      warning("p_smooth: every age in year ", years[i], " is missing after ",
+              "smoothing, so the age pattern cannot be interpolated for it. ",
+              "This usually means the input for that year was all zeros.")
+      next
+    }
+
     xx <- x[!missing]
     tt <- tt[!missing]
     x <- stats::approx(tt, xx, 1:length(x), method = "constant", f = 0.5, rule = 2)

@@ -92,7 +92,7 @@ config_eng <- list(
   max_age_init = 30, age_trend_limit_init = 25,
   init_model_choice = "model8",
   
-  smooth_rate_dim_init = c(3, 13), 
+  smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
   # smooth trends in the rates by age and year. (age, year), 
   # Defaults to c(3, 3). Must be odd numbers
@@ -138,7 +138,7 @@ config_scot <- list(
   max_age_init = 30, age_trend_limit_init = 25,
   init_model_choice = "model8",
   
-  smooth_rate_dim_init = c(3, 13), 
+  smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
   # smooth trends in the rates by age and year. (age, year), 
   # Defaults to c(3, 3). Must be odd numbers
@@ -185,7 +185,7 @@ config_wales <- list(
   max_age_init = 30, age_trend_limit_init = 25,
   init_model_choice = "model8",
   
-  smooth_rate_dim_init = c(3, 13), 
+  smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
   # smooth trends in the rates by age and year. (age, year), 
   # Defaults to c(3, 3). Must be odd numbers
