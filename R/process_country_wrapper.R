@@ -85,10 +85,20 @@ process_country <- function(config) {
   # 4. Generate Empirical Uncertainty Intervals
   # -----------------------------------------
   B_samples <- ifelse(is.null(config$kn_samp), 100, config$kn_samp)
+
+  # The exported central estimates are bootstrap medians, so they depend on the
+  # random draws. Without a seed the delivery cannot be reproduced or diffed
+  # against a previous one. Refuse rather than silently produce a one-off.
+  if (is.null(config$seed)) {
+    stop("process_country: config$seed is not set. The exported estimates are ",
+         "bootstrap medians and would not be reproducible. Set a seed in the ",
+         "country config in 10_run_smoking_transitions.R.")
+  }
   message(sprintf("\n>> Running empirical bootstrap (%d iterations)...", B_samples))
 
   # Call the bootstrap pipeline
-  boot_results <- run_bootstrap_pipeline(config, survey_data, pops, tob_mort_data, tob_mort_data_cause, B = B_samples)
+  boot_results <- run_bootstrap_pipeline(config, survey_data, pops, tob_mort_data, tob_mort_data_cause,
+                                         B = B_samples, seed = config$seed)
 
   message(">> Aggregating uncertainty bounds...")
   init_ci         <- aggregate_uncertainty(boot_results$init, "p_start")
@@ -173,6 +183,17 @@ process_country <- function(config) {
   # a covariance matrix, not just the summarised bounds.
   saveRDS(boot_results$quit,  file.path(out_dir, paste0("raw_boot_quit_data_", config$country, ".rds")))
   saveRDS(boot_results$trend, file.path(out_dir, paste0("raw_boot_smoking_trends_", config$country, ".rds")))
+
+  # Run manifest. When a delivery is queried months later, this is what says
+  # whether a difference is a real change or a different set of random draws.
+  saveRDS(list(
+    country      = config$country,
+    seed         = config$seed,
+    n_bootstrap  = B_samples,
+    run_datetime = Sys.time(),
+    package_version = tryCatch(as.character(utils::packageVersion("smktrans")),
+                               error = function(e) NA_character_)
+  ), file.path(out_dir, paste0("run_manifest_", config$country, ".rds")))
 
   # 5. Export Report
   # ----------------

@@ -25,6 +25,10 @@ run_bootstrap_pipeline(
 \item{tob_mort_data_cause}{A data.table containing cause-specific tobacco mortality data.}
 
 \item{B}{Integer. The number of bootstrap iterations to run. Defaults to 100.}
+
+\item{seed}{Integer. Master seed for the resampling, taken from \code{config$seed}.
+Supplying it makes the run reproducible; NULL restores the old unseeded
+behaviour and warns.}
 }
 \value{
 A list containing five massive data.tables with all bootstrap iterations combined:

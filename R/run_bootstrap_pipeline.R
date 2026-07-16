@@ -17,17 +17,55 @@
 #' @param tob_mort_data A data.table containing general tobacco mortality data.
 #' @param tob_mort_data_cause A data.table containing cause-specific tobacco mortality data.
 #' @param B Integer. The number of bootstrap iterations to run. Defaults to 100.
+#' @param seed Integer. Master seed for the resampling. Taken from `config$seed`
+#'   by the caller. Supplying it makes the whole run reproducible; passing NULL
+#'   restores the old unseeded behaviour and warns, because an unseeded run
+#'   cannot be reproduced or audited.
+#'
+#' @details
+#' The central estimates written out by `process_country()` are bootstrap
+#' medians, not point estimates, so they are a function of the random draws.
+#' Without a seed, two runs of identical code on identical data return
+#' different numbers, and a diff against a previous delivery cannot separate a
+#' genuine change from resampling noise. This bit us in July 2026 when the
+#' project team queried initiation probabilities that had moved between
+#' deliveries.
+#'
+#' Rather than seeding once and relying on the loop running in order, we draw
+#' `B` iteration seeds up front from the master seed and set the seed at the
+#' top of each iteration. Iteration `i` then depends only on the master seed
+#' and `i`, so results are identical whether the loop is run start to finish,
+#' resumed part way, or parallelised later.
 #'
 #' @return A list containing six data.tables with all bootstrap iterations combined:
 #'   \code{init}, \code{quit}, \code{quit_no_init}, \code{relapse}, \code{net} and \code{trend}.
+#'   The master seed and the per-iteration seeds are attached as attributes.
 #' @export
-run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob_mort_data_cause, B = 100) {
+run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob_mort_data_cause, B = 100, seed = NULL) {
 
   temp_dir <- file.path(tempdir(), paste0("smktrans_boot_", format(Sys.time(), "%Y%m%d_%H%M%S")))
   dir.create(temp_dir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(temp_dir, recursive = TRUE))
 
   message(sprintf(">> Storing temporary bootstrap files in: %s", temp_dir))
+
+  # --- Seeding ---------------------------------------------------------------
+  # One master seed generates B independent iteration seeds. Doing it this way
+  # rather than a single set.seed() before the loop means each iteration is
+  # reproducible on its own terms.
+  if (is.null(seed)) {
+    warning("run_bootstrap_pipeline: no seed supplied. This run will not be ",
+            "reproducible - the exported central estimates are bootstrap medians ",
+            "and will differ next time. Set config$seed.")
+    iter_seeds <- rep(NA_integer_, B)
+  } else {
+    if (!is.numeric(seed) || length(seed) != 1 || is.na(seed)) {
+      stop("run_bootstrap_pipeline: `seed` must be a single non-missing number.")
+    }
+    set.seed(seed)
+    iter_seeds <- sample.int(.Machine$integer.max, B)
+    message(sprintf(">> Master seed %d; %d iteration seeds drawn.", seed, B))
+  }
 
   # What we keep from each trend replicate. Defaults cover Tables 7-10.
   keep_ages   <- if (!is.null(config$trend_keep_ages))   config$trend_keep_ages   else 25:74
@@ -55,6 +93,9 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
   message("\n>> Starting Bootstrap Iterations...")
 
   for (i in seq_len(B)) {
+    # 1. Seed this iteration, so it reproduces regardless of loop order
+    if (!is.na(iter_seeds[i])) set.seed(iter_seeds[i])
+
     # 2. Resample Data
     bs_data <- generate_bootstrap_sample(survey_data)
 
@@ -157,6 +198,12 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
     stop("run_bootstrap_pipeline: trend draws span ", uniqueN(out$trend$boot_id),
          " boot_ids, expected ", B, ".")
   }
+
+  # Seed provenance travels with the results, so a saved object can always be
+  # traced back to the run that produced it.
+  setattr(out, "seed", seed)
+  setattr(out, "iter_seeds", iter_seeds)
+  setattr(out, "B", B)
 
   return(out)
 }
