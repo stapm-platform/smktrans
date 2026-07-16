@@ -384,3 +384,132 @@ write.csv(cov_dt, file_calib_covar, row.names = FALSE)
 message("\nWritten ", file_calib_means)
 message("Written ", file_calib_covar)
 message(sprintf("%d targets, %d iterations used, na_handling = '%s'.", n_targets, B_used, na_handling))
+
+##################################################################################
+
+# Block-level diagnostic for the quit calibration covariance matrix.
+#
+# Purpose: confirm that the four target tables can each be inverted on their own,
+# so that the calibration can compute a multivariate implausibility per table and
+# take the maximum (Andrianakis et al. 2015, eq 10 + eq 9), without any
+# manipulation of the supplied covariance file.
+#
+# Run this after produce_abm_calibration_targets.R, with cov_matrix and
+# target_means still in the environment.
+
+# --- 0. Handle the column naming ------------------------------------------
+# target_means gets renamed at step 4.7. This works either side of that.
+if ("arrivalYearCategorical" %in% names(target_means)) {
+  yr_col <- "arrivalYearCategorical"; sex_col <- "pGender"; imd_col <- "pIMDquintile"
+} else {
+  yr_col <- "year_cat"; sex_col <- "sex"; imd_col <- "imd_quintile"
+}
+
+# --- 1. Define the four blocks --------------------------------------------
+# From the target construction at 4.3:
+#   Table 3  year <= 2016, detailed age x sex   -> year_cat "2011-2016", imd "All"
+#   Table 4  year <= 2016, year_cat x imd x broad age -> sex "All"
+#   Table 5  year >= 2017, detailed age x sex   -> year_cat "2017-2019", imd "All"
+#   Table 6  year >= 2017, year_cat x imd x broad age -> sex "All"
+#
+# So the sex-by-age tables are exactly those with imd == "All", and the
+# IMD tables are exactly those with sex == "All". Year category splits each pair.
+tab_ids <- list(
+  `Table 3 (cal, sex x age, 2011-2016)` =
+    target_means[get(imd_col) == "All" & get(yr_col) == "2011-2016", target_id],
+  `Table 4 (cal, imd x age, 2011-2016)` =
+    target_means[get(sex_col) == "All" & get(yr_col) %in% c("2011-2013", "2014-2016"), target_id],
+  `Table 5 (val, sex x age, 2017-2019)` =
+    target_means[get(imd_col) == "All" & get(yr_col) == "2017-2019", target_id],
+  `Table 6 (val, imd x age, 2017-2019)` =
+    target_means[get(sex_col) == "All" & get(yr_col) == "2017-2019", target_id]
+)
+
+# --- 2. The blocks must partition the targets ------------------------------
+# If they do not, the maximum-implausibility approach either double-counts a
+# target or silently drops one. Check before trusting anything below.
+assigned <- unlist(tab_ids, use.names = FALSE)
+if (anyDuplicated(assigned)) {
+  stop("A target is assigned to more than one block: ",
+       paste(assigned[duplicated(assigned)], collapse = ", "))
+}
+unassigned <- setdiff(colnames(cov_matrix), assigned)
+if (length(unassigned) > 0) {
+  stop(length(unassigned), " target(s) fall in no block: ",
+       paste(unassigned, collapse = ", "))
+}
+cat(sprintf("Blocks partition all %d targets cleanly (%s).\n\n",
+            length(assigned), paste(lengths(tab_ids), collapse = " + ")))
+
+# --- 3. Is each block invertible on its own? -------------------------------
+# This is the question that matters. The full matrix has 6 zero eigenvalues.
+# If each block is full rank, all 6 live in the cross-block entries, which the
+# max-implausibility approach never touches - so no manipulation is needed.
+cat("Per-block eigen-diagnostics:\n")
+for (nm in names(tab_ids)) {
+  ids <- tab_ids[[nm]]
+  blk <- cov_matrix[ids, ids, drop = FALSE]
+  ev  <- eigen(blk, symmetric = TRUE, only.values = TRUE)$values
+  rel <- min(ev) / max(ev)          # scale-free: is the smallest a real zero?
+  cat(sprintf("  %-38s n=%2d  min eig %10.3e  max/min %9.1f  min/max %.2e  %s\n",
+              nm, length(ids), min(ev), max(ev) / min(ev), rel,
+              if (rel > 1e-8) "OK" else "*** NEAR-SINGULAR ***"))
+}
+
+# --- 4. Within-block correlations ------------------------------------------
+# Any pair inside a block correlating at ~1 would mean two targets in the same
+# table share respondents (a total and its parts). That would be a real problem,
+# because it sits inside the matrix being inverted and taking the maximum across
+# blocks would not remove it.
+cat("\nWithin-block correlations above 0.9:\n")
+found_any <- FALSE
+for (nm in names(tab_ids)) {
+  ids <- tab_ids[[nm]]
+  cm   <- cov2cor(cov_matrix[ids, ids, drop = FALSE])
+  high <- which(abs(cm) > 0.9 & upper.tri(cm), arr.ind = TRUE)
+  if (nrow(high) > 0) {
+    found_any <- TRUE
+    cat("  ", nm, ":\n", sep = "")
+    print(data.table(a = rownames(cm)[high[, 1]],
+                     b = colnames(cm)[high[, 2]],
+                     r = round(cm[high], 4))[order(-abs(r))])
+  }
+}
+if (!found_any) cat("  None. No two targets within a table are near-collinear.\n")
+
+# --- 5. Where the zero eigenvalues actually live ---------------------------
+# Confirm the deficiency is purely cross-block: the block-diagonal matrix
+# (cross-block entries zeroed) should be full rank even though the full one is not.
+blkdiag <- matrix(0, nrow(cov_matrix), ncol(cov_matrix),
+                  dimnames = dimnames(cov_matrix))
+for (ids in tab_ids) blkdiag[ids, ids] <- cov_matrix[ids, ids]
+
+ev_full <- eigen(cov_matrix, symmetric = TRUE, only.values = TRUE)$values
+ev_blk  <- eigen(blkdiag,    symmetric = TRUE, only.values = TRUE)$values
+
+cat(sprintf("\nFull matrix    : rank %d of %d (%d eigenvalues within rounding of zero)\n",
+            sum(abs(ev_full) > 1e-9 * max(ev_full)), ncol(cov_matrix),
+            sum(abs(ev_full) < 1e-9 * max(ev_full))))
+cat(sprintf("Block-diagonal : rank %d of %d (%d eigenvalues within rounding of zero)\n",
+            sum(abs(ev_blk) > 1e-9 * max(ev_blk)), ncol(blkdiag),
+            sum(abs(ev_blk) < 1e-9 * max(ev_blk))))
+cat("\nIf the block-diagonal is full rank, the deficiency is entirely in the\n",
+    "cross-block entries and per-table inversion is safe as supplied.\n", sep = "")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
