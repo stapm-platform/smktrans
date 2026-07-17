@@ -140,6 +140,9 @@ data[, kids := factor(kids, levels = c("0", "1", "2", "3+"))]
 data[, income5cat := factor(income5cat, levels = c("1_lowest_income", "2", "3", "4", "5_highest_income"))]
 
 # Run Imputation
+
+set.seed(17072026)
+
 imp <- impute_data_mice(
   data = data,
   var_names = c("sex", "age_cat", "kids", "relationship_status", 

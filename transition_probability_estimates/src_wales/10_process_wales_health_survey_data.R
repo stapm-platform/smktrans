@@ -169,6 +169,9 @@ missing_counts <- colSums(is.na(data_w))
 if(sum(missing_counts) > 0) print(missing_counts[missing_counts > 0])
 
 # Impute
+
+set.seed(17072026)
+
 imp <- impute_data_mice(
   data = data_w,
   var_names = c(
@@ -278,6 +281,8 @@ target_rows <- data_imp[cig_smoker_status == "former"]
 # Get unique strata in the target data to loop over
 # (This is much faster than looping over every individual)
 strata <- unique(target_rows[, .(sex, imd_quintile, age_cat)])
+
+set.seed(17072026)
 
 for(i in 1:nrow(strata)) {
   
