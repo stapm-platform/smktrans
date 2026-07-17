@@ -88,8 +88,8 @@ Suggests:
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5)
-RoxygenNote: 7.3.3
 Remotes: 
     stapm-platform/hseclean,
     stapm-platform/tobalcepi,
     stapm-platform/mort.tools
+Config/roxygen2/version: 8.0.0

@@ -1,0 +1,329 @@
+---
+title: "Validating the smktrans transition probabilities"
+subtitle: "England"
+author: "Duncan Gillespie, Sheffield Addictions Research Group"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: hide
+    df_print: kable
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = TRUE,
+                      fig.width = 9, fig.height = 5.5, dpi = 150)
+```
+
+```{r params}
+# Everything the report depends on, set once. The STS waves and the modelled
+# years both come off val_years, so they cannot drift apart.
+val_years <- 2019:2023
+val_ages  <- 16:89
+boot_B    <- 1000
+boot_seed <- 20260716
+
+source("00_validation_utils.R")
+```
+
+# What this report does and does not claim
+
+There are two different things in here and they are not equally strong.
+
+**Validation** is comparing our estimates against data that had no part in
+producing them. There is one of those: quitting, against the Smoking Toolkit
+Study. That is section 2.
+
+**Verification** is checking that the pipeline does to its inputs what we think
+it does. That is initiation, partly, and relapse entirely. It can tell us the
+code is behaving. It cannot tell us the answer is right.
+
+The reason relapse only gets verification is that the Smoking Toolkit Study is a
+repeat cross-section. It never sees the same person twice, so it cannot observe
+anyone relapsing, which is a transition between two points in time for one
+person. There is no independent source we can put next to our relapse
+probabilities. They rest on one paper, Hawkins et al. 2010, and the most we can
+do is check that we have transcribed and transported it correctly.
+
+Initiation sits in between. The STS cannot observe initiation either, for the
+same reason, but it can observe the number of current smokers rising with age,
+and that rise is initiation net of quitting. That is a real quantity and it is
+one we estimate, so section 3 is a genuine comparison over the ages where
+prevalence is still going up. It says nothing about `p_start` itself.
+
+# Quitting against the Smoking Toolkit Study
+
+We build the same quantity from the STS that our `p_quit` is: the probability
+that someone who was a smoker at the start of the year is not one at the end.
+The STS side reconstructs "smoker a year ago" by turning current ex-smokers back
+into smokers if their most recent quit attempt began within the last year, then
+takes one minus the ratio of the two survey-weighted proportions.
+
+```{r quit-sts}
+data_tk <- sts_read_england(years = val_years, ages = val_ages)
+
+# How many ex-smokers fall out of the denominator because q632b8 is missing.
+# They are treated as long-term quitters, which biases p_quit down.
+frac_missing_q632b8 <- sts_check_q632b8(data_tk)
+
+quit_sts <- sts_boot(dt = data_tk, fn = sts_quit_by_age, value_var = "p_quit",
+                     domain_ages = val_ages, B = boot_B, seed = boot_seed)
+```
+
+```{r quit-model}
+quit_model <- stapm_load("quit_data_England_uncertainty.rds")
+quit_ref <- pop_weight_by_age(quit_model, "p_quit", years = val_years, ages = val_ages)
+setnames(quit_ref, "value", "p_quit")
+
+if (all(c("p_quit_lower", "p_quit_upper") %in% names(quit_model))) {
+  quit_ref[, lower := pop_weight_by_age(quit_model, "p_quit_lower", val_years, val_ages)$value]
+  quit_ref[, upper := pop_weight_by_age(quit_model, "p_quit_upper", val_years, val_ages)$value]
+}
+```
+
+```{r quit-plot}
+plot_ages <- 16:80
+sts_plot   <- quit_sts[age %in% plot_ages & !is.na(est) & frac_undefined <= 0.05]
+model_plot <- quit_ref[age %in% plot_ages]
+
+ggplot() +
+  geom_ribbon(data = model_plot, aes(age, ymin = lower, ymax = upper,
+                                     fill = "smktrans"), alpha = 0.25) +
+  geom_line(data = model_plot, aes(age, p_quit, colour = "smktrans"), linewidth = 1) +
+  geom_errorbar(data = sts_plot, aes(age, ymin = lower, ymax = upper,
+                                     colour = "Smoking Toolkit Study"), width = 0, alpha = 0.5) +
+  geom_point(data = sts_plot, aes(age, est, colour = "Smoking Toolkit Study"), size = 1.5) +
+  scale_colour_manual(values = c(smktrans = "#1f78b4", `Smoking Toolkit Study` = "#33a02c")) +
+  scale_fill_manual(values = c(smktrans = "#1f78b4")) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme_minimal() + theme(legend.position = "bottom") +
+  labs(x = "Age", y = "P(quit)", colour = NULL, fill = NULL,
+       title = "Probability of quitting smoking, England",
+       subtitle = sprintf("Bands and bars are 95%%. STS %s.",
+                          paste(range(val_years), collapse = "-")))
+```
+
+```{r quit-numbers}
+cmp <- merge(sts_plot[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
+             model_plot[, .(age, model = p_quit)], by = "age")
+cmp[, inside := model >= sts_lo & model <= sts_hi]
+
+data.table(
+  Measure = c("Ages compared",
+              "smktrans inside the STS 95% interval",
+              "Median difference (smktrans - STS)",
+              "Mean absolute difference",
+              "Correlation over age",
+              "Ex-smokers with no usable q632b8"),
+  Value = c(nrow(cmp),
+            sprintf("%.0f%%", 100 * mean(cmp$inside)),
+            sprintf("%+.4f", median(cmp$diff <- cmp$model - cmp$sts)),
+            sprintf("%.4f", mean(abs(cmp$model - cmp$sts))),
+            sprintf("%.3f", cor(cmp$model, cmp$sts)),
+            sprintf("%.1f%%", 100 * frac_missing_q632b8))
+)
+```
+
+## What to be careful about
+
+The STS estimate is not assumption-free either. Three things carry through into
+the comparison above.
+
+Ex-smokers who did not answer q632b8 stay classified as ex-smokers, so they are
+treated as long-term quitters and drop out of the denominator. If not answering
+is related to how recently someone quit, this pushes the STS p_quit down. The
+size of that group is in the table.
+
+Waves are mapped to calendar years arithmetically, on the basis that wave 1 was
+November 2006 and there has been one wave a month since. Only whole years are
+used, so a year that is part-covered is dropped rather than contributing a
+seasonally biased average.
+
+The model side is averaged over sex, IMD and year using ONS populations, because
+the STS figure is a population average and a plain mean over the ten subgroups
+is not the same thing. The population file stops at `r max(fread(val_paths$pop_file)$year)`,
+so for later years we hold that year's age, sex and IMD structure. That is an
+assumption about who lives in England, not about smoking.
+
+# Net initiation against the Smoking Toolkit Study
+
+`calculate_net_initiation` produces
+
+$$p_{start}^{net}(a) = \frac{n_{current}(a+1) - n_{current}(a)}{n_{never}(a) + n_{former}(a)}$$
+
+and because never, current and former sum to a constant, the denominator is just
+the people who are not currently smoking. Dividing through gives
+
+$$p_{start}^{net}(a) = \frac{prev(a+1) - prev(a)}{1 - prev(a)}$$
+
+which is exactly what we can compute from STS prevalence. Both sides are period
+quantities: `calculate_net_initiation` runs a separate synthetic cohort for each
+year through that year's probabilities, so it is an age profile for a year, not
+a real birth cohort, and that is what a cross-section gives us too.
+
+```{r netinit}
+sts_ages_wide <- 16:35   # read wider than we plot so the difference at the top
+                         # of the plotted range uses a real neighbour
+
+data_tk_init <- sts_read_england(years = val_years, ages = sts_ages_wide)
+
+net_sts <- sts_boot(dt = data_tk_init, fn = sts_net_init_by_age,
+                    value_var = "p_start_net", domain_ages = sts_ages_wide,
+                    B = boot_B, seed = boot_seed)
+
+# Net initiation only means "initiation" while prevalence is still rising. Past
+# that the numerator goes negative, the model clamps it to zero, and we would be
+# comparing a clamp against noise. Take the range from the data.
+prev_point  <- sts_net_init_by_age(data_tk_init, sts_ages_wide)
+last_rising <- suppressWarnings(max(prev_point[!is.na(p_start_net) & p_start_net > 0]$age))
+init_ages   <- min(sts_ages_wide):last_rising
+```
+
+Prevalence stops rising after age **`r last_rising`**, so the comparison runs
+over ages `r min(init_ages)` to `r max(init_ages)`.
+
+```{r netinit-model}
+net_model <- stapm_load("net_init_data_England_uncertainty.rds")
+
+# calculate_net_initiation only runs for 2011:2019, so it will not cover the
+# whole STS window. Use the overlap and say so.
+model_years <- intersect(val_years, unique(net_model$year))
+net_ref <- pop_weight_by_age(net_model, "p_start_net", years = model_years, ages = init_ages)
+setnames(net_ref, "value", "p_start_net")
+```
+
+```{r netinit-plot}
+sts_i   <- net_sts[age %in% init_ages & !is.na(est)]
+model_i <- net_ref[age %in% init_ages]
+
+ggplot() +
+  geom_ribbon(data = sts_i, aes(age, ymin = lower, ymax = upper,
+                                fill = "Smoking Toolkit Study"), alpha = 0.2) +
+  geom_point(data = sts_i, aes(age, est, colour = "Smoking Toolkit Study"), size = 1.5) +
+  geom_line(data = model_i, aes(age, p_start_net, colour = "smktrans"), linewidth = 1) +
+  scale_colour_manual(values = c(smktrans = "#1f78b4", `Smoking Toolkit Study` = "#33a02c")) +
+  scale_fill_manual(values = c(`Smoking Toolkit Study` = "#33a02c")) +
+  theme_minimal() + theme(legend.position = "bottom") +
+  labs(x = "Age", y = "P(net initiation)", colour = NULL, fill = NULL,
+       title = "Net smoking initiation, England",
+       subtitle = sprintf("smktrans %s vs STS %s. Only where prevalence is rising.",
+                          paste(range(model_years), collapse = "-"),
+                          paste(range(val_years), collapse = "-")))
+```
+
+```{r netinit-numbers}
+cmp_i <- merge(sts_i[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
+               model_i[, .(age, model = p_start_net)], by = "age")
+data.table(
+  Measure = c("Ages compared", "smktrans inside the STS 95% interval",
+              "Median difference", "Correlation over age", "Years compared"),
+  Value = c(nrow(cmp_i),
+            sprintf("%.0f%%", 100 * mean(cmp_i$model >= cmp_i$sts_lo & cmp_i$model <= cmp_i$sts_hi)),
+            sprintf("%+.5f", median(cmp_i$model - cmp_i$sts)),
+            sprintf("%.3f", cor(cmp_i$model, cmp_i$sts)),
+            paste(range(model_years), collapse = "-"))
+)
+```
+
+```{r netinit-caveat, results = "asis"}
+if (!identical(sort(model_years), sort(val_years))) {
+  cat(sprintf(paste0("**Note.** The STS window is %s but net initiation is only modelled ",
+                     "for %s, so this comparison rests on the overlap: %s. Widening the ",
+                     "years in `calculate_net_initiation` would give a fairer test.\n\n"),
+              paste(range(val_years), collapse = "-"),
+              paste(range(net_model$year), collapse = "-"),
+              paste(model_years, collapse = ", ")))
+}
+```
+
+The prevalence curve is smoothed over age before it is differenced, rather than
+differenced and then repaired. Differencing a noisy curve gives a very noisy
+derivative, and this is the same mistake that `p_dense` was making until July
+2026: it built the initiation density by differencing a step function and then
+tried to patch the resulting zeros inside `p_smooth`, which turned 0.1% of noise
+on the input into a 51% change in the published probabilities.
+
+# Relapse against the Hawkins inputs
+
+This is verification and not validation. Hawkins et al. 2010 is our input, so
+comparing our output back to it cannot tell us whether our relapse probabilities
+are right. It tells us whether the pipeline is doing what we think.
+
+The check that does the work is an invariant rather than a comparison.
+`prep_relapse` computes a weighted average of Hawkins values over the demographic
+profile, and a weighted average cannot fall outside the range of the things it
+averages. So for every combination of time since quit, age, sex and IMD, our
+output has to sit inside the minimum and maximum of Hawkins across the covariate
+combinations. Historically that is a hard invariant and a failure is a bug. For
+forecast years it is not, because `relapse_forecast` deliberately scales by the
+fitted trend and may legitimately leave the range.
+
+```{r relapse, results = "hold"}
+# Sourced into its own environment rather than this one. The script has to be
+# runnable on its own, so it sets its own parameters and names its own objects,
+# and some of those names (cmp, prof) are ones this report uses too. Keeping it
+# contained means the two cannot tread on each other. Its messages, warnings and
+# printed output still come through.
+source("23_verify_relapse_against_hawkins.R", local = new.env(), echo = FALSE)
+```
+
+## What this cannot check
+
+The relapse module rests entirely on one paper and one cohort: 1,578 people in
+the British Household Panel Survey between 1991 and 2006. Everything above
+confirms we are using it consistently. None of it confirms that those estimates
+describe England in the 2020s.
+
+Three things are worth noting:
+
+The baseline is calibrated rather than published. Hawkins reports odds ratios but
+not the intercept of its model, so we solve for the baseline that makes the
+Hawkins cohort reproduce the paper's own Table 2. That solve assumes the
+covariates are independent of each other, which they are not, and assumes an age
+distribution matching the mean and standard deviation implied by Table 1. Getting
+that age distribution wrong is easy and it moves the answer: the correction is
+1.07 done properly and 1.20 if the distribution is truncated carelessly. Once the
+moments are matched the shape barely matters, and five different shapes all land
+between 1.072 and 1.076. Before calibration the table gave the Hawkins cohort
+14.28% relapsing at one year against the paper's 15.10%.
+
+Relapse is set to exactly zero at ten years, with no uncertainty attached, and
+the ABM cannot tell that apart from a finding. It is a convention. The paper's
+own Kaplan-Meier curve is still declining past ten years, and the zero in Table 2
+rests on no relapses out of 180 people in a single year.
+
+Ages under 18 take the age-18 values, which are the highest in the series.
+
+
+
+# Summary
+
+```{r summary}
+data.table(
+  Component = c("Quitting", "Net initiation", "Initiation (p_start)", "Relapse"),
+  `Independent data?` = c("Yes, Smoking Toolkit Study",
+                          "Yes, Smoking Toolkit Study",
+                          "No",
+                          "No"),
+  `What we can say` = c(
+    "Compared directly against an independent survey",
+    sprintf("Compared over ages %d-%d, where prevalence is still rising", min(init_ages), max(init_ages)),
+    "Not identifiable from a repeat cross-section. Only the net figure above.",
+    "Transcription and transport from Hawkins et al. verified. Level not independently checked."
+  )
+)
+```
+
+```{r sessioninfo}
+data.table(
+  Item = c("R version", "smktrans", "data.table", "Report run", "Bootstrap seed", "Bootstrap draws"),
+  Value = c(R.version.string,
+            as.character(packageVersion("smktrans")),
+            as.character(packageVersion("data.table")),
+            format(Sys.time(), "%Y-%m-%d %H:%M"),
+            boot_seed, boot_B)
+)
+```

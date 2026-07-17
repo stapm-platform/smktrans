@@ -2,15 +2,27 @@
 % Please edit documentation in R/aggregate_uncertainty.R
 \name{aggregate_uncertainty}
 \alias{aggregate_uncertainty}
-\title{Aggregate Bootstrap Uncertainty (Now includes Median Central Estimate)}
+\title{Aggregate Bootstrap Uncertainty (median central estimate, CI bounds, SE)}
 \usage{
-aggregate_uncertainty(boot_dt, prob_col)
+aggregate_uncertainty(
+  boot_dt,
+  prob_col,
+  extra_keys = character(0),
+  min_boot = NULL
+)
 }
 \arguments{
 \item{boot_dt}{The combined data.table from all bootstrap iterations}
 
-\item{prob_col}{The name of the probability column (e.g., "p_quit")}
+\item{prob_col}{The name of the probability column (e.g. "p_quit")}
+
+\item{extra_keys}{Additional grouping columns beyond the standard demographic
+keys. The smoking trends are grouped by smk.state as well, because each
+age/year/sex/IMD cell carries three probabilities rather than one.}
+
+\item{min_boot}{The number of iterations each group must have. Groups with
+fewer are an error, not something to average over quietly.}
 }
 \description{
-Aggregate Bootstrap Uncertainty (Now includes Median Central Estimate)
+Aggregate Bootstrap Uncertainty (median central estimate, CI bounds, SE)
 }

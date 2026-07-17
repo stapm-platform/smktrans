@@ -21,13 +21,6 @@ kn_samp_global <- 1000
 
 # Master seed for the bootstrap (applied to all countries; each country gets its
 # own derived seed below).
-#
-# This matters more than it looks. The central estimates we export are bootstrap
-# MEDIANS, not point estimates, so they are a function of the random draws. Until
-# July 2026 nothing here was seeded, which meant two runs of identical code on
-# identical data returned different numbers. Changing this value changes every
-# published estimate, so do not change it without a reason and a note in the
-# version history.
 seed_global <- 20260716
 
 # --- LOAD FUNCTIONS ---

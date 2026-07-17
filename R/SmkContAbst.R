@@ -1,0 +1,88 @@
+#' Continuous smoking abstinence rates over time
+#'
+#' @description
+#' Mean continuous abstinence rates up to 52 weeks from the start of a quit attempt
+#' in clinical trials can be modelled with simple power functions for placebo,
+#' nicotine replacement therapy, bupropion and varenicline. This lets us predict
+#' abstinence at any point up to 52 weeks from any other point.
+#'
+#' @details
+#' The equations are taken from Supplementary Figure 2 of:
+#'
+#' Jackson SE, Kotz D, West R, Brown J (2019). Moderators of real-world
+#' effectiveness of smoking cessation aids: a population study. Addiction
+#' 114(9):1627-1638. \doi{10.1111/add.14549}
+#'
+#' This function used to live in stapmr. It has been moved here because
+#' data-raw/Relapse_Hawkins2010/prep_Hawkins_relapse.R needs it to build
+#' hawkins_relapse, and stapmr is a private package, so anyone outside the group
+#' could not rebuild the package data. There is nothing in the function that
+#' needs stapmr: it is four curves and no dependencies.
+#'
+#' Note the curves are only fitted out to 52 weeks. Do not ask it for anything
+#' beyond that.
+#'
+#' @param treatment Character - the pharmacological support used for the quit
+#' attempt. One of "placebo", "varenicline", "bupropion", "nrt".
+#' @param weeks Numeric vector - weeks since the quit attempt started. The start
+#' of the attempt is week 0. Maximum 52.
+#'
+#' @return A vector of probabilities that the person is still abstinent.
+#' @export
+#'
+#' @examples
+#'
+#' \dontrun{
+#'
+#' # Continuous abstinence over the first four weeks
+#' SmkContAbst("placebo", 0:4)
+#' # 1.0000000 0.4129423 0.3152202 0.2691612 0.2406239
+#'
+#' # Relative effectiveness of quit aids at 4 weeks
+#' SmkContAbst("varenicline", 4) / SmkContAbst("placebo", 4)
+#' # 2.279061
+#'
+#' # For 1000 four-week quits on placebo, how many twelve-week quits
+#' 1000 * (SmkContAbst("placebo", 12) / SmkContAbst("placebo", 4))
+#' # 651.8131
+#'
+#' }
+SmkContAbst <- function(
+    treatment = c("placebo", "varenicline", "bupropion", "nrt"),
+    weeks = 4
+) {
+
+  treatment <- match.arg(treatment)
+
+  if(!is.numeric(weeks)) stop("SmkContAbst: `weeks` must be numeric.")
+  if(any(weeks < 0, na.rm = TRUE)) stop("SmkContAbst: `weeks` cannot be negative.")
+
+  # The curves in Jackson et al. are fitted to trial follow-up out to 52 weeks.
+  # Anything past that is extrapolation and the old version would have returned
+  # it without comment.
+  if(any(weeks > 52, na.rm = TRUE)) {
+    warning("SmkContAbst: the Jackson et al. curves are only fitted to 52 weeks. ",
+            "Values past that are extrapolated and should not be relied on.")
+  }
+
+  y <- switch(
+    treatment,
+    placebo     = 41.29423 * weeks ^ -0.38958,
+    varenicline = -12.39709 * log(weeks) + 72.02568,
+    bupropion   = 50.95409 * weeks ^ -0.29389,
+    nrt         = 46.23922 * weeks ^ -0.33360
+  )
+
+  # Week 0 is the start of the attempt, so everyone is abstinent. The power and
+  # log forms both blow up there, so it is set directly.
+  y[is.infinite(y)] <- 100
+
+  probabst <- y / 100
+
+  if(any(probabst > 1 | probabst < 0, na.rm = TRUE)) {
+    warning("SmkContAbst: the fitted curve has returned a value outside [0,1] ",
+            "for treatment '", treatment, "'. Check the weeks requested.")
+  }
+
+  probabst
+}

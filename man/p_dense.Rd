@@ -9,7 +9,8 @@ p_dense(
   cum_func_var,
   strat_vars = c("cohort", "sex", "imd_quintile"),
   lowest_year = 2003,
-  max_year = 2100
+  max_year = 2100,
+  cdf_smooth_df = 6
 )
 }
 \arguments{
@@ -22,9 +23,19 @@ p_dense(
 \item{lowest_year}{integer - start year filter.}
 
 \item{max_year}{integer - end year filter.}
+
+\item{cdf_smooth_df}{Numeric - degrees of freedom for the monotone smooth of
+the cumulative curve over age. NULL or 0 skips the smooth and restores the
+pre-2026 behaviour.}
 }
 \description{
 Converts the Cumulative Distribution Function (CDF) of ever-smoking 
 into the Probability Density Function (PDF), which represents the 
 probability of initiating smoking at a specific age.
+}
+\details{
+The cumulative curve is smoothed over age within each group before it is
+differenced (see smooth_cdf). Set cdf_smooth_df = NULL to skip that and get
+the old behaviour back, which is useful for comparing runs, but note that the
+old behaviour is chaotic: see the note on blank_zeros in p_smooth.
 }

@@ -15,6 +15,7 @@ Useful links:
 \itemize{
   \item \url{https://github.com/stapm-platform/smktrans}
   \item \url{https://stapm-platform.github.io/smktrans}
+  \item \url{https://stapm-platform.github.io/smktrans/}
   \item Report bugs at \url{https://github.com/stapm-platform/smktrans/issues}
 }
 
@@ -24,6 +25,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Duncan Gillespie \email{duncan.gillespie@sheffield.ac.uk} (\href{https://orcid.org/0000-0003-3450-5747}{ORCID})
   \item Alan Brennan \email{a.brennan@sheffield.ac.uk} (\href{https://orcid.org/0000-0002-1025-312X}{ORCID})
 }
 
