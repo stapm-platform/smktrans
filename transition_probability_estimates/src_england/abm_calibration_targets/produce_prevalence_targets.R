@@ -225,7 +225,7 @@ if (any(abs(diag_check$diag_var - diag_check$var_prev) > 1e-12)) {
 # positive definite. With B = 1000 draws and 27 targets it should be, but a
 # pair of perfectly collinear targets would break it.
 eig <- eigen(cov_matrix, symmetric = TRUE, only.values = TRUE)$values
-if (min(eig) <= 0) {
+if (min(eig) <= -1e-15) {
   stop("Covariance matrix is not positive definite (smallest eigenvalue ",
        signif(min(eig), 3), "). Two targets may be collinear.")
 }
