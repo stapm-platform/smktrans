@@ -18,9 +18,29 @@ source("transition_probability_validation/00_validation_utils.R")
 # with a hard-coded number and then separately hard-coded the model years, with
 # nothing tying them together.
 
-val_years  <- 2019:2023
+# Validation years. These are chosen to sit entirely inside the model's
+# ESTIMATION window, for two reasons. First, initiation is only estimated to
+# 2017: the forecast jumps off at last_year - 1, so 2018 onwards in the
+# published outputs is trend continuation, and comparing a forecast against a
+# survey tests the forecast, not the estimation. Second, the STS switched to
+# telephone interviewing in April 2020 and barely sampled 16-17 year olds for
+# the next two years (cells of 6-29 people), so any window touching 2020-21 is
+# soft at exactly the ages that matter for initiation. Waves in 2013-2017 are
+# face-to-face with full sampling, and their 12-month lookback reaches into 2012
+# at the earliest, which is still inside the estimation window. A comparison
+# against 2019+ waves is a forecast check and belongs in a separately labelled
+# section if we want it, not here.
+val_years <- 2013:2017
 val_ages   <- 16:89
-plot_ages  <- 16:80        # the STS gets thin above 80
+# Plot from 25. The denominator we can build from the STS holds everyone smoking
+# now plus everyone who stopped in the past year, and "smoking now" includes
+# people who were not smoking a year ago: relapsers, and at young ages
+# initiators. They inflate the denominator and drag the STS p_quit down. A
+# synthetic cohort through our own 2019 probabilities says that is 1 to 5% from
+# 26 upwards, which is inside the bootstrap interval, but 23% below 25 and 28% at
+# 18. A comparison that is 28% out by construction is not a comparison, so it
+# starts where the arithmetic holds. Above 80 the STS gets thin.
+plot_ages  <- 25:80
 boot_B     <- 1000
 boot_seed  <- 20260716
 
@@ -29,17 +49,38 @@ boot_seed  <- 20260716
 
 data_tk <- sts_read_england(years = val_years, ages = val_ages)
 
-# How many ex-smokers drop out of the denominator because q632b8 is missing?
-# This is reported rather than hidden, because it biases p_quit downwards.
-sts_check_q632b8(data_tk)
+# Which model years the STS window actually covers. The STS asks whether someone
+# stopped in the last 12 months, not whether they stopped in a given calendar
+# year, so a wave fielded in March 2019 is reporting on quits back to March 2018.
+# Pooling the wave years therefore reaches one year further back, and the model has
+# to be averaged over the years the window actually covers rather than the years
+# the waves are stamped with. See sts_model_year_weights.
+#
+# It is worth 0.9% here, which is under a fiftieth of the confidence interval, so
+# it does not go on the plot. It is in because it costs nothing and because
+# whoever next widens the year range will get a bigger number without knowing to
+# look for it.
+year_wts <- sts_model_year_weights(unique(data_tk$xwave))
+print(year_wts)
+
+# smokstat tells us directly who stopped in the past year, so there is no
+# reconstruction from q632b8 any more and no missingness to worry about. This
+# reports what the change did, for the record. Comment it out once noted.
+sts_compare_quit_definitions(data_tk)
+
+# Age and sex. sts_quit_by_age indexes on age at the START of the year, i.e.
+# age - 1, because that is how smktrans indexes p_quit: someone observed at 40
+# who stopped in the past year was 39 when the clock started. It matters: on the
+# England data the two indexings differ by around 45%.
+quit_domain <- sts_domain(val_ages, by_sex = TRUE)
 
 quit_sts <- sts_boot(
-  dt          = data_tk,
-  fn          = sts_quit_by_age,
-  value_var   = "p_quit",
-  domain_ages = val_ages,
-  B           = boot_B,
-  seed        = boot_seed
+  dt        = data_tk,
+  fn        = sts_quit_by_age,
+  value_var = "p_quit",
+  domain    = quit_domain,
+  B         = boot_B,
+  seed      = boot_seed
 )
 
 # Ages where the estimator was undefined in a large share of draws are not
@@ -65,7 +106,8 @@ quit_model <- stapm_load("quit_data_England_uncertainty.rds")
 
 stopifnot(all(c("year", "age", "sex", "imd_quintile", "p_quit") %in% names(quit_model)))
 
-quit_ref <- pop_weight_by_age(quit_model, "p_quit", years = val_years, ages = val_ages)
+quit_ref <- pop_weight_by_age(quit_model, "p_quit", years = year_wts$year, ages = val_ages,
+                              by = c("sex", "age"), year_weights = year_wts)
 setnames(quit_ref, "value", "p_quit")
 
 # The model's own uncertainty, collapsed the same way. p_quit_lower/upper are
@@ -74,8 +116,10 @@ setnames(quit_ref, "value", "p_quit")
 # together across cells. They largely do (the same resampled survey drives every
 # cell), but this is an approximation and the band should be read as indicative.
 if (all(c("p_quit_lower", "p_quit_upper") %in% names(quit_model))) {
-  lo <- pop_weight_by_age(quit_model, "p_quit_lower", val_years, val_ages)
-  hi <- pop_weight_by_age(quit_model, "p_quit_upper", val_years, val_ages)
+  lo <- pop_weight_by_age(quit_model, "p_quit_lower", year_wts$year, val_ages,
+                          by = c("sex", "age"), year_weights = year_wts)
+  hi <- pop_weight_by_age(quit_model, "p_quit_upper", year_wts$year, val_ages,
+                          by = c("sex", "age"), year_weights = year_wts)
   quit_ref[, `:=`(lower = lo$value, upper = hi$value)]
 }
 
@@ -95,13 +139,17 @@ p <- ggplot() +
                 width = 0, alpha = 0.5) +
   geom_point(data = sts_plot, aes(x = age, y = est, colour = "Smoking Toolkit Study"),
              size = 1.5) +
+  facet_wrap(~ sex) +
   scale_colour_manual(values = c("smktrans estimate" = "#1f78b4",
                                  "Smoking Toolkit Study" = "#33a02c")) +
   scale_fill_manual(values = c("smktrans estimate" = "#1f78b4")) +
   theme_minimal() +
-  labs(x = "Age", y = "P(quit)", colour = NULL, fill = NULL,
+  labs(x = "Age at the start of the year", y = "P(quit)", colour = NULL, fill = NULL,
        title = "Probability of quitting smoking, England",
-       subtitle = sprintf("smktrans vs Smoking Toolkit Study, %s. Bands and bars are 95%%.",
+       subtitle = sprintf(paste0("smktrans vs Smoking Toolkit Study, waves %s. ",
+                                 "Bands and bars are 95%%.\n",
+                                 "From age 25: below that the STS denominator picks up ",
+                                 "new smokers and reads up to 28%% low."),
                           paste(range(val_years), collapse = "-"))) +
   coord_cartesian(ylim = c(0, 1)) +
   theme(legend.position = "bottom")
@@ -109,20 +157,21 @@ p <- ggplot() +
 print(p)
 
 ggsave("transition_probability_validation/outputs/validation_quit_england.png",
-       p, width = 9, height = 5.5, dpi = 150)
+       p, width = 10, height = 5.5, dpi = 150)
 
 
 # ---- Numerical summary ----------------------------------------------------
 # The plot is for looking at. This is the bit to quote.
 
-cmp <- merge(sts_plot[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
-             model_plot[, .(age, model = p_quit)], by = "age")
+cmp <- merge(sts_plot[, .(age, sex, sts = est, sts_lo = lower, sts_hi = upper)],
+             model_plot[, .(age, sex, model = p_quit)], by = c("age", "sex"))
 cmp[, diff := model - sts]
 cmp[, model_inside_sts_ci := model >= sts_lo & model <= sts_hi]
 
 cat("\n--- smktrans vs STS, ages", min(cmp$age), "-", max(cmp$age), "---\n")
-cat(sprintf("  ages compared              : %d\n", nrow(cmp)))
-cat(sprintf("  model inside the STS 95%% CI: %.0f%%\n", 100 * mean(cmp$model_inside_sts_ci)))
-cat(sprintf("  median difference          : %+.4f\n", median(cmp$diff)))
-cat(sprintf("  mean absolute difference   : %.4f\n", mean(abs(cmp$diff))))
-cat(sprintf("  correlation over age       : %.3f\n", cor(cmp$model, cmp$sts)))
+print(cmp[, .(ages_compared      = .N,
+              model_in_sts_ci    = sprintf("%.0f%%", 100 * mean(model_inside_sts_ci)),
+              median_difference  = sprintf("%+.4f", median(diff)),
+              mean_abs_difference = sprintf("%.4f", mean(abs(diff))),
+              correlation        = sprintf("%.3f", cor(model, sts))),
+          by = sex])

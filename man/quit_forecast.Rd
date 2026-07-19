@@ -17,7 +17,8 @@ quit_forecast(
   jump_off_year = 2015,
   time_horizon = 2050,
   smooth_rate_dim = c(3, 3),
-  k_smooth_age = 3
+  k_smooth_age = 3,
+  preserve_zeros = FALSE
 )
 }
 \arguments{
@@ -44,6 +45,18 @@ quit_forecast(
 \item{smooth_rate_dim}{Vector - dimensions for raster smoothing (c(3,3)).}
 
 \item{k_smooth_age}{Integer - knots for smoothing age component.}
+
+\item{preserve_zeros}{Logical - if TRUE, cells that are exactly zero in the
+input are kept out of the raster smoothing and put back at the floor value
+afterwards, instead of being clamped to 1e-6 and averaged in with their
+neighbours. This exists for initiation. Since the cumulative-curve fix in
+p_dense, a zero in the initiation surface is a real zero - nobody in that
+cohort starts at that age - not survey noise. Clamping it and letting the
+focal mean run over it drags mass down from the ages just below, which is
+how the published initiation tail at ages 24-25 ended up 3 to 4 times the
+estimated values, and the age 26+ fill then carried that inflated number up
+to 30. Quitting and relapse keep the default FALSE: their zeros genuinely
+are sparse-cell noise and smoothing over them is the right treatment.}
 }
 \description{
 Forecasts trends in transition probabilities using a Lee-Carter style 
@@ -56,4 +69,8 @@ Where:
 - Alpha_x: Average age profile
 - Kappa_t: Time trend index
 - Beta_x: Sensitivity of each age to the time trend
+
+Note that the output for the historical years is the reconstruction from
+this decomposition, not the input estimates: everything this function
+returns, past and future, has been through the smoothing and the rank-1 fit.
 }

@@ -41,6 +41,52 @@ if (!requireNamespace("smktrans", quietly = TRUE)) {
 }
 hawkins <- as.data.table(smktrans::hawkins_relapse)
 
+# Guard against version skew between this session and the pipeline run. The
+# rebuilt hawkins_relapse pools Table 2's years 6-9, so within any covariate
+# cell the values at time_since_quit 6, 7, 8 and 9 are identical. The old table
+# had them different (1.1, 1.4, 0.3, 1.3 percent), so this one property tells
+# the two apart. If it fails, this session has loaded the pre-rebuild package
+# data - typically because data-raw was re-run but the package was not
+# reinstalled, or an old library path sits first on .libPaths() - and every
+# envelope below would be the wrong ruler. Judging new outputs against the old
+# envelope produced thousands of spurious breaches once; hence the check.
+tail_spread <- hawkins[time_since_quit %in% 6:9,
+                       .(spread = max(p_relapse) - min(p_relapse)),
+                       by = setdiff(names(hawkins), c("time_since_quit", "p_relapse"))]
+if (tail_spread[spread > 1e-12, .N] > 0) {
+
+  # Before stopping, work out WHICH copy is stale. If the source tree's rda
+  # passes the same test, the situation is precisely: data-raw has been re-run
+  # and the source tree is current, but the installed library is not. That is
+  # what a knit will hit even after devtools::load_all(), because rmarkdown
+  # renders in a fresh session and a fresh session loads the INSTALLED copy.
+  # load_all() only ever fixes the session it is run in.
+  src_current <- FALSE
+  if (file.exists("data/hawkins_relapse.rda")) {
+    e <- new.env()
+    load("data/hawkins_relapse.rda", envir = e)
+    hsrc <- as.data.table(e$hawkins_relapse)
+    ss <- hsrc[time_since_quit %in% 6:9,
+               .(spread = max(p_relapse) - min(p_relapse)),
+               by = setdiff(names(hsrc), c("time_since_quit", "p_relapse"))]
+    src_current <- ss[spread > 1e-12, .N] == 0
+  }
+
+  if (src_current) {
+    stop("23_verify_relapse: this session's smktrans::hawkins_relapse is the old ",
+         "(pre-pooling) table, but data/hawkins_relapse.rda in the source tree is ",
+         "the rebuilt one. So the source tree is current and the INSTALLED package ",
+         "is stale. Run devtools::install() once, then rerun. devtools::load_all() ",
+         "is not enough for the report: knitting starts a fresh R session, and a ",
+         "fresh session loads the installed copy.")
+  }
+  stop("23_verify_relapse: the loaded hawkins_relapse is not the rebuilt ",
+       "(pooled-tail) version - time_since_quit 6-9 differ within a covariate ",
+       "cell, which the rebuild made impossible - and the source tree's copy is ",
+       "either missing or also old. Re-run data-raw/Relapse_Hawkins2010/",
+       "prep_Hawkins_relapse.R, then devtools::install(), then rerun this script.")
+}
+
 final <- stapm_load("relapse_by_age_imd_timesincequit_England.rds")
 
 prep <- readRDS(file.path(val_paths$estimates, "relapse_data_England.rds"))
@@ -90,7 +136,11 @@ check_envelope <- function(dt, years, hard) {
                  n_b, nrow(d), 100 * n_b / nrow(d), paste(range(years), collapse = "-"))
 
   if (n_b > 0) {
-    w <- d[breach][order(-pmax(h_min - p_relapse, p_relapse - h_max))][1]
+    # breach is a column, not a variable in scope: subset it as one. The bare
+    # d[breach] form errors, and only when there ARE breaches to show, which is
+    # exactly when this line matters - it got past testing because the historical
+    # check had none.
+    w <- d[breach == TRUE][order(-pmax(h_min - p_relapse, p_relapse - h_max))][1]
     msg <- paste0(msg, sprintf("\n  Worst: p_relapse = %.5f against [%.5f, %.5f] ",
                                w$p_relapse, w$h_min, w$h_max),
                   sprintf("(age %d, %s, IMD %s, tsq %d, year %d).",
@@ -100,10 +150,12 @@ check_envelope <- function(dt, years, hard) {
   if (hard && n_b > 0) {
     stop("check_envelope: the output is a weighted average of Hawkins, so it cannot sit ",
          "outside the Hawkins range. It does.\n  ", msg,
-         "\n  Before hunting for a bug: the most likely cause by far is that the England ",
-         "outputs predate the current hawkins_relapse. If data-raw has been re-run since ",
-         "the last estimation run, re-run 10_run_smoking_transitions.R for England first. ",
-         "Only if the outputs are current is this a real failure.")
+         "\n  Before hunting for a bug: the most likely cause by far is version skew ",
+         "between the outputs and this session's hawkins_relapse. Either the England ",
+         "outputs predate the current table - re-run 10_run_smoking_transitions.R for ",
+         "England first - or this session has loaded an old packaged copy, which the ",
+         "pooled-tail guard at the top of this script catches. It cannot catch the ",
+         "first kind. Only if both sides are current is this a real failure.")
   }
   message(msg)
   invisible(d)
@@ -297,6 +349,64 @@ if (0 %in% pkg_prof$time_since_quit) {
             "odds and it is ", round(got, 3), ". Check data-raw.")
   }
 }
+
+
+# ---- 6. The picture ---------------------------------------------------------
+#
+# One figure: the Hawkins envelope per time since quit, over age, with our
+# output drawn on top of it. Inside the ribbon is the invariant holding; the
+# forecast line leaving it is the trend extrapolating past the evidence, in
+# exactly the cells the table above counts.
+#
+# Drawn for a single stratum, deliberately. Averaging over sex and IMD would
+# blur cell-level breaches back inside a mixed envelope and the picture would
+# understate what the table says. One stratum is cell-exact: if the line
+# crosses the ribbon, that cell really is outside the range. The stratum shown
+# is the one containing the worst forecast breach; the counts above cover all
+# of them.
+
+pic_sex <- if (nrow(fc_breach) > 0) fc_breach[which.max(p_relapse - h_max)]$sex else "Male"
+pic_imd <- if (nrow(fc_breach) > 0) fc_breach[which.max(p_relapse - h_max)]$imd_quintile else "3"
+pic_yr_fc <- max(final$year)
+
+env_pic <- env[sex == pic_sex & imd_quintile == pic_imd & time_since_quit < 10 &
+                 age %in% 16:89]
+out_pic <- rbind(
+  final[sex == pic_sex & imd_quintile == pic_imd & time_since_quit < 10 &
+          age %in% 16:89 & year == jump_off_year][, series := sprintf("Output %d (jump-off)", jump_off_year)],
+  final[sex == pic_sex & imd_quintile == pic_imd & time_since_quit < 10 &
+          age %in% 16:89 & year == pic_yr_fc][, series := sprintf("Forecast %d", pic_yr_fc)]
+)
+
+tsq_lab <- function(x) fifelse(x == 6, "6-9 (pooled)", as.character(x))
+env_pic[, tsq_f := factor(tsq_lab(time_since_quit), levels = tsq_lab(0:6))]
+out_pic[, tsq_f := factor(tsq_lab(time_since_quit), levels = tsq_lab(0:6))]
+env_pic <- env_pic[time_since_quit <= 6]
+out_pic <- out_pic[time_since_quit <= 6]
+
+p_env <- ggplot() +
+  geom_ribbon(data = env_pic, aes(x = age, ymin = h_min, ymax = h_max),
+              fill = "grey80", alpha = 0.7) +
+  geom_line(data = env_pic, aes(x = age, y = h_mean), linetype = "dashed",
+            colour = "grey40", linewidth = 0.4) +
+  geom_line(data = out_pic, aes(x = age, y = p_relapse, colour = series),
+            linewidth = 0.8) +
+  facet_wrap(~ tsq_f, scales = "free_y", nrow = 2) +
+  scale_colour_manual(values = setNames(c("#1f78b4", "#e31a1c"),
+                                        c(sprintf("Output %d (jump-off)", jump_off_year),
+                                          sprintf("Forecast %d", pic_yr_fc)))) +
+  theme_minimal() + theme(legend.position = "bottom") +
+  labs(x = "Age", y = "P(relapse)", colour = NULL,
+       title = "Relapse against the Hawkins envelope, England",
+       subtitle = paste0("Grey ribbon: min-max over the 160 Hawkins covariate combinations; ",
+                         "dashed: their mean.\nOne stratum (", pic_sex, ", IMD ", pic_imd,
+                         ") so breaches are cell-exact, not averaged away. ",
+                         "Facets: years since quitting."))
+
+print(p_env)
+dir.create("transition_probability_validation/outputs", showWarnings = FALSE, recursive = TRUE)
+ggsave("transition_probability_validation/outputs/verification_relapse_envelope_england.png",
+       p_env, width = 10, height = 6, dpi = 150)
 
 
 # ---- Note on what the STS could add ---------------------------------------

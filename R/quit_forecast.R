@@ -12,6 +12,10 @@
 #' - Kappa_t: Time trend index
 #' - Beta_x: Sensitivity of each age to the time trend
 #'
+#' Note that the output for the historical years is the reconstruction from
+#' this decomposition, not the input estimates: everything this function
+#' returns, past and future, has been through the smoothing and the rank-1 fit.
+#'
 #' @param data Data table with input probabilities.
 #' @param forecast_var Character - variable to forecast.
 #' @param forecast_type "continuing" (linear trend) or "stationary" (constant).
@@ -24,6 +28,17 @@
 #' @param time_horizon Integer - end year of forecast.
 #' @param smooth_rate_dim Vector - dimensions for raster smoothing (c(3,3)).
 #' @param k_smooth_age Integer - knots for smoothing age component.
+#' @param preserve_zeros Logical - if TRUE, cells that are exactly zero in the
+#' input are kept out of the raster smoothing and put back at the floor value
+#' afterwards, instead of being clamped to 1e-6 and averaged in with their
+#' neighbours. This exists for initiation. Since the cumulative-curve fix in
+#' p_dense, a zero in the initiation surface is a real zero - nobody in that
+#' cohort starts at that age - not survey noise. Clamping it and letting the
+#' focal mean run over it drags mass down from the ages just below, which is
+#' how the published initiation tail at ages 24-25 ended up 3 to 4 times the
+#' estimated values, and the age 26+ fill then carried that inflated number up
+#' to 30. Quitting and relapse keep the default FALSE: their zeros genuinely
+#' are sparse-cell noise and smoothing over them is the right treatment.
 #' @importFrom data.table copy := setDT dcast melt rbindlist
 #' @importFrom raster raster as.matrix focal
 #' @importFrom VGAM logitlink
@@ -42,7 +57,8 @@ quit_forecast <- function(
     jump_off_year = 2015,
     time_horizon = 2050,
     smooth_rate_dim = c(3, 3),
-    k_smooth_age = 3
+    k_smooth_age = 3,
+    preserve_zeros = FALSE
 ) {
   
   forecast_type <- match.arg(forecast_type)
@@ -67,6 +83,7 @@ quit_forecast <- function(
   
   # Storage for results
   results_list <- list()
+  n_zero_cells <- 0L
   
   # Loop through subgroups
   # (Loop is acceptable here as models are independent and N=10)
@@ -81,10 +98,29 @@ quit_forecast <- function(
       mat_vals <- as.matrix(mat_wide[, -1]) # Drop age col
       
       # 2. Clamping and Smoothing
-      # Clamp 0/1 to avoid Inf in logit
-      mat_vals[mat_vals <= 0] <- 1e-6
-      mat_vals[mat_vals >= 1] <- 1 - 1e-6
-      mat_vals[is.na(mat_vals)] <- 1e-6
+      
+      # Mark the true zeros before anything touches them. Only used when
+      # preserve_zeros is on.
+      zero_mask <- !is.na(mat_vals) & mat_vals <= 0
+      
+      if(preserve_zeros) {
+        # Keep real zeros out of the focal mean: as NA they contribute nothing
+        # to their neighbours' averages and take nothing from them. They go
+        # back in at the floor value after the smoothing, so the logit step
+        # below sees them as (effectively) zero rather than as a blend of the
+        # ages either side.
+        mat_vals[zero_mask] <- NA
+        n_zero_cells <- n_zero_cells + sum(zero_mask)
+      }
+      
+      # Clamp 0/1 to avoid Inf in logit. which() rather than a bare logical
+      # index, because with preserve_zeros on there are NAs in the matrix at
+      # this point and R refuses NA subscripts in assignment.
+      mat_vals[which(mat_vals <= 0)] <- 1e-6
+      mat_vals[which(mat_vals >= 1)] <- 1 - 1e-6
+      if(!preserve_zeros) {
+        mat_vals[is.na(mat_vals)] <- 1e-6
+      }
       
       # Raster Smoothing (Reduces survey noise)
       r <- raster::raster(mat_vals)
@@ -92,6 +128,13 @@ quit_forecast <- function(
       
       # Handle edges/NAs from smoothing
       mat_smooth[is.na(mat_smooth)] <- 1e-6
+      
+      if(preserve_zeros) {
+        # Restore the true zeros at the floor. The smoothing will have written
+        # neighbour averages into them; that is exactly the inflation we are
+        # avoiding.
+        mat_smooth[zero_mask] <- 1e-6
+      }
       
       # 3. SVD Decomposition (Lee-Carter)
       # Transpose so Rows=Year, Cols=Age for standard SVD processing
@@ -172,6 +215,11 @@ quit_forecast <- function(
       
       results_list[[paste(sex_i, imd_i)]] <- out_long
     }
+  }
+  
+  if(preserve_zeros && n_zero_cells > 0) {
+    message("   quit_forecast: ", n_zero_cells, " zero cells kept out of the surface ",
+            "smoothing and restored at the floor (preserve_zeros = TRUE).")
   }
   
   final_dt <- rbindlist(results_list)

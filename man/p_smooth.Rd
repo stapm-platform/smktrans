@@ -35,11 +35,7 @@ lot of exact zeros. Blanking a zero makes this function discontinuous: a cell
 holding 0 is dropped from the moving average entirely, while a cell holding
 1e-9 contributes in full. When roughly half the matrix sits on that boundary,
 as it does for the initiation density, an arbitrarily small change to the input
-flips cells in and out of every window covering them. Testing on the England
-data in July 2026, 0.1% of noise on the input to p_dense moved the published
-initiation probabilities by 51%. With blanking off it was 3%. That is what was
-behind the initiation estimates moving between the April and July 2026 runs
-without the estimation code having changed.
+flips cells in and out of every window covering them.
 }
 \examples{
 

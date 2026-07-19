@@ -20,27 +20,55 @@ calculate_net_initiation(
 
 \item{relapse_data}{Data.table. Relapse probabilities (must contain 'time_since_quit').}
 
-\item{pops}{Data.table. Population weights.}
+\item{pops}{Data.table. Not used. The synthetic cohort is a fixed 1000 people
+per subgroup, so there is nothing to weight. Kept in the signature because
+process_country_wrapper() and run_bootstrap_pipeline() both pass it.}
 
-\item{config}{List. Must contain 'country' and uncertainty params ('kn', 'kn_samp', 'kR').}
+\item{config}{List. Must contain 'country' and 'path'. The uncertainty
+parameters this used to document ('kn', 'kn_samp', 'kR') are not used
+either: uncertainty is handled by run_bootstrap_pipeline() calling this
+once per bootstrap sample.}
 
 \item{boot_mode}{Logical. If TRUE, skips writing to disk and returns the data.table directly.}
 }
 \description{
-Calculates "Net Initiation" probabilities by simulating a synthetic cohort 
-starting at age 12. This metric represents the net flow into the "Current Smoker" 
-state (Initiation + Relapse - Quitting) relative to the non-smoking population 
-at each age.
+Calculates "Net Initiation" probabilities by simulating a synthetic cohort.
+This metric represents the net flow into the "Current Smoker" state
+(Initiation + Relapse - Quitting) relative to the non-smoking population at
+each age.
 
-It solves the issue where high initiation rates at young ages are offset by 
+It solves the issue where high initiation rates at young ages are offset by
 high quit rates (experimentation vs. established smoking).
 }
 \details{
 \strong{Assumptions:}
 \itemize{
-  \item The cohort starts at age 12 with 100% Never Smokers.
-  \item Relapse probabilities are selected based on age-specific assumptions about 
-        average time since quitting: 
-        (12-17: 1yr, 18-24: 3yrs, 25-30: 5yrs).
+  \item The cohort starts with 100% Never Smokers at the youngest age present
+        in the initiation data.
+  \item Nobody dies. Over ages 12 to 30 that is close enough to true, and it
+        is what makes the denominator below equal to 1 - prevalence.
 }
+
+\strong{p_start_net can be negative.} Past the age where the cohort's smoking
+prevalence peaks, quitting runs ahead of initiation and relapse and the net
+flow turns negative. That is a real feature of the age profile and it is
+returned as it is. It used to be clamped at zero, which flattened the curve
+from about age 24 and hid the fact that the model has prevalence peaking
+there at all.
+
+\strong{Time since quitting.}
+
+This used to pick a relapse probability by assuming how long people at each
+age had been quit: 1 year if under 18, 3 years from 18 to 24, 5 years from 25.
+That produced a step change in p_relapse at exactly 18 and 25 (a 63% drop at
+18 on the England data), and because the relapse flow is a large part of the
+net flow, it put a spurious cliff into the published numbers. Net initiation
+fell 83% between 17 and 18 for no reason other than the age band changing.
+
+It is not necessary to assume any of it. The simulation already carries a
+stock of former smokers, so carry it BY time since quit instead: quitters
+enter at time_since_quit 0, survivors move up one year at a time, and the top
+category absorbs. Every former smoker then has the relapse probability that
+actually applies to them, and the assumption disappears rather than being
+replaced by a better one.
 }

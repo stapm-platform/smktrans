@@ -24,31 +24,34 @@ kn_samp_global <- 1000
 seed_global <- 20260716
 
 # --- LOAD FUNCTIONS ---
-func_path <- "R/"
 
-source(paste0(func_path, "aggregate_uncertainty.R"))
-source(paste0(func_path, "bin_var.R"))
-source(paste0(func_path, "build_reports.R"))
-source(paste0(func_path, "calculate_net_initiation.R"))
-source(paste0(func_path, "estimate_initiation.R"))
-source(paste0(func_path, "estimate_quitting.R"))
-source(paste0(func_path, "estimate_relapse.R"))
-source(paste0(func_path, "ever_smoke.R"))
-source(paste0(func_path, "generate_bootstrap_sample.R"))
-source(paste0(func_path, "init_adj.R"))
-source(paste0(func_path, "init_est.R"))
-source(paste0(func_path, "p_dense.R"))
-source(paste0(func_path, "p_smooth.R"))
-source(paste0(func_path, "prep_relapse.R"))
-source(paste0(func_path, "prep_surv.R"))
-source(paste0(func_path, "process_country_wrapper.R"))
-source(paste0(func_path, "quit_est.R"))
-source(paste0(func_path, "quit_forecast.R"))
-source(paste0(func_path, "relapse_forecast.R"))
-source(paste0(func_path, "run_bootstrap_pipeline.R"))
-source(paste0(func_path, "smoke_surv.R"))
-source(paste0(func_path, "trend_fit.R"))
-source(paste0(func_path, "write_excel_report.R"))
+devtools::load_all()
+
+#func_path <- "R/"
+
+#source(paste0(func_path, "aggregate_uncertainty.R"))
+#source(paste0(func_path, "bin_var.R"))
+#source(paste0(func_path, "build_reports.R"))
+#source(paste0(func_path, "calculate_net_initiation.R"))
+#source(paste0(func_path, "estimate_initiation.R"))
+#source(paste0(func_path, "estimate_quitting.R"))
+#source(paste0(func_path, "estimate_relapse.R"))
+#source(paste0(func_path, "ever_smoke.R"))
+#source(paste0(func_path, "generate_bootstrap_sample.R"))
+#source(paste0(func_path, "init_adj.R"))
+#source(paste0(func_path, "init_est.R"))
+#source(paste0(func_path, "p_dense.R"))
+#source(paste0(func_path, "p_smooth.R"))
+#source(paste0(func_path, "prep_relapse.R"))
+#source(paste0(func_path, "prep_surv.R"))
+#source(paste0(func_path, "process_country_wrapper.R"))
+#source(paste0(func_path, "quit_est.R"))
+#source(paste0(func_path, "quit_forecast.R"))
+#source(paste0(func_path, "relapse_forecast.R"))
+#source(paste0(func_path, "run_bootstrap_pipeline.R"))
+#source(paste0(func_path, "smoke_surv.R"))
+#source(paste0(func_path, "trend_fit.R"))
+#source(paste0(func_path, "write_excel_report.R"))
 
 # -------------------------------------------------------------------------
 # 2. Execution Configuration
@@ -83,7 +86,12 @@ config_eng <- list(
   
   # Initiation Params
   max_age_init = 30, age_trend_limit_init = 25,
-  init_model_choice = "model8",
+  init_model_choice = "auto", # or "model8" to fix it on a safe model
+  init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
+  init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
+  init_auto_floor          = 0.02,  # projections must stay inside...
+  init_auto_ceiling        = 0.98,  # ...this range out to the horizon
+  init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
@@ -129,7 +137,12 @@ config_scot <- list(
   
   # Initiation Params
   max_age_init = 30, age_trend_limit_init = 25,
-  init_model_choice = "model8",
+  init_model_choice = "auto", # or "model8" to fix it on a safe model
+  init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
+  init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
+  init_auto_floor          = 0.02,  # projections must stay inside...
+  init_auto_ceiling        = 0.98,  # ...this range out to the horizon
+  init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
@@ -176,7 +189,12 @@ config_wales <- list(
   
   # Initiation Params
   max_age_init = 30, age_trend_limit_init = 25,
-  init_model_choice = "model8",
+  init_model_choice = "auto", # or "model8" to fix it on a safe model
+  init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
+  init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
+  init_auto_floor          = 0.02,  # projections must stay inside...
+  init_auto_ceiling        = 0.98,  # ...this range out to the horizon
+  init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 

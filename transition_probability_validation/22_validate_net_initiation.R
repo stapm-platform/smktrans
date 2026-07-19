@@ -34,8 +34,31 @@ source("transition_probability_validation/00_validation_utils.R")
 
 # ---- Parameters -----------------------------------------------------------
 
-val_years  <- 2019:2023
+# Validation years. These are chosen to sit entirely inside the model's
+# ESTIMATION window, for two reasons. First, initiation is only estimated to
+# 2017: the forecast jumps off at last_year - 1, so 2018 onwards in the
+# published outputs is trend continuation, and comparing a forecast against a
+# survey tests the forecast, not the estimation. Second, the STS switched to
+# telephone interviewing in April 2020 and barely sampled 16-17 year olds for
+# the next two years (cells of 6-29 people), so any window touching 2020-21 is
+# soft at exactly the ages that matter for initiation. Waves in 2013-2017 are
+# face-to-face with full sampling, and their 12-month lookback reaches into 2012
+# at the earliest, which is still inside the estimation window. A comparison
+# against 2019+ waves is a forecast check and belongs in a separately labelled
+# section if we want it, not here.
+val_years <- 2013:2017
 sts_ages   <- 16:35        # read wider than we plot, so the difference at the
+
+# Defined here, not inherited. An earlier version of this script used plot_ages
+# without defining it, and because these scripts get sourced into one session it
+# quietly picked up the QUIT script's 25:80 - which cut the initiation plot off
+# at exactly the ages where initiation happens. The quit restriction is about
+# the quit denominator and has no business here. 16 is the STS sampling floor;
+# 34 is the last age the cohort diagonal reaches when reading to 35. The model
+# line will stop at 30 because the initiation pipeline runs to age 30, and the
+# STS carrying on without it past 30 is informative, not a mismatch.
+plot_ages  <- 16:34
+
                            # top of the plotted range uses a real neighbour
 boot_B     <- 1000
 boot_seed  <- 20260716
@@ -49,38 +72,39 @@ data_tk <- sts_read_england(years = val_years, ages = sts_ages)
 # sts_net_init_by_age lives in 00_validation_utils.R so that the report can use
 # it too. See there for why the prevalence is smoothed before it is differenced.
 
-net_sts <- sts_boot(
-  dt          = data_tk,
-  fn          = function(d, a) sts_net_init_by_age(d, a, smooth_df = smooth_df),
-  value_var   = "p_start_net",
-  domain_ages = sts_ages,
-  B           = boot_B,
-  seed        = boot_seed
+net_domain <- sts_domain(sts_ages)
+
+# Two STS estimators, deliberately shown together.
+#
+# The cross-sectional one differences prevalence over age within the pooled
+# sample. Its age gradient compares different birth cohorts, and with initiation
+# having fallen over 2005-2019 the older cohorts carry more smoking, so it reads
+# net initiation as staying positive to older ages than it really does. That is
+# exactly where we are trying to judge the model, so it is the wrong ruler there.
+#
+# The pseudo-cohort one follows the same birth cohort from one survey year to
+# the next - prev(a+1, t+1) against prev(a, t) - which cancels the cohort effect
+# by construction. It is the primary comparison. The cross-sectional one stays on
+# the plot so the size of the cohort effect is visible rather than asserted: the
+# gap between the two green series IS the cohort effect, measured from the data.
+
+net_sts_cohort <- sts_boot(
+  dt        = data_tk,
+  fn        = function(d, dom) sts_net_init_cohort(d, dom, smooth_df = smooth_df),
+  value_var = "p_start_net",
+  domain    = net_domain,
+  B         = boot_B,
+  seed      = boot_seed
 )
 
-
-# ---- Choose the age range from the data, do not assume it ------------------
-# Net initiation only means "initiation" while prevalence is still rising. Find
-# the last age at which the central estimate is still positive, and stop there.
-
-prev_point <- sts_net_init_by_age(data_tk, sts_ages, smooth_df = smooth_df)
-last_rising <- suppressWarnings(max(prev_point[!is.na(p_start_net) & p_start_net > 0]$age))
-
-if (!is.finite(last_rising)) {
-  stop("22_validate_net_initiation: prevalence is never rising over ",
-       paste(range(sts_ages), collapse = "-"),
-       ", so net initiation cannot be validated from these data.")
-}
-
-plot_ages <- min(sts_ages):last_rising
-message("Prevalence stops rising after age ", last_rising,
-        ". Validating over ages ", min(plot_ages), "-", max(plot_ages), ".")
-if (last_rising < 20) {
-  warning("Prevalence stops rising at age ", last_rising, ", which leaves a very ",
-          "short window. Check the STS prevalence curve before reading anything ",
-          "into this plot.")
-}
-
+net_sts_cross <- sts_boot(
+  dt        = data_tk,
+  fn        = function(d, dom) sts_net_init_by_age(d, dom, smooth_df = smooth_df),
+  value_var = "p_start_net",
+  domain    = net_domain,
+  B         = boot_B,
+  seed      = boot_seed
+)
 
 # ---- smktrans side --------------------------------------------------------
 
@@ -116,27 +140,29 @@ setnames(net_ref, "value", "p_start_net")
 
 # ---- Plot -----------------------------------------------------------------
 
-sts_plot   <- net_sts[age %in% plot_ages & !is.na(est)]
+sts_coh   <- net_sts_cohort[age %in% plot_ages & !is.na(est)]
+sts_cro   <- net_sts_cross[age %in% plot_ages & !is.na(est)]
 model_plot <- net_ref[age %in% plot_ages]
 
 p <- ggplot() +
+  geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey50") +
+  geom_ribbon(data = sts_coh, aes(x = age, ymin = lower, ymax = upper,
+                                  fill = "STS, cohorts followed"), alpha = 0.2) +
+  geom_point(data = sts_coh, aes(x = age, y = est, colour = "STS, cohorts followed"),
+             size = 1.6) +
+  geom_point(data = sts_cro, aes(x = age, y = est, colour = "STS, single cross-section"),
+             size = 1.6, shape = 1) +
   geom_line(data = model_plot, aes(x = age, y = p_start_net, colour = "smktrans estimate"),
             linewidth = 1) +
-  geom_ribbon(data = sts_plot, aes(x = age, ymin = lower, ymax = upper,
-                                   fill = "Smoking Toolkit Study"), alpha = 0.2) +
-  geom_point(data = sts_plot, aes(x = age, y = est, colour = "Smoking Toolkit Study"),
-             size = 1.5) +
   scale_colour_manual(values = c("smktrans estimate" = "#1f78b4",
-                                 "Smoking Toolkit Study" = "#33a02c")) +
-  scale_fill_manual(values = c("Smoking Toolkit Study" = "#33a02c")) +
-  theme_minimal() +
+                                 "STS, cohorts followed" = "#33a02c",
+                                 "STS, single cross-section" = "#b2df8a")) +
+  scale_fill_manual(values = c("STS, cohorts followed" = "#33a02c")) +
+  theme_minimal() + theme(legend.position = "bottom") +
   labs(x = "Age", y = "P(net initiation)", colour = NULL, fill = NULL,
        title = "Net smoking initiation, England",
-       subtitle = sprintf(paste0("smktrans (%s) vs Smoking Toolkit Study (%s). ",
-                                 "Validated only while prevalence is rising."),
-                          paste(range(model_years), collapse = "-"),
-                          paste(range(val_years), collapse = "-"))) +
-  theme(legend.position = "bottom")
+       subtitle = paste0("Following cohorts across survey years removes the cohort effect\n",
+                         "that inflates the single cross-section at older ages. Band is 95%."))
 
 print(p)
 
@@ -146,7 +172,7 @@ ggsave("transition_probability_validation/outputs/validation_net_initiation_engl
 
 # ---- Numerical summary ----------------------------------------------------
 
-cmp <- merge(sts_plot[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
+cmp <- merge(sts_coh[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
              model_plot[, .(age, model = p_start_net)], by = "age")
 cmp[, model_inside_sts_ci := model >= sts_lo & model <= sts_hi]
 

@@ -55,10 +55,24 @@ estimate_relapse <- function(config, survey_data, boot_mode = FALSE) {
   # -------------------------------------------------------------------------
   if (!boot_mode) message("   > Forecasting Relapse Trends...")
   
+  # Stationary, not continuing, and it is worth recording why. Hawkins is a
+  # single study with no time dimension, so the only year-to-year movement in
+  # the relapse surface is England's covariate profile shifting under the
+  # re-weighting - and at ages 70+, where the HSE cells are thinnest, a good
+  # part of that shift is things like mental health ascertainment rising over
+  # the survey years rather than relapse behaviour changing. The continuing
+  # forecast fitted a trend to that and compounded it: by 2040 it was scaling
+  # relapse by more than 6 at ages 75-83 and 1.4 at 50, asserting probabilities
+  # outside anything any combination of Hawkins covariates produces. The
+  # envelope check in the validation folder is what caught it. Holding the
+  # jump-off surface flat claims nothing the evidence does not contain. If a
+  # relapse trend is ever wanted, the honest route is to project the covariate
+  # profiles themselves and re-weight Hawkins over the projection, not to fit
+  # a curve to the output.
   relapse_forecast_data <- quit_forecast(
     data = copy(relapse_data$relapse_by_age_imd),
     forecast_var = "p_relapse",
-    forecast_type = "continuing",
+    forecast_type = "stationary",
     cont_limit = config$cont_limit,
     first_year = config$first_year,
     jump_off_year = config$last_year - 1,
