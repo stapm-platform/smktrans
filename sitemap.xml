@@ -6,9 +6,11 @@
 <url><loc>https://stapm-platform.github.io/smktrans/articles/report_wales.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/articles/smktrans.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/articles/smk_trans_prob_estimation.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/articles/validation_england.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/authors.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/index.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/LICENSE.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/news/index.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/aggregate_uncertainty.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/bin_var.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/build_web_reports.html</loc></url>
@@ -34,8 +36,11 @@
 <url><loc>https://stapm-platform.github.io/smktrans/reference/quit_forecast.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/relapse_forecast.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/run_bootstrap_pipeline.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/SmkContAbst.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/smktrans-package.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/smoke_surv.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/smooth_cdf.html</loc></url>
+<url><loc>https://stapm-platform.github.io/smktrans/reference/thin_trend_draws.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/trend_fit.html</loc></url>
 <url><loc>https://stapm-platform.github.io/smktrans/reference/write_excel_report.html</loc></url>
 </urlset>

@@ -17,13 +17,15 @@
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Workflow for Estimating Smoking Transition Probabilities">
-<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-167990045-1"></script><script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap">
+<!-- Google Analytics: same GA4 property as the main STAPM site, so package
+     site visits count towards the same totals. The old params.ganalytics
+     entry was a Universal Analytics ID, retired by Google in 2023. --><script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4RP5QG31C"></script><script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
-  gtag('config', 'UA-167990045-1');
-</script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap">
+  gtag('config', 'G-Q4RP5QG31C');
+</script>
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +35,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">smktrans</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,8 +56,10 @@
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical documentation</h6></li>
     <li><a class="dropdown-item" href="../articles/smk_trans_prob_estimation.html">Estimation workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/validation_england.html">Validation: England</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/stapm-platform/smktrans" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -92,6 +96,10 @@ Tobacco Policy Model (STPM).</p>
 We do not estimate rates in isolation; instead, we use a “Stock and
 Flow” approach where the robustly measured number of smokers (the Stock)
 is used to solve for the unobservable quit rates (the Flow).</p>
+<p>The package now carries validation code that compares the estimates
+against survey data that had no part in producing them. The results of
+the validation for England are written up in the companion vignette,
+<em>Validation of the England transition probabilities</em>.</p>
 <div class="section level3">
 <h3 id="the-workflow-at-a-glance">The Workflow at a Glance<a class="anchor" aria-label="anchor" href="#the-workflow-at-a-glance"></a>
 </h3>
@@ -108,28 +116,45 @@ Smoker becoming a Smoker at age
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
 in year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.</p>
-<p><strong>The Challenge:</strong> Older people often forget exactly
-when they started smoking (“Recall Bias”). Furthermore, differential
-mortality means that early initiators are less likely to survive to be
-surveyed in older age. Using raw recall data alone would suggest
-initiation rates were lower in the past than they actually were.</p>
-<p><strong>The Solution:</strong> The <strong>Holford Method</strong>.
+<p><strong>The Challenge:</strong> People often forget exactly when they
+started smoking (“Recall Bias”). Furthermore, differential mortality
+means that early initiators are less likely to survive to be surveyed in
+older age. Using raw recall data alone would suggest initiation rates
+were lower in the past than they actually were.</p>
+<p><strong>The Solution:</strong> The <a href="https://doi.org/10.1016/j.amepre.2013.10.022" class="external-link">Holford Method</a>.
 We reconstruct histories based on reported starting ages (subject to
 bias) and adjust them to match the robust “Ever-Smoker” prevalence
 directly observed in each year.</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Reconstruct (<code>init_est</code>):</strong> Builds the
-“Risk Set” for every cohort using cross-sectional recall.<br>
+“Risk Set” for every cohort using cross-sectional recall. Never smokers
+carry no starting age, so what this estimates is the <em>distribution of
+starting ages among people who ever start</em>; the level of the curve
+is pinned down entirely by the calibration in step 3.<br>
 </li>
 <li>
 <strong>Target (<code>ever_smoke</code>):</strong> Fits a
 Generalized Linear Model (Quasibinomial) to estimate the true proportion
-of Ever-Smokers at age 30.<br>
+of Ever-Smokers at age 30. The model structure can now be selected from
+the data with <code>model = "auto"</code>: candidates are scored on
+their ability to predict held-out survey years, the simplest model
+within a small margin of the best wins, and the winner’s projection is
+checked against guard rails before it is accepted. The scoreboard
+travels with the output so the choice is auditable.<br>
 </li>
 <li>
 <strong>Calibrate (<code>init_adj</code>):</strong> Scales the raw
-curves so their cumulative sum matches the targets.</li>
+curves so their cumulative sum matches the targets. Cohorts too young to
+have been observed at the reference age are first <em>completed</em>:
+their curve is multiplied by the ratio
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo stretchy="false" form="prefix">(</mo><mn>30</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>F</mi><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">F(30)/F(r)</annotation></semantics></math>
+measured on the most recent fully observed cohorts, so the age-30 target
+is compared against an age-30 quantity rather than an
+age-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+one. This lets the youngest cohorts with usable data calibrate on their
+own numbers (<code>min_ref = 18</code>) instead of inheriting a borrowed
+profile.</li>
 </ol>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Reconstruct longitudinal histories from cross-sectional recall</span></span>
@@ -139,20 +164,34 @@ curves so their cumulative sum matches the targets.</li>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. Estimate the 'Truth': Proportion of ever-smokers at age 25-34</span></span>
-<span><span class="co"># We use Model 8 (Sex + IMD + Year_Bin) for a stable target</span></span>
+<span><span class="co"># "auto" scores the candidate structures on held-out years and picks the</span></span>
+<span><span class="co"># simplest one that predicts well; an explicit "model8" etc. still works</span></span>
 <span><span class="va">target_trends</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ever_smoke.html">ever_smoke</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">survey_data</span>,</span>
-<span>  model <span class="op">=</span> <span class="st">"model8"</span>, </span>
+<span>  model <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  age_cats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"25-34"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Adjust the curves using the Holford method</span></span>
-<span><span class="co"># This corrects the recall bias to match the 'truth' at age 30</span></span>
+<span><span class="co"># This corrects the recall bias to match the 'truth' at age 30, completing</span></span>
+<span><span class="co"># truncated cohorts up to an age-30 equivalent before the comparison</span></span>
 <span><span class="va">init_final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/init_adj.html">init_adj</a></span><span class="op">(</span></span>
 <span>  init_data <span class="op">=</span> <span class="va">init_raw</span>,</span>
 <span>  ever_smoke_data <span class="op">=</span> <span class="va">target_trends</span><span class="op">$</span><span class="va">predicted_values</span>,</span>
-<span>  ref_age <span class="op">=</span> <span class="fl">30</span></span>
+<span>  ref_age <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  min_ref <span class="op">=</span> <span class="fl">18</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="model-selection-and-the-bootstrap">Model selection and the bootstrap<a class="anchor" aria-label="anchor" href="#model-selection-and-the-bootstrap"></a>
+</h3>
+<p>Selection is a base-run job. The base estimation chooses the
+<code>ever_smoke</code> structure, writes the choice next to the other
+outputs, and every bootstrap iteration reads it back rather than
+re-selecting. One model therefore underlies the whole uncertainty
+interval; the bootstrap measures sampling variation around a fixed
+structure, never a blend of structures.</p>
+<p><img src="auto_selection.png" class="r-plt" alt="" width="90%" style="display: block; margin: auto;"></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="phase-2-relapse-the-reflow">Phase 2: Relapse (The Reflow)<a class="anchor" aria-label="anchor" href="#phase-2-relapse-the-reflow"></a>
@@ -165,8 +204,15 @@ However, general cross-sectional surveys rarely capture enough long-term
 quitters to estimate late-stage relapse (5+ years post-quit)
 reliably.</p>
 <p><strong>The Solution:</strong> We combine survey demographics with
-clinical evidence (Hawkins et al., 2010) which provides the
-<em>shape</em> of the relapse hazard curve.</p>
+clinical evidence (<a href="https://doi.org/10.1093/ntr/ntq175" class="external-link">Hawkins
+et al., 2010</a>) which provides the <em>shape</em> of the relapse
+hazard curve.</p>
+<p>The packaged <code>hawkins_relapse</code> table is built by
+<code>data-raw/Relapse_Hawkins2010/prep_Hawkins_relapse.R</code>. The
+build pools the paper’s sparse years 6–9 into a single monotone tail,
+and calibrates the baseline odds so that a cohort reconstructed from the
+paper’s own Table 1 reproduces its reported one-year relapse rate
+exactly. The script verifies this on every run.</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Map (<code>prep_relapse</code>):</strong> Calculates the
@@ -175,9 +221,14 @@ mapping their specific characteristics to the Hawkins hazard
 ratios.<br>
 </li>
 <li>
-<strong>Forecast (<code>relapse_forecast</code>):</strong> Projects
-the general trend forward and applies it as a scalar to the detailed TSQ
-curves.</li>
+<strong>Hold (<code>relapse_forecast</code>):</strong> Carries the
+surface forward <em>unchanged</em>. Hawkins is a single study with no
+time dimension, so the only year-to-year movement in the relapse surface
+comes from the survey’s demographic re-weighting; fitting a trend to
+that and projecting it produced relapse probabilities outside anything
+the evidence contains, which the validation suite’s envelope check
+caught. The forecast is therefore stationary: it claims nothing the data
+does not.</li>
 </ol>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Map survey demographics to Hawkins' clinical hazard ratios</span></span>
@@ -186,8 +237,8 @@ curves.</li>
 <span>  hawkins_relapse <span class="op">=</span> <span class="fu">smktrans</span><span class="fu">::</span><span class="va"><a href="../reference/hawkins_relapse.html">hawkins_relapse</a></span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Forecast the trend and apply it to the detailed Time-Since-Quit data</span></span>
-<span><span class="co"># Note: relapse_trend_forecast is derived from a preliminary run of quit_forecast</span></span>
+<span><span class="co"># 2. Carry the surface forward unchanged (forecast_type = "stationary"</span></span>
+<span><span class="co"># inside estimate_relapse): the evidence has no time dimension to project</span></span>
 <span><span class="va">relapse_final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relapse_forecast.html">relapse_forecast</a></span><span class="op">(</span></span>
 <span>  relapse_forecast_data <span class="op">=</span> <span class="va">relapse_trend_forecast</span>, </span>
 <span>  relapse_by_age_imd_timesincequit <span class="op">=</span> <span class="va">relapse_data</span><span class="op">$</span><span class="va">relapse_by_age_imd_timesincequit</span></span>
@@ -207,6 +258,12 @@ flows from jagged data. We fit a <strong>Multinomial Response
 Surface</strong> to smooth the data over time and age.</p>
 <p>The model assumes the log-odds of being in a specific state are a
 function of high-order interactions:<br><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msub><mi>P</mi><mrow><mi>s</mi><mi>t</mi><mi>a</mi><mi>t</mi><mi>e</mi></mrow></msub><msub><mi>P</mi><mrow><mi>r</mi><mi>e</mi><mi>f</mi></mrow></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>f</mi><mo stretchy="false" form="prefix">(</mo><msup><mtext mathvariant="normal">Age</mtext><mn>4</mn></msup><mo>,</mo><msup><mtext mathvariant="normal">Year</mtext><mn>3</mn></msup><mo>,</mo><mtext mathvariant="normal">Sex</mtext><mo>,</mo><mtext mathvariant="normal">IMD</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\ln\left(\frac{P_{state}}{P_{ref}}\right) = f(\text{Age}^4, \text{Year}^3, \text{Sex}, \text{IMD})</annotation></semantics></math></p>
+<p>This surface has been tested against held-out survey years (fit on
+all years but the last, predict the last, score against the people
+actually surveyed in it) and beats a carry-last-year-forward baseline
+comfortably. Any proposed change to it faces the same test: the harness
+lives at
+<code>transition_probability_validation/30_trend_holdout.R</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="step-3-2-differential-mortality-smoke_surv">Step 3.2: Differential Mortality (<code>smoke_surv</code>)<a class="anchor" aria-label="anchor" href="#step-3-2-differential-mortality-smoke_surv"></a>
@@ -277,7 +334,7 @@ perfectly reproduce the observed prevalence trends when run forward.</p>
 <p><strong>Objective:</strong> Project these rates to 2040 and
 beyond.</p>
 <p><strong>The Solution:</strong> The <strong>Lee-Carter SVD
-Method</strong>.<br>
+Method</strong> (see the R package <a href="https://doi.org/10.32614/CRAN.package.demography" class="external-link">Demography</a>).<br>
 We employ a Singular Value Decomposition (SVD) approach, commonly used
 in mortality forecasting. This allows us to model the logit of the rates
 as a linear combination of an age-specific profile and a time-varying
@@ -298,6 +355,18 @@ The sensitivity of each age group to the time trend.</p>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>κ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\kappa_t</annotation></semantics></math>)
 forward linearly and recombine it with the <em>Shape</em>
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>x</mi></msub><mo>,</mo><msub><mi>β</mi><mi>x</mi></msub></mrow><annotation encoding="application/x-tex">\alpha_x, \beta_x</annotation></semantics></math>).</p>
+<p>Two things are worth knowing about this function. First, everything
+it returns – past years as well as future – is the
+<em>reconstruction</em> from the decomposition, not the input estimates:
+the published historical surface is the smoothed rank-1 fit. Second, for
+initiation it runs with <code>preserve_zeros = TRUE</code>: since the
+cumulative-curve fix in <code>p_dense</code>, a zero in the initiation
+surface means nobody in that cohort starts at that age, and those cells
+are held out of the surface smoothing rather than clamped and averaged
+with their neighbours – which previously inflated the published
+initiation tail at ages 24–25 by a factor of 3 to 4. Quitting and
+relapse leave the flag off; their zeros are sparse-cell noise and
+smoothing over them is the right treatment.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Forecast Quitting</span></span>
 <span><span class="va">quit_future</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/quit_forecast.html">quit_forecast</a></span><span class="op">(</span></span>
@@ -308,12 +377,44 @@ forward linearly and recombine it with the <em>Shape</em>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Forecast Initiation (using the same function)</span></span>
+<span><span class="co"># Zeros in the surface are real zeros and are kept out of the smoothing;</span></span>
+<span><span class="co"># the trend jumps off from the last estimated year rather than the year before</span></span>
 <span><span class="va">init_future</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/quit_forecast.html">quit_forecast</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">init_final</span>,</span>
 <span>  forecast_var <span class="op">=</span> <span class="st">"p_start"</span>,</span>
 <span>  forecast_type <span class="op">=</span> <span class="st">"continuing"</span>,</span>
-<span>  time_horizon <span class="op">=</span> <span class="fl">2040</span></span>
+<span>  time_horizon <span class="op">=</span> <span class="fl">2040</span>,</span>
+<span>  preserve_zeros <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="phase-6-checking-the-answer">Phase 6: Checking the Answer<a class="anchor" aria-label="anchor" href="#phase-6-checking-the-answer"></a>
+</h2>
+<p><strong>Objective:</strong> Establish that the estimates agree with
+data that had no part in producing them.</p>
+<p>Two instruments do this work.</p>
+<p><strong>Net initiation
+(<code>calculate_net_initiation</code>):</strong> a synthetic cohort is
+walked through the estimated probabilities, tracking never smokers,
+current smokers, and former smokers <em>by time since quit</em> –
+quitters enter at zero years and age one band per year, so every former
+smoker relapses at the rate that actually applies to them. The net flow
+into smoking,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">initiation</mtext><mo>−</mo><mtext mathvariant="normal">quitting</mtext><mo>+</mo><mtext mathvariant="normal">relapse</mtext><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\text{initiation} - \text{quitting} + \text{relapse})</annotation></semantics></math>
+relative to the non-smoking population, is a quantity an independent
+prevalence survey can also measure. It turns negative past the age where
+the cohort’s smoking prevalence peaks, and is reported as such rather
+than clamped at zero: the location of that sign change is itself part of
+what gets compared.</p>
+<p><img src="net_init_cohort.png" class="r-plt" alt="" width="90%" style="display: block; margin: auto;"></p>
+<p><strong>The validation suite</strong>
+(<code>transition_probability_validation/</code> in the project
+repository) compares quitting and net initiation against the Smoking
+Toolkit Study over the estimated years, verifies the relapse surface
+against an envelope derived from its own Hawkins inputs, and knits the
+results into a standing report. The report doubles as a regression test:
+it is re-run after any change to the estimation, and the England results
+are written up in the companion vignette.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

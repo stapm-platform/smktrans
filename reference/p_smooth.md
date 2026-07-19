@@ -7,7 +7,7 @@ within a particular year.
 ## Usage
 
 ``` r
-p_smooth(data, value_var, window_size = 3)
+p_smooth(data, value_var, window_size = 3, blank_zeros = TRUE)
 ```
 
 ## Arguments
@@ -25,10 +25,29 @@ p_smooth(data, value_var, window_size = 3)
   \- Integer - must be an odd number - the number of years covered by
   the moving average window.
 
+- blank_zeros:
+
+  Logical - if TRUE (the default) values of 0 and 1 are set to NA before
+  smoothing and then filled by interpolating the age pattern. This
+  treats a zero as "nothing was observed here" rather than "the
+  probability is zero". Set to FALSE when the caller has already
+  smoothed the values and a zero means what it says. See the note below.
+
 ## Value
 
 Returns a data table the same as data but with smoothed probability
 values.
+
+## Details
+
+On blank_zeros. The default TRUE is the original behaviour and is kept
+so that prep_relapse is unaffected. It is not a safe default when the
+input contains a lot of exact zeros. Blanking a zero makes this function
+discontinuous: a cell holding 0 is dropped from the moving average
+entirely, while a cell holding 1e-9 contributes in full. When roughly
+half the matrix sits on that boundary, as it does for the initiation
+density, an arbitrarily small change to the input flips cells in and out
+of every window covering them.
 
 ## Examples
 

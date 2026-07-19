@@ -3,13 +3,14 @@
 and fills any remaining missing values by
 approximating the age pattern within a particular year."><meta property="og:description" content="Applies a 2D moving average smooth to the trends over age and period,
 and fills any remaining missing values by
-approximating the age pattern within a particular year."><meta property="og:image" content="https://stapm-platform.github.io/smktrans/logo.png"><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-167990045-1"></script><script>
+approximating the age pattern within a particular year."><meta property="og:image" content="https://stapm-platform.github.io/smktrans/logo.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap"><!-- Google Analytics: same GA4 property as the main STAPM site, so package
+     site visits count towards the same totals. The old params.ganalytics
+     entry was a Universal Analytics ID, retired by Google in 2023. --><script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4RP5QG31C"></script><script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
-  gtag('config', 'UA-167990045-1');
-</script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap"></head><body>
+  gtag('config', 'G-Q4RP5QG31C');
+</script></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -17,7 +18,7 @@ approximating the age pattern within a particular year."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">smktrans</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +37,9 @@ approximating the age pattern within a particular year."><meta property="og:imag
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical documentation</h6></li>
     <li><a class="dropdown-item" href="../articles/smk_trans_prob_estimation.html">Estimation workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/validation_england.html">Validation: England</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/stapm-platform/smktrans" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
@@ -58,7 +61,7 @@ approximating the age pattern within a particular year.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">p_smooth</span><span class="op">(</span><span class="va">data</span>, <span class="va">value_var</span>, window_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">p_smooth</span><span class="op">(</span><span class="va">data</span>, <span class="va">value_var</span>, window_size <span class="op">=</span> <span class="fl">3</span>, blank_zeros <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -77,10 +80,28 @@ approximating the age pattern within a particular year.</p>
 <dd><p>- Integer - must be an odd number -
 the number of years covered by the moving average window.</p></dd>
 
+
+<dt id="arg-blank-zeros">blank_zeros<a class="anchor" aria-label="anchor" href="#arg-blank-zeros"></a></dt>
+<dd><p>Logical - if TRUE (the default) values of 0 and 1 are set to
+NA before smoothing and then filled by interpolating the age pattern. This treats
+a zero as "nothing was observed here" rather than "the probability is zero".
+Set to FALSE when the caller has already smoothed the values and a zero means
+what it says. See the note below.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Returns a data table the same as data but with smoothed probability values.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>On blank_zeros. The default TRUE is the original behaviour and is kept so that
+prep_relapse is unaffected. It is not a safe default when the input contains a
+lot of exact zeros. Blanking a zero makes this function discontinuous: a cell
+holding 0 is dropped from the moving average entirely, while a cell holding
+1e-9 contributes in full. When roughly half the matrix sits on that boundary,
+as it does for the initiation density, an arbitrarily small change to the input
+flips cells in and out of every window covering them.</p>
     </div>
 
     <div class="section level2">

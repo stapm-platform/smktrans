@@ -16,8 +16,8 @@
 - [`run_bootstrap_pipeline()`](https://stapm-platform.github.io/smktrans/reference/run_bootstrap_pipeline.md)
   : Run the Master Bootstrap Pipeline
 - [`aggregate_uncertainty()`](https://stapm-platform.github.io/smktrans/reference/aggregate_uncertainty.md)
-  : Aggregate Bootstrap Uncertainty (Now includes Median Central
-  Estimate)
+  : Aggregate Bootstrap Uncertainty (median central estimate, CI bounds,
+  SE)
 - [`generate_bootstrap_sample()`](https://stapm-platform.github.io/smktrans/reference/generate_bootstrap_sample.md)
   : Generate a Single Bootstrap Sample for Complex Survey Data
 - [`generate_uncertainty()`](https://stapm-platform.github.io/smktrans/reference/generate_uncertainty.md)
@@ -38,7 +38,7 @@
 - [`init_est()`](https://stapm-platform.github.io/smktrans/reference/init_est.md)
   : Cohort specific smoking initiation
 - [`init_adj()`](https://stapm-platform.github.io/smktrans/reference/init_adj.md)
-  : Adjust probabilities of ever-smoking (Holford Method)
+  : Adjust initiation curves for recall bias
 
 ## Quitting smoking
 
@@ -61,6 +61,8 @@
   : Prepare long-term relapse probabilities
 - [`relapse_forecast()`](https://stapm-platform.github.io/smktrans/reference/relapse_forecast.md)
   : Forecast relapse probabilities (Time-Since-Quit Stratified)
+- [`SmkContAbst()`](https://stapm-platform.github.io/smktrans/reference/SmkContAbst.md)
+  : Continuous smoking abstinence rates over time
 
 ## Misc
 
@@ -70,6 +72,8 @@
   : Convert probabilities of ever-smoking to age-specific probabilities
 - [`p_smooth()`](https://stapm-platform.github.io/smktrans/reference/p_smooth.md)
   : Smooth age and period pattern in probability values
+- [`thin_trend_draws()`](https://stapm-platform.github.io/smktrans/reference/thin_trend_draws.md)
+  : Cut bootstrap trend draws down to what the targets actually need
 
 ## Data
 

@@ -1,9 +1,10 @@
-# Adjust probabilities of ever-smoking (Holford Method)
+# Adjust initiation curves for recall bias
 
-Calibrates retrospective recall data against observed period trends
-using the Holford (2014) method. This ensures that cohort histories sum
-up to match the "truth" seen in cross-sectional surveys at specific
-ages.
+Scales the cohort initiation curves from init_est() so that the
+cumulative probability of ever smoking at the reference age matches the
+trend in ever smoking estimated by ever_smoke(). init_est() gives us the
+shape of the curve (the distribution of starting ages among people who
+ever start); this function pins down the level.
 
 ## Usage
 
@@ -13,10 +14,11 @@ init_adj(
   ever_smoke_data,
   ref_age = 30,
   fix_ref_age = FALSE,
-  min_ref = 25,
+  min_ref = 18,
   cohorts = 1973:2020,
   period_start = 2003,
-  period_end = 2018
+  period_end = 2018,
+  n_completion_cohorts = 10
 )
 ```
 
@@ -40,7 +42,12 @@ init_adj(
 
 - min_ref:
 
-  Integer - minimum age to allow for reference.
+  Integer - youngest reference age a truncated cohort may calibrate at.
+  With the completion step this can sit lower than it used to: the old
+  guard against truncation bias was to refuse cohorts seen only to their
+  early twenties, whereas now the bias is corrected rather than avoided.
+  It should not go so low that F(r) is a small and noisy fraction of
+  F(ref_age).
 
 - cohorts:
 
@@ -53,3 +60,31 @@ init_adj(
 - period_end:
 
   Integer - last year of data.
+
+- n_completion_cohorts:
+
+  Integer - how many of the most recent fully observed cohorts to
+  average the completion ratios over.
+
+## Details
+
+The trend target is the level of ever smoking at age ref_age:
+ever_smoke() estimates it on 25-34 year olds and we map each year's
+value to the cohort that is ref_age in that year. For cohorts old enough
+to have been surveyed at ref_age, the raw curve and the target refer to
+the same age and the scalar is simply target / raw.
+
+Younger cohorts have not been seen that far. Their raw curve stops at
+whatever age the surveys last observed them, and its value there is
+missing the initiation that happens between that age and ref_age.
+Dividing the age-30 target by, say, an age-21 curve quietly assumes
+nobody starts between 21 and 30 - and the cohorts we did see all the way
+say that is wrong by about 5 21 and 2 multiplying it by F(ref_age) /
+F(r) averaged over the most recent fully observed cohorts within sex and
+IMD quintile. That trades the "initiation stops dead at the truncation
+age" assumption for "the timing of initiation, conditional on ever
+starting, is stable across adjacent cohorts", which is a much weaker
+thing to assume and one we can check in the data.
+
+Initiation is still assumed to stop after ref_age: the curve is carried
+forward flat from there.

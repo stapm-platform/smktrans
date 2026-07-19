@@ -5,13 +5,14 @@ through `B` bootstrap samples, saving intermediate results to a temporary direct
 before combining them into final output tables."><meta property="og:description" content="Executes the optimized bootstrapping loop for smoking transition probabilities.
 This function pre-calculates mortality risks once to save memory, then iterates
 through `B` bootstrap samples, saving intermediate results to a temporary directory
-before combining them into final output tables."><meta property="og:image" content="https://stapm-platform.github.io/smktrans/logo.png"><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-167990045-1"></script><script>
+before combining them into final output tables."><meta property="og:image" content="https://stapm-platform.github.io/smktrans/logo.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap"><!-- Google Analytics: same GA4 property as the main STAPM site, so package
+     site visits count towards the same totals. The old params.ganalytics
+     entry was a Universal Analytics ID, retired by Google in 2023. --><script async src="https://www.googletagmanager.com/gtag/js?id=G-Q4RP5QG31C"></script><script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
-  gtag('config', 'UA-167990045-1');
-</script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&amp;display=swap"></head><body>
+  gtag('config', 'G-Q4RP5QG31C');
+</script></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -19,7 +20,7 @@ before combining them into final output tables."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">smktrans</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +39,9 @@ before combining them into final output tables."><meta property="og:image" conte
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical documentation</h6></li>
     <li><a class="dropdown-item" href="../articles/smk_trans_prob_estimation.html">Estimation workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/validation_england.html">Validation: England</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/stapm-platform/smktrans" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
@@ -67,7 +70,8 @@ before combining them into final output tables.</p>
 <span>  <span class="va">pops</span>,</span>
 <span>  <span class="va">tob_mort_data</span>,</span>
 <span>  <span class="va">tob_mort_data_cause</span>,</span>
-<span>  B <span class="op">=</span> <span class="fl">100</span></span>
+<span>  B <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,11 +102,40 @@ before combining them into final output tables.</p>
 <dt id="arg-b">B<a class="anchor" aria-label="anchor" href="#arg-b"></a></dt>
 <dd><p>Integer. The number of bootstrap iterations to run. Defaults to 100.</p></dd>
 
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Integer. Master seed for the resampling. Taken from `config$seed`
+by the caller. Supplying it makes the whole run reproducible; passing NULL
+restores the old unseeded behaviour and warns, because an unseeded run
+cannot be reproduced or audited.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing five massive data.tables with all bootstrap iterations combined:
-  <code>init</code>, <code>quit</code>, <code>quit_no_init</code>, <code>relapse</code>, and <code>net</code>.</p>
+    <p>A list containing six data.tables with all bootstrap iterations combined:
+  <code>init</code>, <code>quit</code>, <code>quit_no_init</code>, <code>relapse</code>, <code>net</code> and <code>trend</code>.
+  The master seed and the per-iteration seeds are attached as attributes.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The fitted smoking trend surface is now collected too. estimate_quitting has
+always fitted it on every iteration in order to solve for quitting; it just
+discarded it afterwards. Each replicate is thinned to the ages, years and
+smoking states the prevalence targets need before it is written to disk,
+because the full grid at B = 1000 is roughly 38 million rows.</p>
+
+<p>The central estimates written out by `process_country()` are bootstrap
+medians, not point estimates, so they are a function of the random draws.
+Without a seed, two runs of identical code on identical data return
+different numbers, and a diff against a previous delivery cannot separate a
+genuine change from resampling noise. This bit us in July 2026 when the
+project team queried initiation probabilities that had moved between
+deliveries.</p>
+<p>Rather than seeding once and relying on the loop running in order, we draw
+`B` iteration seeds up front from the master seed and set the seed at the
+top of each iteration. Iteration `i` then depends only on the master seed
+and `i`, so results are identical whether the loop is run start to finish,
+resumed part way, or parallelised later.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

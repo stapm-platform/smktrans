@@ -11,6 +11,8 @@ Useful links:
 
 - <https://stapm-platform.github.io/smktrans>
 
+- <https://stapm-platform.github.io/smktrans/>
+
 - Report bugs at <https://github.com/stapm-platform/smktrans/issues>
 
 ## Author
@@ -19,6 +21,9 @@ Useful links:
 ([ORCID](https://orcid.org/0000-0003-3450-5747))
 
 Authors:
+
+- Duncan Gillespie <duncan.gillespie@sheffield.ac.uk>
+  ([ORCID](https://orcid.org/0000-0003-3450-5747))
 
 - Alan Brennan <a.brennan@sheffield.ac.uk>
   ([ORCID](https://orcid.org/0000-0002-1025-312X))

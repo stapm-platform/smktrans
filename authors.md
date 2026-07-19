@@ -32,15 +32,15 @@ Source:
 [`inst/CITATION`](https://github.com/stapm-platform/smktrans/blob/HEAD/inst/CITATION)
 
 Gillespie, D., and Brennan, A. (2026). smktrans: An R Package for
-estimating smoking state transition probabilities (v2.1.2). University
+estimating smoking state transition probabilities (v2.2.0). University
 of Sheffield. https://doi.org/10.17605/OSF.IO/YGXQ9
 
     @Manual{,
       title = {smktrans: An R Package for estimating smoking state transition probabilities from cross-sectional survey data},
       author = {Duncan Gillespie and Alan Brennan},
       year = {2026},
-      version = {2.1.2},
-      note = {R package version 2.1.2},
+      version = {2.2.0},
+      note = {R package version 2.2.0},
       doi = {10.17605/OSF.IO/YGXQ9},
       url = {https://stapm-platform.github.io/smktrans/},
     }
