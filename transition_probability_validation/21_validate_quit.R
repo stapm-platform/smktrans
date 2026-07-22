@@ -22,24 +22,16 @@ source("transition_probability_validation/00_validation_utils.R")
 # ESTIMATION window, for two reasons. First, initiation is only estimated to
 # 2017: the forecast jumps off at last_year - 1, so 2018 onwards in the
 # published outputs is trend continuation, and comparing a forecast against a
-# survey tests the forecast, not the estimation. Second, the STS switched to
-# telephone interviewing in April 2020 and barely sampled 16-17 year olds for
-# the next two years (cells of 6-29 people), so any window touching 2020-21 is
-# soft at exactly the ages that matter for initiation. Waves in 2013-2017 are
+# survey tests the forecast, not the estimation. Waves in 2013-2017 are
 # face-to-face with full sampling, and their 12-month lookback reaches into 2012
 # at the earliest, which is still inside the estimation window. A comparison
-# against 2019+ waves is a forecast check and belongs in a separately labelled
-# section if we want it, not here.
+# against 2019+ waves would be a forecast check which is different to what we are doing here.
 val_years <- 2013:2017
 val_ages   <- 16:89
 # Plot from 25. The denominator we can build from the STS holds everyone smoking
 # now plus everyone who stopped in the past year, and "smoking now" includes
 # people who were not smoking a year ago: relapsers, and at young ages
-# initiators. They inflate the denominator and drag the STS p_quit down. A
-# synthetic cohort through our own 2019 probabilities says that is 1 to 5% from
-# 26 upwards, which is inside the bootstrap interval, but 23% below 25 and 28% at
-# 18. A comparison that is 28% out by construction is not a comparison, so it
-# starts where the arithmetic holds. Above 80 the STS gets thin.
+# initiators. They inflate the denominator and drag the STS p_quit down. Above 80 the STS gets thin.
 plot_ages  <- 25:80
 boot_B     <- 1000
 boot_seed  <- 20260716
@@ -56,10 +48,6 @@ data_tk <- sts_read_england(years = val_years, ages = val_ages)
 # to be averaged over the years the window actually covers rather than the years
 # the waves are stamped with. See sts_model_year_weights.
 #
-# It is worth 0.9% here, which is under a fiftieth of the confidence interval, so
-# it does not go on the plot. It is in because it costs nothing and because
-# whoever next widens the year range will get a bigger number without knowing to
-# look for it.
 year_wts <- sts_model_year_weights(unique(data_tk$xwave))
 print(year_wts)
 
@@ -70,8 +58,7 @@ sts_compare_quit_definitions(data_tk)
 
 # Age and sex. sts_quit_by_age indexes on age at the START of the year, i.e.
 # age - 1, because that is how smktrans indexes p_quit: someone observed at 40
-# who stopped in the past year was 39 when the clock started. It matters: on the
-# England data the two indexings differ by around 45%.
+# who stopped in the past year was 39 when the clock started.
 quit_domain <- sts_domain(val_ages, by_sex = TRUE)
 
 quit_sts <- sts_boot(
@@ -149,7 +136,7 @@ p <- ggplot() +
        subtitle = sprintf(paste0("smktrans vs Smoking Toolkit Study, waves %s. ",
                                  "Bands and bars are 95%%.\n",
                                  "From age 25: below that the STS denominator picks up ",
-                                 "new smokers and reads up to 28%% low."),
+                                 "new smokers and reads low."),
                           paste(range(val_years), collapse = "-"))) +
   coord_cartesian(ylim = c(0, 1)) +
   theme(legend.position = "bottom")
@@ -161,7 +148,7 @@ ggsave("transition_probability_validation/outputs/validation_quit_england.png",
 
 
 # ---- Numerical summary ----------------------------------------------------
-# The plot is for looking at. This is the bit to quote.
+
 
 cmp <- merge(sts_plot[, .(age, sex, sts = est, sts_lo = lower, sts_hi = upper)],
              model_plot[, .(age, sex, model = p_quit)], by = c("age", "sex"))

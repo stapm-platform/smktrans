@@ -36,16 +36,6 @@ val_paths <- list(
 #' rather than an inference. One wave a month with no gaps then puts wave 1 in
 #' October 2006, since 150 - 1 = 149 months back from March 2019 is October 2006.
 #'
-#' This is the single assumption everything in this folder is labelled by, so it
-#' is worth saying how it checks out. The old script filtered xwave >= 148 and
-#' commented it "2019-". Under this mapping wave 148 is January 2019, so that
-#' filter is exactly 2019 onwards, which is what the comment says. An earlier
-#' guess of November 2006 for wave 1 would have made wave 148 February, and the
-#' filter would have been quietly missing a month.
-#'
-#' The commented-out 75:147 in the old script was labelled 2013-2018. Wave 75 is
-#' December 2012 and wave 147 is December 2018, so that one did pick up an extra
-#' month at the front. 76:147 is January 2013 to December 2018 exactly.
 sts_wave_to_year <- function(wave) {
   stopifnot(is.numeric(wave), all(wave >= 1, na.rm = TRUE))
   2006L + (wave + 8L) %/% 12L
@@ -91,32 +81,6 @@ sts_waves_for_years <- function(years, max_wave) {
 #'
 #' Reads the raw SPSS file rather than going through toolkitr. Three reasons.
 #'
-#' We only want a handful of variables, and toolkitr's cleaning functions build a
-#' great deal we then throw away, including a merge onto its LA_codes lookup
-#' table. Depending on a package to get at actage and smokstat was more trouble
-#' than it was worth, particularly one that is not being kept up.
-#'
-#' ReadToolkit builds its file path with paste0(path_in, data_in, ".sav"), so
-#' path_in has to end in a slash, and if it does not you get "unable to open
-#' file: No such file or directory" with no clue as to why. file.path() below
-#' does not care.
-#'
-#' The real reason is ToolkitCleanSmkStatus. smokstat arrives with four levels,
-#' "Smoker", "Stopped>1y ago", "Stopped in past year" and "Never smoked", and it
-#' collapses the two stopped categories into a single ex_smoker. That throws away
-#' exactly the distinction the quit estimate needs. We were then reconstructing
-#' it from q632b8, the question about how long ago the most recent quit attempt
-#' started. That is a different question. q632b8 is put to anyone who has made a
-#' serious attempt, including people who are smoking again now, so a current
-#' smoker who tried three months ago and relapsed has a perfectly good answer to
-#' it. It was never a measure of who had stopped.
-#'
-#' What using it cost us was in the other direction: anyone smokstat puts in
-#' "Stopped in past year" who did not give a usable q632b8 was being treated as a
-#' long-term quitter, which took them out of the p_quit denominator and biased it
-#' down. On the England data that is about 18% of recent quitters.
-#' sts_compare_quit_definitions() reports it.
-#'
 #' @param years Integer vector - the calendar years to keep.
 #' @param ages Integer vector - the ages to keep.
 #' @param path,file Where the SPSS file is. Defaults come from val_paths.
@@ -144,10 +108,6 @@ sts_read_england <- function(years,
   setDT(raw)
   n_raw <- nrow(raw)
 
-  # ReadToolkit did str_replace(colnames, "X.", "A"). The dot there is a regex
-  # wildcard rather than a dot, so it matches an X followed by anything and eats
-  # the character after it: X39.1cot would come back as A9.1cot. Anchored, with
-  # the dot escaped.
   setnames(raw, sub("^X\\.", "A", names(raw)))
 
   required <- c("actage", "sexz", "gore", "Aweight0", "xwave", "smokstat")
@@ -487,10 +447,6 @@ sts_prev_by_age <- function(dt, domain) {
 #' afterwards is worse than not making the mess in the first place. This is the
 #' same lesson as p_dense: smooth the thing you estimated, then difference it.
 #'
-#' The old 22_prepare_toolkit_data_init.R did cumsum(prevalence), fitted a gam to
-#' that, and differenced the fit, which is a roundabout way of doing the same
-#' thing because the cumsum and the diff cancel.
-#'
 #' @param dt Individual STS records.
 #' @param domain From sts_domain().
 #' @param smooth_df Numeric - degrees of freedom for the prevalence smooth.
@@ -550,11 +506,17 @@ sts_net_init_by_age <- function(dt, domain, smooth_df = 6) {
 #' over age WITHIN each survey year before the diagonal difference is taken, same
 #' lesson as always: smooth the estimate, then difference it.
 #'
-#' The model side needs no matching change: within a five-year window the model's own
-#' probabilities move slowly, so its period synthetic cohort and its true cohort
-#' are close. The big cohort effect in the STS comes from real history - the
-#' fall in youth initiation over 2005-2019 - which the model's period profile
-#' never contained in the first place.
+#' The model side is NOT fully matched by this, and the direction of the
+#' mismatch is known. Following cohorts fixes the RATES: within a five-year
+#' window the model's probabilities move slowly, so period and cohort rates are
+#' close. It does not fix the STOCKS: the model's synthetic cohort at age a
+#' carries the stocks of a lifetime lived under one year's rates, while the
+#' real cohort in the diagonal carries the history of higher initiation a
+#' decade earlier. Under secular decline the synthetic current-smoker stock is
+#' smaller at every age past about 20, the quit outflow with it, and the model
+#' sits above (less negative than) the diagonal at 25+ even when every
+#' probability is right. See the header of 22_validate_net_initiation.R for
+#' the arithmetic; treat the 25+ comparison as descriptive.
 #'
 #' @param dt Individual STS records spanning at least two survey years.
 #' @param domain From sts_domain(). Age only; sex stratification works but
@@ -622,10 +584,6 @@ sts_net_init_cohort <- function(dt, domain, smooth_df = 6) {
 #' The toolkit has no clustering or stratification, just a calibration weight, so
 #' individuals are resampled with replacement uniformly and the weighted
 #' estimator is applied to each resample.
-#'
-#' The old code sampled with probability proportional to weight AND then applied
-#' the weights again inside the summary, which counts them twice. Pick one. The
-#' weights belong in the estimator, so the resample is uniform.
 #'
 #' @param dt Individual STS records.
 #' @param fn Function(dt, domain) returning a data table holding the domain's

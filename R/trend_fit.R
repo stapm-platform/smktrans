@@ -300,3 +300,92 @@ thin_trend_draws <- function(dt, keep_ages, keep_years, keep_states = "current")
 
   return(out[])
 }
+
+
+#' Design-weighted survey aggregates for the prevalence targets
+#'
+#' Collapses one survey dataset (or one bootstrap resample of it) to weighted
+#' sums by year, age, sex and IMD quintile: the total design weight, the design
+#' weight carried by current smokers, and the respondent count. Summing these
+#' over any set of cells and dividing gives the pooled design-weighted
+#' prevalence for that set exactly, which is what the survey-sourced
+#' calibration targets are built from. Storing sums rather than proportions is
+#' what makes that exact: a cell that is empty in a resample contributes
+#' nothing to either sum, which is the correct pooled estimator, whereas a
+#' missing proportion would need a decision about how to average over it.
+#'
+#' The completeness rule matches trend_fit: a missing value in any of the
+#' variables is an error to resolve upstream, not a row to drop here.
+#'
+#' @param data One survey dataset or resample.
+#' @param keep_ages,keep_years Integer vectors - the cells to keep. Years in
+#'   keep_years that the survey does not cover are simply absent from the
+#'   output; the caller decides whether that is expected.
+#' @param state_var,age_var,year_var,sex_var,imd_var,weight_var Column names.
+#' @param current_level Character - the value of the state variable that counts
+#'   as a current smoker.
+#' @import data.table
+#' @export
+aggregate_survey_prev <- function(data,
+                                  keep_ages,
+                                  keep_years,
+                                  state_var   = "smk.state",
+                                  age_var     = "age",
+                                  year_var    = "year",
+                                  sex_var     = "sex",
+                                  imd_var     = "imd_quintile",
+                                  weight_var  = "wt_int",
+                                  current_level = "current") {
+
+  required <- c(state_var, age_var, year_var, sex_var, imd_var, weight_var)
+  missing_cols <- setdiff(required, names(data))
+  if (length(missing_cols) > 0) {
+    stop("aggregate_survey_prev: columns missing from `data`: ",
+         paste(missing_cols, collapse = ", "))
+  }
+
+  d <- data.table(
+    smk.state    = as.character(data[[state_var]]),
+    age          = data[[age_var]],
+    year         = data[[year_var]],
+    sex          = as.character(data[[sex_var]]),
+    imd_quintile = as.character(data[[imd_var]]),
+    wt_int       = data[[weight_var]]
+  )
+
+  n_incomplete <- sum(!stats::complete.cases(d))
+  if (n_incomplete > 0) {
+    stop("aggregate_survey_prev: ", n_incomplete, " of ", nrow(d),
+         " rows have a missing value in one of the variables. ",
+         "Resolve them upstream so the loss is explicit.")
+  }
+  if (any(d$wt_int < 0)) stop("aggregate_survey_prev: negative survey weights.")
+
+  if (!current_level %in% unique(d$smk.state)) {
+    stop("aggregate_survey_prev: no rows have ", state_var, " == '",
+         current_level, "'. Values present: ",
+         paste(sort(unique(d$smk.state)), collapse = ", "))
+  }
+
+  d <- d[age %in% keep_ages & year %in% keep_years]
+  if (nrow(d) == 0) {
+    stop("aggregate_survey_prev: no survey rows in the requested ages and years.")
+  }
+
+  out <- d[, .(
+    sum_wt         = sum(wt_int),
+    sum_wt_current = sum(wt_int * (smk.state == current_level)),
+    n_obs          = .N
+  ), by = .(year, age, sex, imd_quintile)]
+
+  if (out[, sum(sum_wt)] <= 0) {
+    stop("aggregate_survey_prev: survey weights sum to zero over the kept cells.")
+  }
+  if (out[, any(sum_wt_current > sum_wt)]) {
+    stop("aggregate_survey_prev: a cell has more weighted smokers than weighted ",
+         "respondents. The weight or state variable is not what we think it is.")
+  }
+
+  setorder(out, year, age, sex, imd_quintile)
+  return(out[])
+}

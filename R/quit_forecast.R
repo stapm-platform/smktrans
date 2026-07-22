@@ -34,10 +34,9 @@
 #' neighbours. This exists for initiation. Since the cumulative-curve fix in
 #' p_dense, a zero in the initiation surface is a real zero - nobody in that
 #' cohort starts at that age - not survey noise. Clamping it and letting the
-#' focal mean run over it drags mass down from the ages just below, which is
-#' how the published initiation tail at ages 24-25 ended up 3 to 4 times the
-#' estimated values, and the age 26+ fill then carried that inflated number up
-#' to 30. Quitting and relapse keep the default FALSE: their zeros genuinely
+#' focal mean run over it drags mass down from the ages just below, which 
+#' incorrectly increases the estimated values. 
+#' Quitting and relapse keep the default FALSE: their zeros genuinely
 #' are sparse-cell noise and smoothing over them is the right treatment.
 #' @importFrom data.table copy := setDT dcast melt rbindlist
 #' @importFrom raster raster as.matrix focal

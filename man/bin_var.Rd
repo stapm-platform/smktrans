@@ -15,7 +15,8 @@ bin_var(x, n_bins)
 Returns a numeric binned variable
 }
 \description{
-Converts a numeric variable to bins of specified number, where the binned variable is also numeric and has the mid-points of the bins.
+Converts a numeric variable to bins of specified number, 
+where the binned variable is also numeric and has the mid-points of the bins.
 }
 \examples{
 bin_var(1:10, 3)

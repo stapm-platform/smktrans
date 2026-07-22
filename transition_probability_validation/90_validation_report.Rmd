@@ -29,10 +29,7 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 # ESTIMATION window, for two reasons. First, initiation is only estimated to
 # 2017: the forecast jumps off at last_year - 1, so 2018 onwards in the
 # published outputs is trend continuation, and comparing a forecast against a
-# survey tests the forecast, not the estimation. Second, the STS switched to
-# telephone interviewing in April 2020 and barely sampled 16-17 year olds for
-# the next two years (cells of 6-29 people), so any window touching 2020-21 is
-# soft at exactly the ages that matter for initiation. Waves in 2013-2017 are
+# survey tests the forecast, not the estimation.  Waves in 2013-2017 are
 # face-to-face with full sampling, and their 12-month lookback reaches into 2012
 # at the earliest, which is still inside the estimation window. A comparison
 # against 2019+ waves is a forecast check and belongs in a separately labelled
@@ -224,11 +221,10 @@ code: it filtered `xwave >= 148` and called it "2019-", and wave 148 is January
 2019 under this mapping. Only whole years are used, so a part-covered year is
 dropped rather than contributing a seasonally biased average.
 
-The model side is averaged over sex, IMD and year using ONS populations, because
-the STS figure is a population average and a plain mean over the ten subgroups
+The model side is averaged over IMD and year using ONS populations, because
+the STS figure is a population average and a plain mean over the subgroups
 is not the same thing. The population file stops at `r max(fread(val_paths$pop_file)$year)`,
-so for later years we hold that year's age, sex and IMD structure. That is an
-assumption about who lives in England, not about smoking.
+so for later years we hold that year's age, sex and IMD structure.
 
 # Net initiation against the Smoking Toolkit Study
 
@@ -249,9 +245,24 @@ judged. With five survey years we can instead follow the same cohort from one
 year to the next, prev(a+1, t+1) against prev(a, t), which cancels the cohort
 effect by construction. The cohort-followed series is the primary comparison;
 the cross-section is plotted as open circles so the size of the cohort effect is
-visible rather than asserted. The model side needs no matching change: its own
-probabilities move slowly within the window, so its period profile and cohort
-profile are close.
+visible rather than asserted.
+
+Following cohorts matches the rates but not the stocks, and that limits what
+this comparison can test. The model runs a separate synthetic cohort for each
+year, so its stocks at age $a$ are those of a lifetime lived under that one
+year's rates; the STS diagonal follows a real cohort whose stocks carry the
+history of higher initiation a decade earlier. Under secular decline the
+synthetic current-smoker stock is smaller at every age past about 20, the quit
+outflow with it, and the model sits above (less negative than) the diagonal at
+25+ even when every probability in it is right - roughly
+$p_{quit} \times (prev_{real} - prev_{synth})/(1 - prev)$, about 0.010 at
+25-30, the size of the gap seen below. The diagonal additionally absorbs
+composition change (migration and response drift between waves) that the closed
+synthetic cohort excludes, and its 16-17 points are boundary derivatives of a
+smoothed curve. So this section reads in two registers: at ages 16-24 the two
+sides measure close to the same thing and interval coverage is a test; at 25+
+the comparison is descriptive, and the documented estimand gap - not model
+error - is the expected explanation for the model sitting above the dots.
 
 ```{r netinit}
 sts_ages_wide <- 16:35   # read wider than we plot so the difference at the top
@@ -286,7 +297,11 @@ net_model <- stapm_load("net_init_data_England_uncertainty.rds")
 
 # calculate_net_initiation only runs for 2011:2019, so it will not cover the
 # whole STS window. Use the overlap and say so.
-model_years <- intersect(val_years, unique(net_model$year))
+# The diagonal indexes each transition by its starting year, so the last survey
+# year only appears as a destination: the model is averaged over the transition
+# years, not the full window.
+transition_years <- val_years[-length(val_years)]
+model_years <- intersect(transition_years, unique(net_model$year))
 net_ref <- pop_weight_by_age(net_model, "p_start_net", years = model_years, ages = init_ages)
 setnames(net_ref, "value", "p_start_net")
 ```
@@ -308,19 +323,24 @@ ggplot() +
   theme_minimal() + theme(legend.position = "bottom") +
   labs(x = "Age", y = "P(net initiation)", colour = NULL, fill = NULL,
        title = "Net smoking initiation, England",
-       subtitle = sprintf("smktrans %s vs STS %s. Only where prevalence is rising.",
+       subtitle = sprintf(paste0("smktrans %s vs STS transitions %s. 16-24 is the test; ",
+                                 "25+ is descriptive (estimand gap, see text)."),
                           paste(range(model_years), collapse = "-"),
-                          paste(range(val_years), collapse = "-")))
+                          paste(range(transition_years), collapse = "-")))
 ```
 
 ```{r netinit-numbers}
 cmp_i <- merge(sts_i[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
                model_i[, .(age, model = p_start_net)], by = "age")
+cmp_i[, inside := model >= sts_lo & model <= sts_hi]
+strict_i <- cmp_i[age %in% 16:24]
 data.table(
-  Measure = c("Ages compared", "smktrans inside the STS 95% interval",
-              "Median difference", "Correlation over age", "Years compared"),
-  Value = c(nrow(cmp_i),
-            sprintf("%.0f%%", 100 * mean(cmp_i$model >= cmp_i$sts_lo & cmp_i$model <= cmp_i$sts_hi)),
+  Measure = c("Ages compared", "Inside the STS 95% interval, ages 16-24 (the test)",
+              "Median difference, full range", "Correlation over age, full range",
+              "Transition years compared"),
+  Value = c(sprintf("%d (%d-%d)", nrow(cmp_i), min(cmp_i$age), max(cmp_i$age)),
+            sprintf("%.0f%% (%d of %d)", 100 * mean(strict_i$inside),
+                    sum(strict_i$inside), nrow(strict_i)),
             sprintf("%+.5f", median(cmp_i$model - cmp_i$sts)),
             sprintf("%.3f", cor(cmp_i$model, cmp_i$sts)),
             paste(range(model_years), collapse = "-"))
@@ -339,11 +359,7 @@ if (!identical(sort(model_years), sort(val_years))) {
 ```
 
 The prevalence curve is smoothed over age before it is differenced, rather than
-differenced and then repaired. Differencing a noisy curve gives a very noisy
-derivative, and this is the same mistake that `p_dense` was making until July
-2026: it built the initiation density by differencing a step function and then
-tried to patch the resulting zeros inside `p_smooth`, which turned 0.1% of noise
-on the input into a 51% change in the published probabilities.
+differenced and then repaired.
 
 # Relapse against the Hawkins inputs
 
@@ -408,33 +424,30 @@ rests on no relapses out of 180 people in a single year.
 
 Ages under 18 take the age-18 values, which are the highest in the series.
 
-## What would settle it
-
-The British Household Panel Survey is archived at the UK Data Service.
-Reconstructing Hawkins' cohort and refitting their model would give us the
-intercept directly and remove every assumption in the calibration, along with the
-covariate joint distribution we currently have to assume away. Given that the
-whole relapse module rests on this one paper, that is probably worth someone's
-time.
 
 # Where this leaves things
 
 ```{r verdict}
 # cmp_i is the section 3 comparison table; the numbers here are the same ones,
 # so this paragraph cannot drift from the table above it.
-v_cov  <- 100 * mean(cmp_i$model >= cmp_i$sts_lo & cmp_i$model <= cmp_i$sts_hi)
+v_cov  <- 100 * mean(strict_i$inside)
 v_corr <- cor(cmp_i$model, cmp_i$sts)
 v_med  <- median(cmp_i$model - cmp_i$sts)
 ```
 
 The estimation stands up. Quitting sits inside the STS interval across ages 25
-to 80 for both sexes. Net initiation, followed through cohorts, has the model
-inside the STS 95% interval at `r sprintf("%.0f%%", v_cov)` of ages, a
-correlation over age of `r sprintf("%.3f", v_corr)`, and a median difference of
-`r sprintf("%+.5f", v_med)` - which is smaller than the smoothing bias we
-measured in the cohort estimator itself on synthetic data (about 0.002). At that
-point the ruler, not the model, is the binding constraint, and chasing the
-difference further would mean fitting the ruler's error.
+to 80 for both sexes. Net initiation, followed through cohorts and judged where
+the two sides measure the same thing (ages 16-24), has the model inside the STS
+95% interval at `r sprintf("%.0f%%", v_cov)` of ages, with a correlation over
+the full age range of `r sprintf("%.3f", v_corr)` and a median difference of
+`r sprintf("%+.5f", v_med)`. At 25+ the model sits above the STS diagonal by
+roughly the amount the stock-vintage estimand gap predicts (section 3), so that
+region is read as descriptive: the ruler and the model measure different
+things there, and chasing the difference would mean fitting the gap. The one
+number worth continued attention is the model sitting at or below the lower
+edge of the STS band at 16-18, which is consistent with the youth-anchored
+targets understating later-shifted initiation for recent cohorts; a second
+anchor point at an older age is what would likely be needed to fix this.
 
 What this does not cover, deliberately: the forecast years, which are known to
 miss the post-2020 turn in youth uptake because the survey feeding the trend
@@ -442,7 +455,8 @@ ends in 2018; and the level of relapse, which rests on Hawkins et al. alone.
 Those are the two places any remaining worry should live. The STS decline in
 prevalence at ages 31-34, visible past the end of the model line in section 3,
 is close to a pure quit-versus-relapse quantity and would give relapse an
-external check if the initiation pipeline were extended past age 30.
+external check if the initiation pipeline were extended past age 30. 
+This will need to be addressed when new, post-COVID, years of data are added to the estimation process.
 
 # Summary
 

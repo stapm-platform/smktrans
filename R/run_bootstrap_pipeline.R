@@ -5,11 +5,18 @@
 #' through `B` bootstrap samples, saving intermediate results to a temporary directory
 #' before combining them into final output tables.
 #'
-#' The fitted smoking trend surface is now collected too. estimate_quitting has
+#' The fitted smoking trend surface is collected too. estimate_quitting has
 #' always fitted it on every iteration in order to solve for quitting; it just
 #' discarded it afterwards. Each replicate is thinned to the ages, years and
 #' smoking states the prevalence targets need before it is written to disk,
 #' because the full grid at B = 1000 is roughly 38 million rows.
+#'
+#' Alongside the fitted surface, each iteration also saves the design-weighted
+#' survey aggregates for the same ages and years (aggregate_survey_prev), so
+#' the prevalence targets can be built either from the model fit or from the
+#' survey data directly, from the same draws under the same seed. Years inside
+#' the target range that the survey does not cover are checked against the
+#' original data once and must stay identical across iterations.
 #'
 #' @param config A list containing model configuration parameters (e.g., country, years, ages).
 #' @param survey_data A data.table or data.frame containing the base survey data.
@@ -37,8 +44,9 @@
 #' and `i`, so results are identical whether the loop is run start to finish,
 #' resumed part way, or parallelised later.
 #'
-#' @return A list containing six data.tables with all bootstrap iterations combined:
-#'   \code{init}, \code{quit}, \code{quit_no_init}, \code{relapse}, \code{net} and \code{trend}.
+#' @return A list containing seven data.tables with all bootstrap iterations combined:
+#'   \code{init}, \code{quit}, \code{quit_no_init}, \code{relapse}, \code{net},
+#'   \code{trend} and \code{survey_prev}.
 #'   The master seed and the per-iteration seeds are attached as attributes.
 #' @export
 run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob_mort_data_cause, B = 100, seed = NULL) {
@@ -71,6 +79,27 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
   keep_ages   <- if (!is.null(config$trend_keep_ages))   config$trend_keep_ages   else 25:74
   keep_years  <- if (!is.null(config$trend_keep_years))  config$trend_keep_years  else 2011:2019
   keep_states <- if (!is.null(config$trend_keep_states)) config$trend_keep_states else "current"
+
+  # The survey's own coverage of the target range, fixed from the full data
+  # before any resampling. The resample is stratified by year, so every
+  # iteration must reproduce exactly this set of years; a year appearing or
+  # disappearing mid-run means the resampler is not doing what we think.
+  survey_keep_years <- sort(intersect(unique(survey_data$year), keep_years))
+  survey_keep_ages  <- sort(intersect(unique(survey_data$age),  keep_ages))
+  absent_years <- setdiff(keep_years, survey_keep_years)
+  if (length(survey_keep_years) == 0) {
+    stop("run_bootstrap_pipeline: the survey covers none of the target years ",
+         paste(range(keep_years), collapse = "-"), ".")
+  }
+  if (length(absent_years) > 0) {
+    message(sprintf(">> Survey aggregates: years %s are in the target range but not in the survey; the survey-sourced targets will cover %s.",
+                    paste(absent_years, collapse = ", "),
+                    paste(range(survey_keep_years), collapse = "-")))
+  }
+  if (!setequal(survey_keep_ages, keep_ages)) {
+    stop("run_bootstrap_pipeline: the survey is missing target ages ",
+         paste(setdiff(keep_ages, survey_keep_ages), collapse = ", "), ".")
+  }
 
   # =====================================================================
   # PRE-CALCULATE MORTALITY (Runs exactly once!)
@@ -129,6 +158,19 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
     }
     trend_dt <- thin_trend_draws(quit_res$trend, keep_ages, keep_years, keep_states)
 
+    # The survey aggregates for this resample. Cells can legitimately be empty
+    # in a resample (their weighted sums are then simply absent, and pooled
+    # totals downstream remain exact), but the set of YEARS is pinned: the
+    # resample is stratified by year, so a year going missing is an error.
+    survey_prev_dt <- aggregate_survey_prev(bs_data, keep_ages, survey_keep_years)
+    if (!setequal(unique(survey_prev_dt$year), survey_keep_years)) {
+      stop("run_bootstrap_pipeline: iteration ", i, " survey aggregates cover years ",
+           paste(sort(unique(survey_prev_dt$year)), collapse = ", "),
+           ", expected ", paste(survey_keep_years, collapse = ", "),
+           ". The year-stratified resampler should make this impossible.")
+    }
+    survey_prev_dt[, boot_id := i]
+
     # Calculate net initiation using the final objects
     net_dt <- calculate_net_initiation(init_dt, quit_dt, relapse_dt, pops, config, boot_mode = TRUE)
 
@@ -151,6 +193,7 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
     saveRDS(relapse_dt, file.path(temp_dir, sprintf("boot_relapse_%04d.rds", i)))
     saveRDS(net_dt, file.path(temp_dir, sprintf("boot_net_%04d.rds", i)))
     saveRDS(trend_dt, file.path(temp_dir, sprintf("boot_trend_%04d.rds", i)))
+    saveRDS(survey_prev_dt, file.path(temp_dir, sprintf("boot_survey_prev_%04d.rds", i)))
 
     # Clear memory each loop to prevent RAM bloat on large B runs
     gc(verbose = FALSE)
@@ -184,7 +227,8 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
     quit_no_init = read_and_combine("^boot_quit_no_init_[0-9]+\\.rds$"),
     relapse = read_and_combine("^boot_relapse_[0-9]+\\.rds$"),
     net = read_and_combine("^boot_net_[0-9]+\\.rds$"),
-    trend = read_and_combine("^boot_trend_[0-9]+\\.rds$")
+    trend = read_and_combine("^boot_trend_[0-9]+\\.rds$"),
+    survey_prev = read_and_combine("^boot_survey_prev_[0-9]+\\.rds$")
   )
 
   # Every trend cell must appear once per iteration, or the covariance matrix
@@ -197,6 +241,20 @@ run_bootstrap_pipeline <- function(config, survey_data, pops, tob_mort_data, tob
   if (uniqueN(out$trend$boot_id) != B) {
     stop("run_bootstrap_pipeline: trend draws span ", uniqueN(out$trend$boot_id),
          " boot_ids, expected ", B, ".")
+  }
+
+  # The survey aggregates are ragged by design - a resample can empty a cell -
+  # so the check is per iteration, not per cell: every iteration present, every
+  # iteration carrying positive total weight in every year.
+  if (uniqueN(out$survey_prev$boot_id) != B) {
+    stop("run_bootstrap_pipeline: survey aggregates span ",
+         uniqueN(out$survey_prev$boot_id), " boot_ids, expected ", B, ".")
+  }
+  wt_by_iter_year <- out$survey_prev[, .(wt = sum(sum_wt)), by = .(boot_id, year)]
+  if (nrow(wt_by_iter_year) != B * length(survey_keep_years) ||
+      wt_by_iter_year[, any(wt <= 0)]) {
+    stop("run_bootstrap_pipeline: an iteration has a survey year with no ",
+         "positive weight. The pooled targets cannot be built from it.")
   }
 
   # Seed provenance travels with the results, so a saved object can always be

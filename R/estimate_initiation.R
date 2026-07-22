@@ -99,6 +99,28 @@ estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
     message("   > Ever-smoking trend model resolved to ", ever_smoke_data$model_choice,
             " and saved for the bootstrap (", basename(resolved$choice_file), ")")
   }
+
+  # B2. Anchor recent cohort targets on a youth survey series (optional)
+  # -------------------------------------------------------------------------
+  # Targets for cohorts beyond the trend model's data are re-anchored on an
+  # external youth smoking series; cohorts within its data are untouched.
+  # Runs without youth_anchor_file in the config are unchanged.
+  if (!is.null(config$youth_anchor_file)) {
+    missing_keys <- setdiff(c("youth_anchor_age_centre", "youth_anchor_taper"),
+                            names(config))
+    if (length(missing_keys) > 0) {
+      stop("estimate_initiation: youth_anchor_file is set but the config is ",
+           "missing: ", paste(missing_keys, collapse = ", "))
+    }
+    ever_smoke_data <- anchor_recent_cohorts(
+      ever_smoke_data = ever_smoke_data,
+      youth_anchor_data = data.table::fread(config$youth_anchor_file),
+      ref_age = config$ref_age,
+      anchor_age_centre = config$youth_anchor_age_centre,
+      taper_cohorts = config$youth_anchor_taper,
+      quiet = boot_mode
+    )
+  }
   
   # C. Adjust for Recall Bias
   # -------------------------------------------------------------------------
@@ -108,10 +130,7 @@ estimate_initiation <- function(config, survey_data, boot_mode = FALSE) {
     ref_age = config$ref_age,
     fix_ref_age = FALSE,
     # 18 rather than 21. init_adj now completes a truncated cohort's curve up to
-    # its ref_age equivalent before calibrating, so the old reason for refusing
-    # cohorts seen only to their early twenties - the truncation bias - is
-    # corrected rather than avoided, and the youngest cohorts with usable data
-    # get to calibrate on their own numbers.
+    # its ref_age equivalent before calibrating
     min_ref = 18,
     cohorts = (config$first_year - config$ref_age):config$time_horizon,
     period_start = config$first_year, 

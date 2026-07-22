@@ -30,6 +30,7 @@ devtools::load_all()
 #func_path <- "R/"
 
 #source(paste0(func_path, "aggregate_uncertainty.R"))
+#source(paste0(func_path, "anchor_recent_cohorts.R"))
 #source(paste0(func_path, "bin_var.R"))
 #source(paste0(func_path, "build_reports.R"))
 #source(paste0(func_path, "calculate_net_initiation.R"))
@@ -85,13 +86,20 @@ config_eng <- list(
   trend_keep_states = "current",
   
   # Initiation Params
-  max_age_init = 30, age_trend_limit_init = 25,
+  max_age_init = 30, age_trend_limit_init = 30,
   init_model_choice = "auto", # or "model8" to fix it on a safe model
   init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
   init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
   init_auto_floor          = 0.02,  # projections must stay inside...
   init_auto_ceiling        = 0.98,  # ...this range out to the horizon
   init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
+  
+  # Youth anchor: re-anchors the ever-smoking targets for cohorts beyond the
+  # trend model's data on the SDD ever-smoked series. Path is relative to the
+  # project root, like pop_file. See anchor_recent_cohorts().
+  youth_anchor_file = "05_input/sdd_ever_smoked_england.csv",
+  youth_anchor_age_centre = 13, # SDD reports an 11-15 band; 13 = mid-band age
+  youth_anchor_taper = 3,       # cohorts over which the handover is blended
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
@@ -104,7 +112,8 @@ config_eng <- list(
   
   # Quit/Relapse Params
   smooth_rate_dim_quit = c(5, 7), k_smooth_age_quit = 6, age_trend_limit_quit = 79,
-  smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, age_trend_limit_relapse = 79,
+  smooth_rate_dim_relapse = c(5, 7), k_smooth_age_relapse = 6, 
+  age_trend_limit_relapse = 79, # this doesnt do anything if the relapse trend is "stationary"
   
   # Uncertainty Params (Note: kn_samp determines bootstrap iterations)
   #kn = 100, kR = 0.9, # use only with the old generate_uncertainty function
@@ -136,13 +145,20 @@ config_scot <- list(
   time_horizon = 2040,
   
   # Initiation Params
-  max_age_init = 30, age_trend_limit_init = 25,
+  max_age_init = 30, age_trend_limit_init = 30,
   init_model_choice = "auto", # or "model8" to fix it on a safe model
   init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
   init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
   init_auto_floor          = 0.02,  # projections must stay inside...
   init_auto_ceiling        = 0.98,  # ...this range out to the horizon
   init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
+  
+  # Youth anchor: not enabled. Needs a national youth ever-smoked series
+  # reaching back to at least 3 cohorts inside the trend model's own data;
+  # anchor_recent_cohorts() errors if that is not met. Candidate: SALSUS 15-year-olds, sex-split.
+  # youth_anchor_file = NULL,
+  # youth_anchor_age_centre = 15,
+  # youth_anchor_taper = 3,
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 
@@ -188,13 +204,20 @@ config_wales <- list(
   time_horizon = 2040,
   
   # Initiation Params
-  max_age_init = 30, age_trend_limit_init = 25,
+  max_age_init = 30, age_trend_limit_init = 30,
   init_model_choice = "auto", # or "model8" to fix it on a safe model
   init_auto_holdout_bins   = 2,     # year bins held out when scoring candidates
   init_auto_tie_margin     = 2,     # QAIC units within which the simpler model wins
   init_auto_floor          = 0.02,  # projections must stay inside...
   init_auto_ceiling        = 0.98,  # ...this range out to the horizon
   init_auto_max_slope_mult = 2,      # cap on any stratum slope vs the common one
+  
+  # Youth anchor: not enabled. Needs a national youth ever-smoked series
+  # reaching back to at least 3 cohorts inside the trend model's own data;
+  # anchor_recent_cohorts() errors if that is not met. Candidate: HBSC Wales (SHRN starts too recently for the overlap).
+  # youth_anchor_file = NULL,
+  # youth_anchor_age_centre = 15,
+  # youth_anchor_taper = 3,
   
   smooth_rate_dim_init = c(3, 7), 
   # The dimensions of the 2d window used to 

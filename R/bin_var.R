@@ -1,6 +1,7 @@
 #' Bin numeric variable
 #' 
-#' Converts a numeric variable to bins of specified number, where the binned variable is also numeric and has the mid-points of the bins.
+#' Converts a numeric variable to bins of specified number, 
+#' where the binned variable is also numeric and has the mid-points of the bins.
 #' 
 #'
 #' @param x Numeric variable to be binned

@@ -75,12 +75,14 @@ reference:
   contents:
   - ever_smoke
   - trend_fit
+  - aggregate_survey_prev
 
 - title: Smoking initiation
   contents:
   - estimate_initiation
   - init_est
   - init_adj
+  - anchor_recent_cohorts
 
 - title: Quitting smoking
   contents:

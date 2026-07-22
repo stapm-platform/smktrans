@@ -1,6 +1,6 @@
 # Check the estimated relapse probabilities against the Hawkins inputs.
 #
-# Be clear about what this is. Hawkins is our INPUT, not independent data, so
+# Hawkins is our INPUT, not independent data, so
 # this is not validation in the sense that 21_validate_quit.R is validation. It
 # cannot tell us whether our relapse probabilities are right. What it can tell
 # us is whether the pipeline is doing to Hawkins what we think it is doing, and
@@ -41,15 +41,7 @@ if (!requireNamespace("smktrans", quietly = TRUE)) {
 }
 hawkins <- as.data.table(smktrans::hawkins_relapse)
 
-# Guard against version skew between this session and the pipeline run. The
-# rebuilt hawkins_relapse pools Table 2's years 6-9, so within any covariate
-# cell the values at time_since_quit 6, 7, 8 and 9 are identical. The old table
-# had them different (1.1, 1.4, 0.3, 1.3 percent), so this one property tells
-# the two apart. If it fails, this session has loaded the pre-rebuild package
-# data - typically because data-raw was re-run but the package was not
-# reinstalled, or an old library path sits first on .libPaths() - and every
-# envelope below would be the wrong ruler. Judging new outputs against the old
-# envelope produced thousands of spurious breaches once; hence the check.
+# Guard against version skew between this session and the pipeline run.
 tail_spread <- hawkins[time_since_quit %in% 6:9,
                        .(spread = max(p_relapse) - min(p_relapse)),
                        by = setdiff(names(hawkins), c("time_since_quit", "p_relapse"))]
@@ -421,7 +413,4 @@ ggsave("transition_probability_validation/outputs/verification_relapse_envelope_
 # still not smoking, which gives a one-year survival of quit attempts and is
 # comparable to our p_relapse at tsq = 0.
 #
-# That is one point against a model that runs to ten years, it only covers the
-# most recent attempt, and it relies on recall of exactly the thing people are
-# worst at recalling. It is worth having if q632b8 has a "more than a year ago"
-# category. Check the levels before writing it.
+# That is one point against a model that runs to ten years though

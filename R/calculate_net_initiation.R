@@ -28,6 +28,18 @@
 #'         in the initiation data.
 #'   \item Nobody dies. Over ages 12 to 30 that is close enough to true, and it
 #'         is what makes the denominator below equal to 1 - prevalence.
+#'   \item The cohort is synthetic within a single year: ages are iterated with
+#'         the year held fixed, so the stocks at age a are those of a lifetime
+#'         lived under that one year's rates. Under secular change this differs
+#'         from a real cohort's stocks, which matters when comparing against a
+#'         cohort-followed survey estimator - see the header of
+#'         22_validate_net_initiation.R for the direction and size.
+#'   \item Quit and relapse probabilities must cover every age present in the
+#'         initiation data; the function stops if they do not. On the current
+#'         pipeline they always do -- the relapse table extends below 18 by
+#'         carrying the age-18 values, the same convention as everywhere else,
+#'         so this calculation assumes nothing about under-18 relapse that the
+#'         main estimates do not.
 #' }
 #'
 #' \strong{p_start_net can be negative.} Past the age where the cohort's smoking
@@ -39,19 +51,9 @@
 #'
 #' \strong{Time since quitting.}
 #'
-#' This used to pick a relapse probability by assuming how long people at each
-#' age had been quit: 1 year if under 18, 3 years from 18 to 24, 5 years from 25.
-#' That produced a step change in p_relapse at exactly 18 and 25 (a 63% drop at
-#' 18 on the England data), and because the relapse flow is a large part of the
-#' net flow, it put a spurious cliff into the published numbers. Net initiation
-#' fell 83% between 17 and 18 for no reason other than the age band changing.
-#'
-#' It is not necessary to assume any of it. The simulation already carries a
-#' stock of former smokers, so carry it BY time since quit instead: quitters
-#' enter at time_since_quit 0, survivors move up one year at a time, and the top
+#' Quitters enter at time_since_quit 0, ongoing quitters move up one year at a time, and the top
 #' category absorbs. Every former smoker then has the relapse probability that
-#' actually applies to them, and the assumption disappears rather than being
-#' replaced by a better one.
+#' actually applies to them.
 #'
 #'
 #' @import data.table
@@ -74,19 +76,19 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
     stop("calculate_net_initiation: relapse_data has no time_since_quit.")
   }
 
-  # Take the range from the data rather than hard-coding it. The old version
-  # fixed ages 12:29 and years 2011:2019, which silently threw away whatever the
-  # estimation had actually produced. The initiation data currently runs 2003 to
-  # 2040 and ages 11 to 30, so the old years alone dropped 30 of the 38 years,
-  # and anything comparing this against a survey outside 2011-2019 was left with
-  # almost no overlap.
+  # Take the range from the data 
   ages  <- sort(unique(init_data$age))
   years <- sort(intersect(unique(init_data$year), unique(quit_data$year)))
   if (length(years) == 0) stop("calculate_net_initiation: init_data and quit_data share no years.")
 
   dt <- init_data[age %in% ages & year %in% years, c(cols, "p_start"), with = FALSE]
   dt <- merge(dt, quit_data[, c(cols, "p_quit"), with = FALSE], by = cols, all.x = TRUE)
-  dt[is.na(p_quit), p_quit := 0]
+  if (dt[is.na(p_quit), .N] > 0) {
+    stop("calculate_net_initiation: no quit probability for ages ",
+         paste(sort(unique(dt[is.na(p_quit), age])), collapse = ", "),
+         " that the initiation data covers. Zero-filling here would quietly ",
+         "assume nobody quits at those ages.")
+  }
 
   # Relapse, one column per time since quit, so every former smoker can be given
   # the probability that applies to them.
@@ -99,7 +101,15 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
   setnames(r_wide, as.character(tsq_vals), tsq_cols)
 
   dt <- merge(dt, r_wide, by = cols, all.x = TRUE)
-  for (cc in tsq_cols) dt[is.na(get(cc)), (cc) := 0]
+  na_relapse <- dt[rowSums(is.na(dt[, tsq_cols, with = FALSE])) > 0]
+  if (nrow(na_relapse) > 0) {
+    stop("calculate_net_initiation: no relapse probability for ages ",
+         paste(sort(unique(na_relapse$age)), collapse = ", "),
+         " that the initiation data covers. The relapse table is expected to ",
+         "extend to the youngest initiation age (currently by carrying the ",
+         "age-18 values down, as elsewhere in the pipeline). Zero-filling here ",
+         "would quietly assume under-age quitters never relapse.")
+  }
 
   # 2. Run Synthetic Cohort Simulation
   # -------------------------------------------------------------------------
@@ -162,11 +172,7 @@ calculate_net_initiation <- function(init_data, quit_data, relapse_data, pops, c
 
     # Not clamped at zero. A negative net flow is a real thing and a useful one:
     # it says quitting is running ahead of initiation plus relapse, so the cohort's
-    # smoking prevalence has peaked and is coming down. The old version clamped
-    # it, which flattened the curve to a floor of zero from about age 24 and made
-    # the biggest cliff in the whole series an artefact of the clamp. It also made
-    # the comparison against a survey one-sided, because a survey estimate of the
-    # same quantity is free to go negative and ours was not.
+    # smoking prevalence has peaked and is coming down.
     n_negative <- n_negative + sum(p_start_net < 0)
 
     results_list[[as.character(a)]] <- data.table(

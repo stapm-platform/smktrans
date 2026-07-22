@@ -25,7 +25,7 @@ aggregate_uncertainty <- function(boot_dt, prob_col, extra_keys = character(0), 
 
   # 2. Every cell should have been estimated in every iteration. If some have
   # not, the quantiles below are computed off a different number of draws per
-  # cell and the CIs are not comparable. Say so rather than let it through.
+  # cell and the CIs are not comparable.
   if ("boot_id" %in% names(boot_dt)) {
     if (is.null(min_boot)) min_boot <- uniqueN(boot_dt$boot_id)
     counts <- boot_dt[!is.na(get(prob_col)), .N, by = group_cols]

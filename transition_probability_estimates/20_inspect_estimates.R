@@ -42,7 +42,7 @@ ggplot(init_data[year == 2014 & age <= 30]) +
 
 relapse_data <- readRDS(file.path(config$path, "outputs", paste0("relapse_forecast_data_", config$country, ".rds")))
 
-ggplot(relapse_data[year == 2014 & time_since_quit == 0]) +
+ggplot(relapse_data[year == 2014]) +
   geom_line(aes(x = age, y = p_relapse, color = imd_quintile), linewidth = 1.2) +
   facet_wrap(~ sex) +
   labs(x = "Age", y = "Probability of Relapse") +

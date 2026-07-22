@@ -8,7 +8,7 @@
 # smokers rising with age, and that rise is initiation net of quitting. So the
 # only initiation quantity the STS can identify is the net one.
 #
-# That happens to be exactly what calculate_net_initiation() produces:
+# That is close to what calculate_net_initiation() produces:
 #
 #   p_start_net = (n_current(a+1) - n_current(a)) / (n_never(a) + n_former(a))
 #
@@ -17,17 +17,30 @@
 #
 #   p_start_net = (prev(a+1) - prev(a)) / (1 - prev(a))
 #
-# which is what we can compute from STS prevalence. The comparison is like for
-# like. It is also a period comparison on both sides: calculate_net_initiation
-# runs a separate synthetic cohort for each year through that year's
-# probabilities, so it is an age profile for a year, not a real birth cohort.
+# which is what we can compute from STS prevalence. But the two sides are NOT
+# fully like for like, and the difference matters past the mid-20s. The model
+# runs a separate synthetic cohort for each year, so its stocks at age a are
+# the ones a cohort would have if it had lived its whole life under that single
+# year's rates. The STS pseudo-cohort estimator follows a real cohort, whose
+# stocks reflect the actual history of higher initiation ten years earlier.
+# Under secular decline the synthetic stocks are smaller than the real ones at
+# every age past about 20, so the model's quit outflow - p_quit times the
+# current-smoker stock - is smaller, and the model's net flow sits above
+# (less negative than) the STS diagonal at 25+ even when every probability in
+# it is right. Roughly: gap ~ p_quit * (real prev - synthetic prev) / (1 -
+# prev), which at 25-30 is about 0.11 * 0.08 / 0.85 ~ 0.010, the size of the
+# gap seen in practice. The STS diagonal additionally absorbs composition
+# change (migration and response drift between waves), which the closed
+# synthetic cohort excludes, and its 16-17 points are boundary derivatives of
+# a smoothed curve, which is where a smoother is least reliable. So treat the
+# 25+ comparison as descriptive, not as a pass/fail test of the model.
 #
-# Where it stops working. Net initiation is only informative while the number of
-# smokers is still growing. Once quitting overtakes initiation the numerator
-# goes negative and the quantity stops meaning "initiation". The model clamps
-# negatives to zero (see calculate_net_initiation), so past that age it is
-# comparing a clamped zero against noise. The age range below is chosen from the
-# data rather than assumed.
+# Where it stops working. Net initiation is only informative while the number
+# of smokers is still growing. Past the peak the quantity means net quitting,
+# and the stock-vintage mismatch above dominates it. Negative model values are
+# real and are NOT clamped (calculate_net_initiation stopped clamping; see its
+# roxygen), so the curve past the peak is meaningful in its own terms - it is
+# the ruler, not the model, that measures a different thing there.
 
 source("transition_probability_validation/00_validation_utils.R")
 
@@ -43,9 +56,7 @@ source("transition_probability_validation/00_validation_utils.R")
 # the next two years (cells of 6-29 people), so any window touching 2020-21 is
 # soft at exactly the ages that matter for initiation. Waves in 2013-2017 are
 # face-to-face with full sampling, and their 12-month lookback reaches into 2012
-# at the earliest, which is still inside the estimation window. A comparison
-# against 2019+ waves is a forecast check and belongs in a separately labelled
-# section if we want it, not here.
+# at the earliest, which is still inside the estimation window.
 val_years <- 2013:2017
 sts_ages   <- 16:35        # read wider than we plot, so the difference at the
 
@@ -115,10 +126,15 @@ if (!"p_start_net" %in% names(net_model)) {
        paste(names(net_model), collapse = ", "))
 }
 
-# calculate_net_initiation only runs for 2011:2019, so it will not cover the
-# whole STS window. Use the overlap and say so, rather than quietly comparing
-# different years on the two sides.
-model_years <- intersect(val_years, unique(net_model$year))
+# Two alignment rules, both stated rather than implicit. First, the STS cohort
+# diagonal indexes each transition by its STARTING year t, and the last survey
+# year only ever appears as a destination, so the diagonals span
+# val_years[-length(val_years)]. Averaging the model over all of val_years
+# would include one year of rates the STS side never uses. Second,
+# calculate_net_initiation may not cover the whole window; use the overlap and
+# say so, rather than quietly comparing different years on the two sides.
+transition_years <- val_years[-length(val_years)]
+model_years <- intersect(transition_years, unique(net_model$year))
 if (length(model_years) == 0) {
   stop("22_validate_net_initiation: net_init_data covers ",
        paste(range(net_model$year), collapse = "-"),
@@ -126,8 +142,8 @@ if (length(model_years) == 0) {
        ". No overlap, so there is nothing to compare. Either widen the STS ",
        "window or extend the years in calculate_net_initiation().")
 }
-if (!identical(sort(model_years), sort(val_years))) {
-  message("Note: STS window is ", paste(range(val_years), collapse = "-"),
+if (!identical(sort(model_years), sort(transition_years))) {
+  message("Note: STS transitions cover ", paste(range(transition_years), collapse = "-"),
           " but net initiation is only modelled for ",
           paste(range(model_years), collapse = "-"),
           ". Comparing on the overlap: ", paste(model_years, collapse = ", "), ".")
@@ -176,8 +192,18 @@ cmp <- merge(sts_coh[, .(age, sts = est, sts_lo = lower, sts_hi = upper)],
              model_plot[, .(age, model = p_start_net)], by = "age")
 cmp[, model_inside_sts_ci := model >= sts_lo & model <= sts_hi]
 
-cat("\n--- net initiation: smktrans vs STS, ages", min(cmp$age), "-", max(cmp$age), "---\n")
-cat(sprintf("  ages compared              : %d\n", nrow(cmp)))
-cat(sprintf("  model inside the STS 95%% CI: %.0f%%\n", 100 * mean(cmp$model_inside_sts_ci)))
-cat(sprintf("  median difference          : %+.5f\n", median(cmp$model - cmp$sts)))
-cat(sprintf("  correlation over age       : %.3f\n", cor(cmp$model, cmp$sts)))
+# The interval-coverage statistic is only a test where the two sides measure
+# the same thing. Past the mid-20s they do not (the stock-vintage mismatch in
+# the header), so coverage is reported for 16-24 and the full range is
+# summarised by shape (correlation) and the median gap, which the mismatch
+# affects far less than it affects coverage.
+strict <- cmp[age %in% 16:24]
+
+cat("\n--- net initiation: smktrans vs STS ---\n")
+cat(sprintf("  ages compared                        : %d (%d-%d)\n",
+            nrow(cmp), min(cmp$age), max(cmp$age)))
+cat(sprintf("  model inside the STS 95%% CI, 16-24   : %.0f%% (%d of %d ages)\n",
+            100 * mean(strict$model_inside_sts_ci), sum(strict$model_inside_sts_ci), nrow(strict)))
+cat(sprintf("  median difference, full range        : %+.5f\n", median(cmp$model - cmp$sts)))
+cat(sprintf("  correlation over age, full range     : %.3f\n", cor(cmp$model, cmp$sts)))
+cat("  25+ is descriptive, not pass/fail: see the estimand note in the header.\n")

@@ -33,8 +33,9 @@ restores the old unseeded behaviour and warns, because an unseeded run
 cannot be reproduced or audited.}
 }
 \value{
-A list containing six data.tables with all bootstrap iterations combined:
-  \code{init}, \code{quit}, \code{quit_no_init}, \code{relapse}, \code{net} and \code{trend}.
+A list containing seven data.tables with all bootstrap iterations combined:
+  \code{init}, \code{quit}, \code{quit_no_init}, \code{relapse}, \code{net},
+  \code{trend} and \code{survey_prev}.
   The master seed and the per-iteration seeds are attached as attributes.
 }
 \description{
@@ -44,11 +45,18 @@ through `B` bootstrap samples, saving intermediate results to a temporary direct
 before combining them into final output tables.
 }
 \details{
-The fitted smoking trend surface is now collected too. estimate_quitting has
+The fitted smoking trend surface is collected too. estimate_quitting has
 always fitted it on every iteration in order to solve for quitting; it just
 discarded it afterwards. Each replicate is thinned to the ages, years and
 smoking states the prevalence targets need before it is written to disk,
 because the full grid at B = 1000 is roughly 38 million rows.
+
+Alongside the fitted surface, each iteration also saves the design-weighted
+survey aggregates for the same ages and years (aggregate_survey_prev), so
+the prevalence targets can be built either from the model fit or from the
+survey data directly, from the same draws under the same seed. Years inside
+the target range that the survey does not cover are checked against the
+original data once and must stay identical across iterations.
 
 
 The central estimates written out by `process_country()` are bootstrap
