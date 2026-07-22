@@ -30,6 +30,8 @@
   : Summarise and project trends in ever-smoking
 - [`trend_fit()`](https://stapm-platform.github.io/smktrans/reference/trend_fit.md)
   : Statistically model trends in smoking status
+- [`aggregate_survey_prev()`](https://stapm-platform.github.io/smktrans/reference/aggregate_survey_prev.md)
+  : Design-weighted survey aggregates for the prevalence targets
 
 ## Smoking initiation
 
@@ -39,6 +41,8 @@
   : Cohort specific smoking initiation
 - [`init_adj()`](https://stapm-platform.github.io/smktrans/reference/init_adj.md)
   : Adjust initiation curves for recall bias
+- [`anchor_recent_cohorts()`](https://stapm-platform.github.io/smktrans/reference/anchor_recent_cohorts.md)
+  : Anchor extrapolated ever-smoking targets on a youth survey series
 
 ## Quitting smoking
 

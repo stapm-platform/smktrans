@@ -1,5 +1,126 @@
 # Changelog
 
+## smktrans 2.3.0
+
+Changes to initiation estimation and the calibration-target outputs,
+plus reporting and validation additions. Versions 2.2.1 and 2.3.0 were
+developed in one cycle; the 2.2.1 changes were never released separately
+and are folded in here.
+
+### Estimation changes
+
+- The initiation age trend limit rises from 25 to 30 (= `ref_age`), so
+  ages 26–30 are estimated rather than carrying the age-25 value
+  forward. The quit trend limit stays at 79; the relapse trend limit is
+  retained but inert under the stationary relapse forecast, where the
+  trend scaler is identically 1.
+
+- New
+  [`anchor_recent_cohorts()`](https://stapm-platform.github.io/smktrans/reference/anchor_recent_cohorts.md).
+  For cohorts beyond the trend model’s own data, the ever-smoking
+  targets that set the level of each cohort’s initiation curve are
+  re-anchored on an external youth smoking series – the SDD for England
+  (`sdd_ever_smoked_england.csv`). The youth series is linked onto the
+  target scale by a factor estimated on the cohorts both sources
+  observe, applied as a cohort-level ratio so the sex and IMD gradients
+  pass through, blended over a configurable taper at the handover, and
+  held at its final value for cohorts born after the last youth survey.
+  Cohorts inside the trend model’s data are unchanged. Config keys
+  `youth_anchor_file`, `youth_anchor_age_centre` and
+  `youth_anchor_taper` are all required once a file is set; countries
+  without a file are unchanged. In the bootstrap the youth series is
+  fixed external data and the link factor is re-estimated each
+  iteration. The
+  [`estimate_initiation()`](https://stapm-platform.github.io/smktrans/reference/estimate_initiation.md)
+  step gains a hook that calls the function when a file is configured
+  and errors if the accompanying keys are absent. Note that this has
+  reduced initiation rates for England but the corresponding corrections
+  have not yet been explored for Scotland and Wales, so these are still
+  reading slightly higher on initiation.
+
+### Calibration-target changes
+
+- `produce_prevalence_targets.R` gains a `target_source` option,
+  `"survey"` or `"model"`. `"survey"` builds each target as the pooled
+  design-weighted prevalence taken directly from each bootstrap resample
+  of the survey; `"model"` reproduces the previous behaviour, collapsing
+  the fitted trend surface over each target’s cells with ONS population
+  weights. Default is `"survey"`. The means file gains `source` and
+  `years_used` columns.
+
+- Survey years the data does not yet cover are declared in
+  `known_missing_years`. A target keeps its label but records the years
+  actually used, the only permitted gap between label and data is the
+  declared one, and a declared-missing year that later appears in the
+  data stops the script rather than being silently ignored.
+
+- [`run_bootstrap_pipeline()`](https://stapm-platform.github.io/smktrans/reference/run_bootstrap_pipeline.md)
+  collects design-weighted survey aggregates
+  ([`aggregate_survey_prev()`](https://stapm-platform.github.io/smktrans/reference/aggregate_survey_prev.md),
+  new in `trend_fit.R`) for the target ages and years on each iteration,
+  alongside the fitted trend surface it already collected, and returns
+  both.
+  [`process_country()`](https://stapm-platform.github.io/smktrans/reference/process_country.md)
+  saves the survey aggregates as `raw_boot_survey_prev_<country>.rds`.
+  Both sources are written from the same run, so switching between them
+  needs no re-run.
+
+### Reporting changes
+
+- [`write_excel_report()`](https://stapm-platform.github.io/smktrans/reference/write_excel_report.md)
+  gains a ‘Run Configuration’ sheet: an auto-generated dump of every
+  element of the run config, plus the package version, the resolved
+  initiation trend model, the bootstrap seed and the run time. It
+  iterates `names(config)`, so a config parameter added later cannot
+  fall out of the report.
+
+- All config access in the report uses `[[` rather than `$`, which had
+  partial-matched `config$kn` to `kn_samp`. The legacy `kn` and `kR`
+  rows are removed; the uncertainty block reports the bootstrap
+  iteration count, the seed and the interval definition.
+
+- The parameter table no longer overwrites the variable-definitions
+  table above it. Table contents are corrected and extended: the
+  initiation age trend limit is reported, the relapse trend limit is
+  flagged inactive under the stationary forecast, the model-choice row
+  reports the resolved model, `cont_limit` is described as the year the
+  projected trend goes flat, and `max_age_init` is replaced by
+  `ref_age`. The hard-coded package-version fallback is removed.
+
+- The run manifest saved by
+  [`process_country()`](https://stapm-platform.github.io/smktrans/reference/process_country.md)
+  now includes the full config, so a run’s settings travel with its
+  outputs rather than depending on a separately saved snapshot.
+
+### Validation and verification
+
+- New `24_verify_youth_anchor.R`. Hard checks are exact identities the
+  anchored outputs satisfy by construction: the link factor rebuilt from
+  scratch, anchored targets equalling the linked youth series outside
+  the taper, the taper blend rearranged into a checkable identity, and
+  the structure of the ratio path. A shape diagnostic plots the implied
+  initiation against the youth series over years with complete age
+  coverage. The config is read from the run manifest when present.
+
+- The net-initiation validation is reframed. The survey-side estimators
+  are unchanged; the documentation is corrected to state that the
+  model’s single-year synthetic cohort and the survey’s followed cohort
+  carry different stocks, so interval coverage is reported for ages
+  16–24 and the older ages are descriptive. The model side is averaged
+  over the diagonal’s transition years rather than the full survey
+  window, and a stale comment about clamping negative flows is removed.
+
+- [`calculate_net_initiation()`](https://stapm-platform.github.io/smktrans/reference/calculate_net_initiation.md)
+  documents the single-year synthetic cohort assumption and converts two
+  silent NA-to-zero fills, on the quit and relapse merges, into hard
+  checks.
+
+## smktrans 2.2.1
+
+Not released. Developed as the age-trend-limit change plus the reporting
+upgrade, then folded into 2.3.0 during the same QA cycle; its changes
+are recorded above.
+
 ## smktrans 2.2.0
 
 This release changes published numbers. The headline movements on the
@@ -29,7 +150,7 @@ changes – and the validation passed; see the new validation vignette.
   quietly assumed nobody starts between $`r`$ and 30, over-scaling
   young-age initiation by about 5% at $`r = 21`$. `min_ref` drops from
   21 to 18 so the youngest cohorts with usable data calibrate on their
-  own numbers. Fully observed cohorts are bit-identical to the previous
+  own numbers. Fully observed cohorts are identical to the previous
   version.
 
 - [`calculate_net_initiation()`](https://stapm-platform.github.io/smktrans/reference/calculate_net_initiation.md)

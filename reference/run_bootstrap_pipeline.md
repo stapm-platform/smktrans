@@ -56,18 +56,27 @@ run_bootstrap_pipeline(
 
 ## Value
 
-A list containing six data.tables with all bootstrap iterations
-combined: `init`, `quit`, `quit_no_init`, `relapse`, `net` and `trend`.
-The master seed and the per-iteration seeds are attached as attributes.
+A list containing seven data.tables with all bootstrap iterations
+combined: `init`, `quit`, `quit_no_init`, `relapse`, `net`, `trend` and
+`survey_prev`. The master seed and the per-iteration seeds are attached
+as attributes.
 
 ## Details
 
-The fitted smoking trend surface is now collected too. estimate_quitting
-has always fitted it on every iteration in order to solve for quitting;
-it just discarded it afterwards. Each replicate is thinned to the ages,
+The fitted smoking trend surface is collected too. estimate_quitting has
+always fitted it on every iteration in order to solve for quitting; it
+just discarded it afterwards. Each replicate is thinned to the ages,
 years and smoking states the prevalence targets need before it is
 written to disk, because the full grid at B = 1000 is roughly 38 million
 rows.
+
+Alongside the fitted surface, each iteration also saves the
+design-weighted survey aggregates for the same ages and years
+(aggregate_survey_prev), so the prevalence targets can be built either
+from the model fit or from the survey data directly, from the same draws
+under the same seed. Years inside the target range that the survey does
+not cover are checked against the original data once and must stay
+identical across iterations.
 
 The central estimates written out by \`process_country()\` are bootstrap
 medians, not point estimates, so they are a function of the random

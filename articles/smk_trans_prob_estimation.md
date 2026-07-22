@@ -12,9 +12,9 @@ estimate rates in isolation; instead, we use a “Stock and Flow” approach
 where the robustly measured number of smokers (the Stock) is used to
 solve for the unobservable quit rates (the Flow).
 
-The package now carries validation code that compares the estimates
-against survey data that had no part in producing them. The results of
-the validation for England are written up in the companion vignette,
+The package carries validation code that compares the estimates against
+survey data that had no part in producing them. The results of the
+validation for England are written up in the companion vignette,
 *Validation of the England transition probabilities*.
 
 ### The Workflow at a Glance
@@ -48,20 +48,37 @@ each year.
     entirely by the calibration in step 3.  
 2.  **Target (`ever_smoke`):** Fits a Generalized Linear Model
     (Quasibinomial) to estimate the true proportion of Ever-Smokers at
-    age 30. The model structure can now be selected from the data with
+    age 30. The model structure can be selected from the data with
     `model = "auto"`: candidates are scored on their ability to predict
     held-out survey years, the simplest model within a small margin of
     the best wins, and the winner’s projection is checked against guard
-    rails before it is accepted. The scoreboard travels with the output
-    so the choice is auditable.  
-3.  **Calibrate (`init_adj`):** Scales the raw curves so their
+    rails before it is accepted. The scoreboard is returned with the
+    output, so the choice can be inspected after the fact.  
+3.  **Anchor (`anchor_recent_cohorts`):** The targets from step 2 are
+    only data-supported for cohorts old enough to have been surveyed at
+    the reference age; for younger cohorts they are projections. Where a
+    national youth smoking series is available – the Smoking, Drinking
+    and Drug Use survey for England – the projected part of the target
+    trajectory is anchored on it. The youth series is linked onto the
+    target scale by a factor estimated on the cohorts both sources
+    observe, applied as a cohort-level ratio so the sex and IMD
+    gradients pass through unchanged, blended over a short taper at the
+    handover, and held at its final value for cohorts born after the
+    last youth survey. Cohorts inside the trend model’s data are
+    untouched. The link factor absorbs both later initiation between the
+    survey age and the reference age and the difference in what children
+    and adults report; the working assumption, stated in the function
+    documentation, is that this relationship is stable across cohorts.
+    In the bootstrap the youth series is fixed external data, and the
+    link factor is re-estimated in every iteration. Countries without a
+    suitable series simply skip this step.  
+4.  **Calibrate (`init_adj`):** Scales the raw curves so their
     cumulative sum matches the targets. Cohorts too young to have been
     observed at the reference age are first *completed*: their curve is
     multiplied by the ratio $`F(30)/F(r)`$ measured on the most recent
     fully observed cohorts, so the age-30 target is compared against an
-    age-30 quantity rather than an age-$`r`$ one. This lets the youngest
-    cohorts with usable data calibrate on their own numbers
-    (`min_ref = 18`) instead of inheriting a borrowed profile.
+    age-30 quantity rather than an age-$`r`$ one. The youngest cohorts
+    with usable data (`min_ref = 18`) calibrate on their own numbers.
 
 ``` r
 
@@ -80,8 +97,18 @@ target_trends <- ever_smoke(
   age_cats = c("25-34")
 )
 
-# 3. Adjust the curves using the Holford method
-# This corrects the recall bias to match the 'truth' at age 30, completing
+# 3. Anchor the projected part of the target trajectory on the youth survey
+# (England: SDD ever-smoked series; controlled by youth_anchor_* in the config)
+target_trends <- anchor_recent_cohorts(
+  ever_smoke_data = target_trends,
+  youth_anchor_data = data.table::fread("05_input/sdd_ever_smoked_england.csv"),
+  ref_age = 30,
+  anchor_age_centre = 13,
+  taper_cohorts = 3
+)
+
+# 4. Adjust the curves using the Holford method
+# This corrects the recall bias to match the targets at age 30, completing
 # truncated cohorts up to an age-30 equivalent before the comparison
 init_final <- init_adj(
   init_data = init_raw,
@@ -129,11 +156,10 @@ script verifies this on every run.
 2.  **Hold (`relapse_forecast`):** Carries the surface forward
     *unchanged*. Hawkins is a single study with no time dimension, so
     the only year-to-year movement in the relapse surface comes from the
-    survey’s demographic re-weighting; fitting a trend to that and
-    projecting it produced relapse probabilities outside anything the
-    evidence contains, which the validation suite’s envelope check
-    caught. The forecast is therefore stationary: it claims nothing the
-    data does not.
+    survey’s demographic re-weighting, and the forecast is stationary:
+    future years take the jump-off surface. The verification suite
+    checks that every published relapse probability lies inside the
+    envelope of the Hawkins inputs it averages.
 
 ``` r
 
@@ -144,7 +170,7 @@ relapse_data <- prep_relapse(
 )
 
 # 2. Carry the surface forward unchanged (forecast_type = "stationary"
-# inside estimate_relapse): the evidence has no time dimension to project
+# inside estimate_relapse): the evidence has no time dimension
 relapse_final <- relapse_forecast(
   relapse_forecast_data = relapse_trend_forecast, 
   relapse_by_age_imd_timesincequit = relapse_data$relapse_by_age_imd_timesincequit
@@ -225,8 +251,8 @@ q = 1 - \frac{N_{t+1}}{N_t \times S} + \frac{\text{Inflow}}{N_t \times S}
   
 *Where Inflow includes both Relapse and Initiation.*
 
-This ensures internal consistency: the calculated quit rates perfectly
-reproduce the observed prevalence trends when run forward.
+The result is internally consistent by construction: run forward, the
+calculated quit rates reproduce the observed prevalence trends.
 
 ``` r
 
@@ -266,17 +292,16 @@ rise in rates over years).
 We project the *Trend* ($`\kappa_t`$) forward linearly and recombine it
 with the *Shape* ($`\alpha_x, \beta_x`$).
 
-Two things are worth knowing about this function. First, everything it
-returns – past years as well as future – is the *reconstruction* from
-the decomposition, not the input estimates: the published historical
-surface is the smoothed rank-1 fit. Second, for initiation it runs with
-`preserve_zeros = TRUE`: since the cumulative-curve fix in `p_dense`, a
-zero in the initiation surface means nobody in that cohort starts at
-that age, and those cells are held out of the surface smoothing rather
-than clamped and averaged with their neighbours – which previously
-inflated the published initiation tail at ages 24–25 by a factor of 3 to
-4. Quitting and relapse leave the flag off; their zeros are sparse-cell
-noise and smoothing over them is the right treatment.
+Everything this function returns – past years as well as future – is the
+*reconstruction* from the decomposition, not the input estimates: the
+published historical surface is the smoothed rank-1 fit. For initiation
+it runs with `preserve_zeros = TRUE`. A zero in the initiation surface
+means nobody in that cohort starts at that age (the cumulative curve in
+`p_dense` is monotone, so its flat sections difference to genuine
+zeros), and those cells are held out of the surface smoothing and
+restored afterwards, keeping the tail of the age profile at the level
+the data gives it. Quitting and relapse leave the flag off; their zeros
+are sparse-cell noise, and smoothing over them is the right treatment.
 
 ``` r
 
@@ -315,9 +340,12 @@ relapses at the rate that actually applies to them. The net flow into
 smoking, $`(\text{initiation} - \text{quitting} + \text{relapse})`$
 relative to the non-smoking population, is a quantity an independent
 prevalence survey can also measure. It turns negative past the age where
-the cohort’s smoking prevalence peaks, and is reported as such rather
-than clamped at zero: the location of that sign change is itself part of
-what gets compared.
+the cohort’s smoking prevalence peaks, and is reported as such: the
+location of that sign change is itself part of what gets compared. Each
+year’s cohort is synthetic within that year – ages are walked through a
+single year’s probabilities – which is spelled out in the function
+documentation because it matters when comparing against a survey
+estimator that follows real cohorts through time.
 
 ![](net_init_cohort.png)
 

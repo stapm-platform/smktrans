@@ -10,7 +10,7 @@ This report shows the estimated baseline transition probabilities used
 in the simulation model.
 
 [Download Full Excel
-Estimates](https://github.com/stapm-platform/smktrans/raw/master/transition_probability_estimates/outputs/SmokeStateTransProbs_England_2026-07-18.xlsx)
+Estimates](https://github.com/stapm-platform/smktrans/raw/master/transition_probability_estimates/outputs/SmokeStateTransProbs_England_2026-07-22.xlsx)
 
 ------------------------------------------------------------------------
 
@@ -39,4 +39,4 @@ Calendar Year
 
 ------------------------------------------------------------------------
 
-*Report generated on 2026-07-19 using `smktrans`.*
+*Report generated on 2026-07-22 using `smktrans`.*

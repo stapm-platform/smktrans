@@ -62,6 +62,20 @@ calculate_net_initiation(
 - Nobody dies. Over ages 12 to 30 that is close enough to true, and it
   is what makes the denominator below equal to 1 - prevalence.
 
+- The cohort is synthetic within a single year: ages are iterated with
+  the year held fixed, so the stocks at age a are those of a lifetime
+  lived under that one year's rates. Under secular change this differs
+  from a real cohort's stocks, which matters when comparing against a
+  cohort-followed survey estimator - see the header of
+  22_validate_net_initiation.R for the direction and size.
+
+- Quit and relapse probabilities must cover every age present in the
+  initiation data; the function stops if they do not. On the current
+  pipeline they always do – the relapse table extends below 18 by
+  carrying the age-18 values, the same convention as everywhere else, so
+  this calculation assumes nothing about under-18 relapse that the main
+  estimates do not.
+
 **p_start_net can be negative.** Past the age where the cohort's smoking
 prevalence peaks, quitting runs ahead of initiation and relapse and the
 net flow turns negative. That is a real feature of the age profile and
@@ -71,16 +85,6 @@ prevalence peaking there at all.
 
 **Time since quitting.**
 
-This used to pick a relapse probability by assuming how long people at
-each age had been quit: 1 year if under 18, 3 years from 18 to 24, 5
-years from 25. That produced a step change in p_relapse at exactly 18
-and 25 (a 63 18 on the England data), and because the relapse flow is a
-large part of the net flow, it put a spurious cliff into the published
-numbers. Net initiation fell 83
-
-It is not necessary to assume any of it. The simulation already carries
-a stock of former smokers, so carry it BY time since quit instead:
-quitters enter at time_since_quit 0, survivors move up one year at a
-time, and the top category absorbs. Every former smoker then has the
-relapse probability that actually applies to them, and the assumption
-disappears rather than being replaced by a better one.
+Quitters enter at time_since_quit 0, ongoing quitters move up one year
+at a time, and the top category absorbs. Every former smoker then has
+the relapse probability that actually applies to them.
